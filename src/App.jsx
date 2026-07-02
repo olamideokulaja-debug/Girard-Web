@@ -168,9 +168,25 @@ function ListingCard({ l }) {
 const Rule = ({ light }) => <div style={{ width: 54, height: 2, background: "var(--gold)", opacity: light ? 1 : .9 }} />;
 
 const IMG = {
-  hero: "https://images.unsplash.com/photo-1759162788764-f40075c8857f?auto=format&fit=crop&w=1500&q=80",
-  tower: "https://images.unsplash.com/photo-1764722870631-877f5c694b76?auto=format&fit=crop&w=1200&q=80"
+  hero: "/img/bourdillon_tower.jpg",
+  tower: "/img/bourdillon_lobby.jpg"
 };
+
+/* Girard emblem, recreated from the brand: a gold ring on an arc base with three towers. */
+function GirardMark({ size = 34 }) {
+  const g = "var(--gold)";
+  return (
+    <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true">
+      <circle cx="60" cy="55" r="41" fill="none" stroke={g} strokeWidth="3.4" />
+      <path d="M28 83 Q60 103 92 83" fill="none" stroke={g} strokeWidth="3.6" strokeLinecap="round" />
+      <g fill={g}>
+        <path d="M53 84 L53 33 L61 27 L61 84 Z" />
+        <path d="M63 84 L63 47 L75 41 L75 84 Z" />
+        <path d="M41 84 L41 53 L51 49 L51 84 Z" />
+      </g>
+    </svg>
+  );
+}
 
 const PHOTO_POOL = [
   "https://images.unsplash.com/photo-1764722870631-877f5c694b76?auto=format&fit=crop&w=800&q=68",
@@ -269,10 +285,10 @@ function Landing({ onStart, onSignIn }) {
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,31,60,.9)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--navy-line)" }}>
         <div className="wrap" style={{ height: 74, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <svg viewBox="0 0 100 100" width="34" height="34"><rect x="6" y="6" width="88" height="88" rx="6" fill="none" stroke="var(--gold)" strokeWidth="5" /><path d="M30 74 L30 50 L46 38 L62 50 L62 74 Z M62 74 L62 44 L74 52 L74 74 Z" fill="#fff" /><rect x="42" y="56" width="8" height="8" fill="var(--navy)" /></svg>
+            <GirardMark size={38} />
             <div>
-              <div className="serif" style={{ fontSize: 21, fontWeight: 600, letterSpacing: .4, color: "#fff" }}>Girard</div>
-              <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -2 }}>PROPERTY ESTATE</div>
+              <div className="serif" style={{ fontSize: 20, fontWeight: 600, letterSpacing: 1, color: "#fff" }}>GIRARD</div>
+              <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -1 }}>PROPERTY ESTATE</div>
             </div>
           </div>
           <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 30 }}>
@@ -373,6 +389,24 @@ function Landing({ onStart, onSignIn }) {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* FEATURED DEVELOPMENT */}
+      <section style={{ background: "var(--navy)", color: "#fff" }}>
+        <div className="feat-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+          <Photo src="/img/bourdillon_tower.jpg" hue={210} alt="1 Bourdillon Residences, Ikoyi" style={{ minHeight: 480 }} />
+          <div style={{ padding: "72px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Featured development</div>
+            <h2 className="serif" style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>1 Bourdillon Residences</h2>
+            <div style={{ color: "var(--gold-soft)", fontWeight: 600, marginTop: 8, letterSpacing: 1, fontSize: 13 }}>IKOYI, LAGOS · AN ADDRESS OF DISTINCTION</div>
+            <p style={{ color: "rgba(255,255,255,.74)", fontSize: 15.5, lineHeight: 1.7, margin: "18px 0 24px", maxWidth: 460 }}>A refined expression of vertical luxury: 40 bespoke residences with panoramic water views, floor-to-ceiling glazing, a rooftop infinity pool and round-the-clock concierge.</p>
+            <div style={{ display: "flex", gap: 28, marginBottom: 26, flexWrap: "wrap" }}>
+              {[["40", "Bespoke units"], ["110m", "Max height"], ["2,039", "sq.m plot"]].map(([n, l]) => <div key={l}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--gold)" }}>{n}</div><div style={{ fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>{l}</div></div>)}
+            </div>
+            <div><a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Enquire about 1 Bourdillon <ArrowUpRight size={16} /></a></div>
+          </div>
+        </div>
+        <style>{`@media(max-width:900px){.feat-grid{grid-template-columns:1fr!important}}`}</style>
       </section>
 
       {/* FLAGSHIP PLATFORM MODULES */}
@@ -551,14 +585,14 @@ const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate
 /* Per-account identity, resolved by sign-in email.
    Edit this map with your real team so each person is greeted by name and title. */
 const FOUNDERS = {
-  "principal@girard.example": { name: "Girard Principal", title: "Founder & Principal", greeting: "Welcome back" },
-  "operations@girard.example": { name: "Operations Lead", title: "Platform Administration", greeting: "Welcome back" }
+  "founder@girardproperty.com": { name: "Girard Founder", title: "Founder & Administrator", greeting: "Welcome back", allAccess: true },
+  "admin@girardproperty.com": { name: "Girard Admin", title: "Platform Administration", greeting: "Welcome back", allAccess: true }
 };
 function initialsOf(name) { return (name || "G").split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0, 2).toUpperCase(); }
 function resolveIdentity(email, role) {
   const key = (email || "").toLowerCase().trim();
   const f = FOUNDERS[key];
-  if (f) return { email: key, role, name: f.name, title: f.title, greeting: f.greeting, initials: initialsOf(f.name), isFounder: true };
+  if (f) return { email: key, role, name: f.name, title: f.title, greeting: f.greeting, initials: initialsOf(f.name), isFounder: true, allAccess: !!f.allAccess };
   const local = (key.split("@")[0] || "there").replace(/[._-]+/g, " ").trim();
   const name = local ? local.replace(/\b\w/g, c => c.toUpperCase()) : "There";
   return { email: key, role, name, title: ROLE_TITLE[role] || "Member", greeting: "Welcome", initials: initialsOf(name), isFounder: false };
@@ -621,8 +655,11 @@ async function authSignOut() {
 function BrandMark({ dark }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <svg viewBox="0 0 100 100" width="30" height="30"><rect x="6" y="6" width="88" height="88" rx="6" fill="none" stroke="var(--gold)" strokeWidth="6" /><path d="M30 74 L30 50 L46 38 L62 50 L62 74 Z M62 74 L62 44 L74 52 L74 74 Z" fill={dark ? "var(--navy)" : "#fff"} /><rect x="42" y="56" width="8" height="8" fill="var(--gold)" /></svg>
-      <span className="serif" style={{ fontSize: 19, fontWeight: 600, color: dark ? "var(--ink)" : "#fff" }}>Girard</span>
+      <GirardMark size={30} />
+      <div style={{ lineHeight: 1.05 }}>
+        <div className="serif" style={{ fontSize: 17, fontWeight: 600, letterSpacing: .8, color: dark ? "var(--ink)" : "#fff" }}>GIRARD</div>
+        <div style={{ fontSize: 7.5, letterSpacing: 2.2, color: "var(--gold)" }}>PROPERTY ESTATE</div>
+      </div>
     </div>
   );
 }
@@ -893,9 +930,19 @@ function seedProperties() {
     };
   });
 }
+const BOURDILLON = {
+  id: "PR-BOURDILLON", title: "1 Bourdillon Residences", area: "Ikoyi", type: "Luxury Apartment", beds: 3,
+  rent: 95000000, status: "Available", verified: true, hue: 210, featured: true, img: "/img/bourdillon_tower.jpg",
+  units: 40, height: "110m", plot: "2,039 sq.m",
+  amenities: ["Rooftop Infinity Pool", "Fitness Studio", "24/7 Concierge", "Smart Home", "Secure Parking", "Panoramic Water Views"],
+  address: "Bourdillon Road, Ikoyi, Lagos",
+  blurb: "A refined expression of vertical luxury on Bourdillon Road, Ikoyi. 40 bespoke residences with panoramic water views, floor-to-ceiling glazing and world-class amenities, developed by Girard Property Estate Limited.",
+  gallery: ["/img/bourdillon_tower.jpg", "/img/bourdillon_lobby.jpg", "/img/bourdillon_living.jpg", "/img/bourdillon_bedroom.jpg", "/img/bourdillon_pool.jpg", "/img/bourdillon_entrance.jpg"]
+};
+
 function pmSeed() {
   return {
-    properties: seedProperties(),
+    properties: [BOURDILLON, ...seedProperties()],
     applications: [
       { id: "AP-01", tenant: "Chidera Okonkwo", email: "chidera@example.com", property: "PR-1004", income: 14000000, score: 742, status: "Applied", note: "Fintech PM, 3yr employment" },
       { id: "AP-02", tenant: "Fatima Bello", email: "fatima@example.com", property: "PR-1010", income: 9500000, score: 688, status: "More Info Required", note: "Guarantor pending" }
@@ -1066,7 +1113,7 @@ function PropertiesScreen({ st, setSt, identity }) {
     <H2 title="Properties" sub={list.length + " of " + st.properties.length + " shown"} right={<div style={{ width: 200 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", cursor: "pointer" }}>
-        <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} photo={poolPhoto(p.id)} /></div>
+        <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} photo={p.img || poolPhoto(p.id)} /></div>
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
@@ -1074,7 +1121,12 @@ function PropertiesScreen({ st, setSt, identity }) {
         </div></PmCard>)}
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <HouseArt hue={sel.hue} status={sel.status} h={190} photo={poolPhoto(sel.id)} />
+      <HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || poolPhoto(sel.id)} />
+      {sel.featured && <div style={{ marginTop: 14 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["Units", sel.units], ["Max height", sel.height], ["Plot", sel.plot]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 110, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 17 }}>{v}</div></div>)}</div>
+        <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12 }}>{sel.blurb}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
+      </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--navy)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div>
@@ -1132,14 +1184,19 @@ function TenantFind({ st, setSt, identity, toast }) {
     <H2 title="Find a home" sub={list.length + " available"} right={<div style={{ display: "flex", gap: 10 }}><div style={{ width: 160 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div><div style={{ width: 120 }}><PmSelect value={beds} onChange={setBeds} options={["Any", "1", "2", "3+"]} /></div></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden" }}>
-        <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" photo={poolPhoto(p.id)} /></div>
+        <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" photo={p.img || poolPhoto(p.id)} /></div>
         <div style={{ padding: 14 }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}<span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span></div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <HouseArt hue={sel.hue} status="Available" h={190} photo={poolPhoto(sel.id)} />
+      <HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || poolPhoto(sel.id)} />
+      {sel.featured && <div style={{ marginTop: 14 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["Units", sel.units], ["Max height", sel.height], ["Plot", sel.plot]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 110, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 17 }}>{v}</div></div>)}</div>
+        <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12 }}>{sel.blurb}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
+      </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--navy)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{sel.amenities.map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
       <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn>
@@ -1338,9 +1395,14 @@ const NAV = {
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["reports", "Analytics", LineChart]],
   investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["work", "Overview", LayoutGrid]]
 };
-function AppShell({ identity, onSignOut, onSwitchRole }) {
-  const nav = NAV[identity.role] || NAV.agent;
+function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
+  const canSwitch = identity0.allAccess || identity0.role === "admin";
+  const [activeRole, setActiveRole] = useState(identity0.role);
+  const identity = { ...identity0, role: activeRole };
+  const nav = NAV[activeRole] || NAV.agent;
   const [view, setView] = useState(nav[0][0]);
+  const [roleMenu, setRoleMenu] = useState(false);
+  const switchWorkspace = (r) => { setActiveRole(r); setView((NAV[r] || NAV.agent)[0][0]); setRoleMenu(false); };
   const [st, setStRaw] = useState(pmLoad);
   const [nav2Open, setNav2Open] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -1398,6 +1460,19 @@ function AppShell({ identity, onSignOut, onSwitchRole }) {
             <div className="serif" style={{ width: 34, height: 34, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 13 }}>{identity.initials}</div>
             <div style={{ lineHeight: 1.2 }}><div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{identity.name}</div><div style={{ fontSize: 11, color: "var(--gold-2)" }}>{identity.title}</div></div>
           </div>
+          {canSwitch && <div style={{ position: "relative" }}>
+            <button onClick={() => setRoleMenu(o => !o)} style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--navy)", color: "#fff", border: "1px solid var(--navy-line)", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+              <span style={{ color: "var(--gold)", fontSize: 10, fontWeight: 800, letterSpacing: .5 }}>WORKSPACE</span>
+              {ROLES.find(r => r.key === activeRole)?.name || "Workspace"}
+              <ChevronRight size={14} style={{ transform: "rotate(90deg)", color: "var(--gold)" }} />
+            </button>
+            {roleMenu && <div style={{ position: "absolute", left: 0, top: 44, width: 230, background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 10, boxShadow: "0 20px 50px rgba(10,31,60,.16)", zIndex: 50, overflow: "hidden" }}>
+              <div style={{ padding: "9px 14px", fontSize: 10.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .5, borderBottom: "1px solid var(--cream-line)" }}>Switch workspace</div>
+              {ROLES.map(r => <button key={r.key} onClick={() => switchWorkspace(r.key)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", padding: "10px 14px", border: "none", background: activeRole === r.key ? "var(--ivory)" : "transparent", cursor: "pointer", color: "var(--ink)", fontSize: 13.5, fontWeight: activeRole === r.key ? 700 : 500 }}>
+                <r.icon size={16} color="var(--gold-2)" />{r.name}{activeRole === r.key && <Check size={14} color="var(--gold-2)" style={{ marginLeft: "auto" }} />}
+              </button>)}
+            </div>}
+          </div>}
           <div style={{ position: "relative" }}>
             <button onClick={() => setNotifOpen(o => !o)} title="Notifications" style={{ position: "relative", background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, width: 36, height: 36, display: "grid", placeItems: "center", cursor: "pointer", color: "var(--ink)" }}>
               <Bell size={17} /><span style={{ position: "absolute", top: 7, right: 8, width: 7, height: 7, borderRadius: 999, background: "var(--gold)" }} />

@@ -1,8 +1,9 @@
 :root {
-  --navy: #0A1F3C;
-  --navy-2: #0E2647;
-  --navy-3: #14335F;
-  --navy-line: #274268;
+  --navy: #0A1A38;
+  --navy-2: #0C2145;
+  --navy-3: #163564;
+  --navy-line: #2A456E;
+  --navy-deep: #06112A;
   --gold: #C6A15B;
   --gold-2: #B8934A;
   --gold-soft: #E7D6AE;
@@ -13,9 +14,7 @@
   --muted: #5A6472;
   --white: #FFFFFF;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body {
   background: var(--ivory);
   color: var(--ink);
@@ -23,14 +22,8 @@ html, body {
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
 }
-
 .serif { font-family: "Lora", Georgia, "Times New Roman", serif; }
-
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; }
-::selection { background: var(--gold); color: #20160140; }
 ::selection { background: var(--gold); color: #201601; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
-}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
