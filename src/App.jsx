@@ -5,7 +5,8 @@ import {
   LogOut, Mail, Lock, ArrowLeft, ChevronRight, Wallet, Wrench, FileText,
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
   CreditCard, PenLine, Filter, LayoutDashboard, Bell, Send, Loader2, MoreHorizontal,
-  Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check
+  Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
+  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -166,6 +167,49 @@ function ListingCard({ l }) {
 
 const Rule = ({ light }) => <div style={{ width: 54, height: 2, background: "var(--gold)", opacity: light ? 1 : .9 }} />;
 
+const IMG = {
+  hero: "https://images.unsplash.com/photo-1759162788764-f40075c8857f?auto=format&fit=crop&w=1500&q=80",
+  tower: "https://images.unsplash.com/photo-1764722870631-877f5c694b76?auto=format&fit=crop&w=1200&q=80"
+};
+
+const PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1764722870631-877f5c694b76?auto=format&fit=crop&w=800&q=68",
+  "https://images.unsplash.com/photo-1757359056339-22968344cce6?auto=format&fit=crop&w=800&q=68",
+  "https://images.unsplash.com/photo-1706808849802-8f876ade0d1f?auto=format&fit=crop&w=800&q=68",
+  "https://images.unsplash.com/photo-1759162788764-f40075c8857f?auto=format&fit=crop&w=800&q=68"
+];
+function poolPhoto(id) { let h = 0; const t = String(id); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return PHOTO_POOL[h % PHOTO_POOL.length]; }
+
+/* Photo renders a stock image and falls back to premium gradient art if it fails to load.
+   To use your own photography, drop files into public/img and point these at /img/your-file.jpg */
+function Photo({ src, hue = 212, alt = "", style, radius = 0, overlay, className }) {
+  const [ok, setOk] = useState(true);
+  return (
+    <div className={className} style={{ position: "relative", overflow: "hidden", borderRadius: radius, ...style }}>
+      {ok && src
+        ? <img src={src} alt={alt} onError={() => setOk(false)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        : <div style={{ width: "100%", height: "100%", background: "linear-gradient(140deg, hsl(" + hue + ",45%,19%), hsl(" + (hue - 14) + ",55%,33%))" }}>
+            <svg viewBox="0 0 400 300" width="100%" height="100%" style={{ opacity: .2 }}><g fill="none" stroke="var(--gold)" strokeWidth="1.4"><path d="M70 250 L70 140 L120 110 L170 140 L170 250 Z" /><path d="M190 250 L190 90 L250 60 L310 90 L310 250 Z" /><rect x="330" y="150" width="46" height="100" /></g></svg>
+          </div>}
+      {overlay && <div style={{ position: "absolute", inset: 0, background: overlay }} />}
+    </div>
+  );
+}
+
+/* Real capabilities and positioning, drawn from girardpropertylimited.com */
+const MGMT_CAPS = ["Facility & infrastructure management", "Lease administration", "Service charge management", "Maintenance oversight", "Vendor coordination", "Security operations", "Utilities management", "Financial reporting"];
+const INV_CAPS = ["Development partnerships", "Income-producing assets", "Land banking strategies", "Institutional investment platforms"];
+const VALUES = [
+  { t: "Reliability", d: "Consistent service excellence, delivered on time and to a dependable standard." },
+  { t: "Transparency", d: "Clear reporting frameworks and open, accountable communication throughout." },
+  { t: "Compliance", d: "Strong governance and regulatory compliance embedded at every step." },
+  { t: "Discipline", d: "Operational discipline that protects asset value and stabilises cash flow." }
+];
+
+/* Leadership. Add your real team and the section appears automatically.
+   Example: { name: "Full Name", role: "Managing Director", photo: "/img/team-1.jpg" } */
+const TEAM = [];
+
 function Landing({ onStart, onSignIn }) {
   const [region, setRegion] = useState("International");
   const [menu, setMenu] = useState(false);
@@ -204,15 +248,19 @@ function Landing({ onStart, onSignIn }) {
         .cap-card:hover{border-color:var(--gold);background:rgba(198,161,91,.05)}
         .aud-card{border:1px solid var(--cream-line);border-radius:6px;padding:24px;background:var(--white);transition:transform .2s,box-shadow .2s}
         .aud-card:hover{transform:translateY(-3px);box-shadow:0 20px 44px rgba(10,31,60,.10)}
+        .val-card{background:var(--white);border:1px solid var(--cream-line);border-radius:8px;padding:24px;transition:transform .2s}
+        .val-card:hover{transform:translateY(-3px)}
+        .cap-li{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink);padding:7px 0}
+        .team-card{background:var(--white);border:1px solid var(--cream-line);border-radius:10px;overflow:hidden}
         @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         .rise{animation:rise .8s ease both}
-        .hero-h{font-size:clamp(46px,7vw,92px);line-height:1.02;font-weight:600;letter-spacing:-1px}
+        .hero-h{font-size:clamp(46px,6.6vw,86px);line-height:1.02;font-weight:600;letter-spacing:-1px}
         .sec-h{font-size:clamp(32px,4.4vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.5px}
-        @media(max-width:900px){
+        @media(max-width:940px){
           .nav-links{display:none!important}.burger{display:inline-flex!important}
           .grid-2{grid-template-columns:1fr!important}.hero-grid{grid-template-columns:1fr!important}
-          .hero-art{display:none!important}.mod-grid{grid-template-columns:1fr!important}
-          .grid-4{grid-template-columns:1fr 1fr!important}
+          .hero-photo{display:none!important}.mod-grid{grid-template-columns:1fr!important}
+          .grid-4{grid-template-columns:1fr 1fr!important}.cap-split{grid-template-columns:1fr!important}
         }
         @media(max-width:560px){.grid-4{grid-template-columns:1fr!important}}
       `}</style>
@@ -228,8 +276,8 @@ function Landing({ onStart, onSignIn }) {
             </div>
           </div>
           <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 30 }}>
+            <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#platform">Platform</a>
-            <a className="nav-link" href="#capabilities">Capabilities</a>
             <a className="nav-link" href="#who">Who we serve</a>
             <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 18px" }}>Sign in</a>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
@@ -238,65 +286,99 @@ function Landing({ onStart, onSignIn }) {
         </div>
         {menu && (
           <div className="wrap" style={{ paddingBottom: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+            <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#platform">Platform</a>
-            <a className="nav-link" href="#capabilities">Capabilities</a>
             <a className="nav-link" href="#who">Who we serve</a>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
           </div>
         )}
       </header>
 
-      {/* HERO (NAVY) */}
+      {/* HERO */}
       <section style={{ background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 200, pointerEvents: "none" }}><Skyline /></div>
-        <div className="wrap" style={{ paddingTop: 84, paddingBottom: 90, position: "relative" }}>
-          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.15fr .85fr", gap: 56, alignItems: "center" }}>
+        <div className="wrap" style={{ paddingTop: 72, paddingBottom: 78, position: "relative" }}>
+          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 54, alignItems: "center" }}>
             <div className="rise">
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 22 }}>Digital management &amp; cross-border swaps</div>
               <h1 className="serif hero-h">
                 Managed with <span style={{ fontStyle: "italic", color: "var(--gold)" }}>discipline.</span><br />
                 Moved without <span style={{ fontStyle: "italic", color: "var(--gold)" }}>borders.</span>
               </h1>
-              <p style={{ fontSize: 17.5, color: "rgba(255,255,255,.74)", marginTop: 26, maxWidth: 520, lineHeight: 1.65 }}>
-                Girard brings digital property management and cross-border swaps onto one governed platform, built for owners, tenants, agents and investors across Nigeria, the UK and beyond.
+              <p style={{ fontSize: 17.5, color: "rgba(255,255,255,.76)", marginTop: 24, maxWidth: 520, lineHeight: 1.65 }}>
+                Girard Property Estate Limited delivers professional, end-to-end management of residential and commercial property, now on one governed platform with cross-border swaps, market intelligence and a concierge of trusted services.
               </p>
-              <div style={{ display: "flex", gap: 12, marginTop: 32, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap" }}>
                 <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
-                <a className="btn-line on-navy" href="#platform">Explore the platform</a>
+                <a className="btn-line on-navy" href="#services">Explore services</a>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 30, color: "rgba(255,255,255,.6)", fontSize: 13 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 28, color: "rgba(255,255,255,.6)", fontSize: 13 }}>
                 <ShieldCheck size={16} color="var(--gold)" /> Governance-led and compliance-first, with human oversight at every critical step.
               </div>
             </div>
-            <div className="hero-art rise" style={{ height: 480 }}><BuildingPortrait /></div>
-          </div>
-        </div>
-      </section>
-
-      {/* MANIFESTO (IVORY) */}
-      <section style={{ background: "var(--ivory)", padding: "88px 0" }}>
-        <div className="wrap" style={{ display: "grid", gridTemplateColumns: "1fr 1.25fr", gap: 56, alignItems: "start" }} >
-          <div className="grid-2" style={{ display: "contents" }}>
-            <div>
-              <Rule light />
-              <div className="eyebrow" style={{ color: "var(--gold-2)", marginTop: 18 }}>The Girard standard</div>
-            </div>
-            <div>
-              <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>
-                Property held to a higher standard, from the first listing to the final transfer.
-              </h2>
-              <p style={{ fontSize: 16.5, color: "var(--muted)", marginTop: 20, lineHeight: 1.7, maxWidth: 640 }}>
-                Girard delivers professional, end-to-end management of residential and commercial property, built on reliability, transparency and regulatory compliance. That same discipline now extends across borders, letting owners exchange assets directly through a governed, secure marketplace.
-              </p>
+            <div className="hero-photo rise" style={{ position: "relative" }}>
+              <div style={{ border: "1px solid var(--gold)", padding: 10, borderRadius: 4 }}>
+                <Photo src={IMG.hero} hue={210} alt="Modern residential towers" style={{ height: 440 }} overlay="linear-gradient(180deg, rgba(10,31,60,.18), rgba(10,31,60,.55))" />
+              </div>
+              <div style={{ position: "absolute", bottom: -22, left: -22, background: "var(--white)", color: "var(--ink)", borderRadius: 8, padding: "16px 20px", boxShadow: "0 20px 50px rgba(0,0,0,.35)" }}>
+                <div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--navy)" }}>30</div>
+                <div style={{ fontSize: 12, color: "var(--muted)", maxWidth: 130 }}>Lagos properties under management at launch</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FLAGSHIP MODULES (NAVY) */}
+      {/* LIVE STRIP + REGION LENS */}
+      <section style={{ background: "var(--navy-2)", color: "#fff", borderTop: "1px solid var(--navy-line)" }}>
+        <div className="wrap" style={{ padding: "22px 28px", display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold)", fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap" }}><span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--gold)" }} /> Live</span>
+            <span key={instr} className="rise" style={{ color: "rgba(255,255,255,.82)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{instr}</span>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {Object.keys(REGIONS).map(k => <button key={k} onClick={() => { setRegion(k); setOffset(0); }} className={"rpill" + (region === k ? " on" : "")}>{k}</button>)}
+          </div>
+        </div>
+      </section>
+
+      {/* SERVICES DEEP-DIVE (real copy) */}
+      <section id="services" style={{ background: "var(--ivory)", padding: "88px 0" }}>
+        <div className="wrap">
+          <div style={{ maxWidth: 660, marginBottom: 46 }}>
+            <Rule light />
+            <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>What Girard does</div>
+            <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Two disciplines, delivered to an institutional standard.</h2>
+          </div>
+          <div className="cap-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28 }}>
+            <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, overflow: "hidden" }}>
+              <Photo src={IMG.tower} hue={210} alt="Managed residential building" style={{ height: 200 }} overlay="linear-gradient(180deg, rgba(10,31,60,.05), rgba(10,31,60,.35))" />
+              <div style={{ padding: 26 }}>
+                <div className="serif" style={{ fontSize: 24, fontWeight: 600, color: "var(--ink)", marginBottom: 10 }}>Property &amp; Estate Management</div>
+                <p style={{ color: "var(--muted)", fontSize: 14.5, lineHeight: 1.65, marginBottom: 16 }}>End-to-end management of residential and commercial property, ensuring operational efficiency, tenant satisfaction and long-term asset preservation, with technology-enabled real-time monitoring and data-driven performance tracking.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 18px" }}>
+                  {MGMT_CAPS.map(c => <div key={c} className="cap-li"><span style={{ width: 6, height: 6, borderRadius: 999, background: "var(--gold)", flexShrink: 0 }} />{c}</div>)}
+                </div>
+              </div>
+            </div>
+            <div style={{ background: "var(--navy)", color: "#fff", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              <div style={{ padding: 26, flex: 1 }}>
+                <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Investment &amp; Partnerships</div>
+                <div className="serif" style={{ fontSize: 24, fontWeight: 600, marginBottom: 10 }}>Real Estate Investment &amp; Partnerships</div>
+                <p style={{ color: "rgba(255,255,255,.74)", fontSize: 14.5, lineHeight: 1.65, marginBottom: 18 }}>Secure, high-yield investment models supported by disciplined due diligence, strong governance structures and transparent reporting. Partnerships align investor objectives with sustainable asset performance and controlled risk.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {INV_CAPS.map(c => <div key={c} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "rgba(255,255,255,.9)" }}><span style={{ width: 6, height: 6, borderRadius: 999, background: "var(--gold)" }} />{c}</div>)}
+                </div>
+              </div>
+              <div style={{ borderTop: "1px solid var(--navy-line)", padding: "16px 26px", fontSize: 13, color: "rgba(255,255,255,.6)" }}>Governed by clear legal frameworks, compliance protocols and performance accountability standards.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FLAGSHIP PLATFORM MODULES */}
       <section id="platform" style={{ background: "var(--navy-2)", color: "#fff", padding: "92px 0" }}>
         <div className="wrap">
-          <div style={{ maxWidth: 640, marginBottom: 54 }}>
+          <div style={{ maxWidth: 640, marginBottom: 48 }}>
             <Rule />
             <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 14px" }}>The platform</div>
             <h2 className="serif sec-h">Two flagship modules, one continuous journey.</h2>
@@ -317,30 +399,19 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>
 
-      {/* LIVE LISTINGS + REGION LENS (IVORY) */}
-      <section style={{ background: "var(--ivory)", padding: "88px 0" }}>
+      {/* LISTINGS TEASER */}
+      <section style={{ background: "var(--ivory)", padding: "84px 0" }}>
         <div className="wrap">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 20, marginBottom: 34 }}>
-            <div>
-              <Rule light />
-              <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Live on Girard</div>
-              <h2 className="serif sec-h" style={{ color: "var(--ink)", maxWidth: 560 }}>Instructions and swaps, moving in real time.</h2>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {Object.keys(REGIONS).map(k => (
-                <button key={k} onClick={() => { setRegion(k); setOffset(0); }} className={"rpill" + (region === k ? " on" : "")} style={region === k ? {} : { color: "var(--muted)", borderColor: "var(--cream-line)" }}>{k}</button>
-              ))}
-            </div>
+          <div style={{ marginBottom: 30 }}>
+            <Rule light />
+            <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Live on Girard</div>
+            <h2 className="serif sec-h" style={{ color: "var(--ink)", maxWidth: 560 }}>Instructions and swaps, moving in real time.</h2>
           </div>
-
           <div style={{ background: "var(--navy)", borderRadius: 10, padding: 26, position: "relative", overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#fff", marginBottom: 18 }}>
               <Globe2 size={16} color="var(--gold)" />
               <span className="serif" style={{ color: "var(--gold)", fontWeight: 600, fontSize: 15 }}>{R.tag}.</span>
               <span style={{ color: "rgba(255,255,255,.72)", fontSize: 14 }}>{R.line}</span>
-            </div>
-            <div style={{ background: "var(--navy-3)", borderRadius: 6, padding: "11px 15px", fontSize: 13, fontWeight: 600, color: "#fff", display: "flex", alignItems: "center", gap: 9, marginBottom: 20, border: "1px solid var(--navy-line)" }}>
-              <Sparkles size={15} color="var(--gold)" /><span key={instr} className="rise" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{instr}</span>
             </div>
             <div style={{ position: "relative" }}>
               <div style={{ display: "flex", gap: 14, overflow: "hidden", filter: "blur(3px)", opacity: .95, WebkitMaskImage: "linear-gradient(90deg,#000 68%,transparent)", maskImage: "linear-gradient(90deg,#000 68%,transparent)" }}>
@@ -355,30 +426,28 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>
 
-      {/* CAPABILITIES (NAVY) */}
-      <section id="capabilities" style={{ background: "var(--navy)", color: "#fff", padding: "92px 0" }}>
+      {/* VALUES */}
+      <section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
         <div className="wrap">
-          <div style={{ maxWidth: 640, marginBottom: 48 }}>
+          <div style={{ maxWidth: 640, marginBottom: 46 }}>
             <Rule />
-            <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 14px" }}>Beyond the core</div>
-            <h2 className="serif sec-h">Intelligence and services, on the same platform.</h2>
+            <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>The Girard standard</div>
+            <h2 className="serif sec-h">Built on reliability, transparency and compliance.</h2>
           </div>
-          <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-            {CAPABILITIES.map(c => (
-              <div key={c.name} className="cap-card">
-                <div style={{ width: 48, height: 48, borderRadius: 8, background: "rgba(198,161,91,.14)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 18 }}><c.icon size={22} /></div>
-                <h3 className="serif" style={{ fontSize: 22, fontWeight: 600, marginBottom: 10 }}>{c.name}</h3>
-                <p style={{ color: "rgba(255,255,255,.72)", fontSize: 14.5, lineHeight: 1.65 }}>{c.copy}</p>
-              </div>
-            ))}
+          <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
+            {VALUES.map((v, i) => <div key={v.t} style={{ border: "1px solid var(--navy-line)", borderRadius: 8, padding: 24 }}>
+              <div className="serif" style={{ fontSize: 34, fontWeight: 600, color: "var(--gold)" }}>{String(i + 1).padStart(2, "0")}</div>
+              <div className="serif" style={{ fontSize: 20, fontWeight: 600, margin: "8px 0 8px" }}>{v.t}</div>
+              <div style={{ color: "rgba(255,255,255,.72)", fontSize: 13.5, lineHeight: 1.6 }}>{v.d}</div>
+            </div>)}
           </div>
         </div>
       </section>
 
-      {/* WHO WE SERVE (IVORY) */}
-      <section id="who" style={{ background: "var(--ivory)", padding: "92px 0" }}>
+      {/* WHO WE SERVE */}
+      <section id="who" style={{ background: "var(--ivory)", padding: "88px 0" }}>
         <div className="wrap">
-          <div style={{ maxWidth: 640, marginBottom: 48 }}>
+          <div style={{ maxWidth: 640, marginBottom: 46 }}>
             <Rule light />
             <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Who we serve</div>
             <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>A role-aware platform, tuned to each user.</h2>
@@ -392,22 +461,41 @@ function Landing({ onStart, onSignIn }) {
               </div>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24, marginTop: 60, borderTop: "1px solid var(--cream-line)", paddingTop: 40 }} className="grid-4">
-            {STATS.map(s => (
-              <div key={s.k}><div className="serif" style={{ fontSize: 46, fontWeight: 600, color: "var(--navy)" }}>{s.k}</div><div style={{ color: "var(--muted)", fontSize: 14, marginTop: 4 }}>{s.v}</div></div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* CTA (NAVY) */}
-      <section style={{ background: "var(--navy-2)", color: "#fff", padding: "96px 0", position: "relative", overflow: "hidden" }}>
+      {/* LEADERSHIP (renders only when TEAM has entries) */}
+      {TEAM.length > 0 && (
+        <section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
+          <div className="wrap">
+            <div style={{ maxWidth: 640, marginBottom: 44 }}>
+              <Rule />
+              <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Leadership</div>
+              <h2 className="serif sec-h">The team behind Girard.</h2>
+            </div>
+            <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 22 }}>
+              {TEAM.map(t => (
+                <div key={t.name} className="team-card">
+                  <Photo src={t.photo} hue={208} alt={t.name} style={{ height: 220 }} />
+                  <div style={{ padding: 16 }}>
+                    <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{t.name}</div>
+                    <div style={{ fontSize: 12.5, color: "var(--gold-2)", fontWeight: 600, marginTop: 3 }}>{t.role}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* CTA */}
+      <section style={{ background: "var(--navy-2)", color: "#fff", padding: "92px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, opacity: .5 }}><Skyline /></div>
         <div className="wrap" style={{ textAlign: "center", position: "relative" }}>
-          <Rule /><div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}><div style={{ width: 54, height: 2, background: "var(--gold)" }} /></div>
-          <h2 className="serif" style={{ fontSize: "clamp(34px,5vw,60px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Begin with Girard.</h2>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}><div style={{ width: 54, height: 2, background: "var(--gold)" }} /></div>
+          <h2 className="serif" style={{ fontSize: "clamp(34px,5vw,58px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Begin with Girard.</h2>
           <p style={{ color: "rgba(255,255,255,.74)", fontSize: 17, marginTop: 16, maxWidth: 540, margin: "16px auto 0", lineHeight: 1.65 }}>Create an account, tell us who you are, and step into a property platform that works across borders.</p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 32, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 30, flexWrap: "wrap" }}>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
             <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Speak with Girard <ArrowRight size={16} /></a>
           </div>
@@ -422,7 +510,7 @@ function Landing({ onStart, onSignIn }) {
               <div className="serif" style={{ fontSize: 23, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Girard</div>
               <div style={{ fontSize: 13.5, lineHeight: 1.65, maxWidth: 260 }}>Girard Property Estate Limited. Property managed with discipline, moved without borders.</div>
             </div>
-            {[["Platform", ["Management", "Property Swap", "Intelligence", "Support Services"]], ["Markets", ["Nigeria", "United Kingdom", "Middle East", "International"]], ["Company", ["About", "Partners", "Contact", "Sign in"]]].map(([h, items]) => (
+            {[["Services", ["Property Management", "Investment & Partnerships", "Property Swap", "Market Intelligence"]], ["Markets", ["Nigeria", "United Kingdom", "Middle East", "International"]], ["Company", ["About", "Partners", "Contact", "Sign in"]]].map(([h, items]) => (
               <div key={h}>
                 <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 12, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>{h}</div>
                 {items.map(x => <div key={x} style={{ fontSize: 13.5, marginBottom: 9 }}>{x}</div>)}
@@ -907,9 +995,11 @@ function AiPanel({ loading, offline, children }) {
     <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold-2)", fontWeight: 700, fontSize: 12.5, marginBottom: 8 }}><Sparkles size={14} /> AI Engine{offline ? <span style={{ color: "var(--muted)", fontWeight: 600 }}> · offline estimate</span> : null}</div>
     {loading ? <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--muted)", fontSize: 13 }}><Loader2 size={15} className="spin" /> Analysing market data…</div> : children}</div>;
 }
-function HouseArt({ hue = 200, status, h = 140 }) {
+function HouseArt({ hue = 200, status, h = 140, photo }) {
+  const [ok, setOk] = useState(!!photo);
   return <div style={{ position: "relative", height: h, borderRadius: 10, overflow: "hidden", background: "linear-gradient(140deg, hsl(" + hue + ",42%,22%), hsl(" + (hue - 10) + ",50%,34%))" }}>
-    <svg viewBox="0 0 300 140" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: .22 }}><g fill="none" stroke="var(--gold)" strokeWidth="1.4"><path d="M60 110 L60 64 L96 44 L132 64 L132 110 Z" /><path d="M150 110 L150 52 L188 30 L226 52 L226 110 Z" /><rect x="240" y="74" width="34" height="36" /></g></svg>
+    {photo && ok ? <img src={photo} alt="" onError={() => setOk(false)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <svg viewBox="0 0 300 140" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: .22 }}><g fill="none" stroke="var(--gold)" strokeWidth="1.4"><path d="M60 110 L60 64 L96 44 L132 64 L132 110 Z" /><path d="M150 110 L150 52 L188 30 L226 52 L226 110 Z" /><rect x="240" y="74" width="34" height="36" /></g></svg>}
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,31,60,0) 52%, rgba(10,31,60,.45))" }} />
     {status && <div style={{ position: "absolute", top: 10, left: 10 }}><PmPill label={status} /></div>}
   </div>;
 }
@@ -976,7 +1066,7 @@ function PropertiesScreen({ st, setSt, identity }) {
     <H2 title="Properties" sub={list.length + " of " + st.properties.length + " shown"} right={<div style={{ width: 200 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", cursor: "pointer" }}>
-        <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} /></div>
+        <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} photo={poolPhoto(p.id)} /></div>
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
@@ -984,7 +1074,7 @@ function PropertiesScreen({ st, setSt, identity }) {
         </div></PmCard>)}
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <HouseArt hue={sel.hue} status={sel.status} h={190} />
+      <HouseArt hue={sel.hue} status={sel.status} h={190} photo={poolPhoto(sel.id)} />
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--navy)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div>
@@ -1042,14 +1132,14 @@ function TenantFind({ st, setSt, identity, toast }) {
     <H2 title="Find a home" sub={list.length + " available"} right={<div style={{ display: "flex", gap: 10 }}><div style={{ width: 160 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div><div style={{ width: 120 }}><PmSelect value={beds} onChange={setBeds} options={["Any", "1", "2", "3+"]} /></div></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden" }}>
-        <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" /></div>
+        <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" photo={poolPhoto(p.id)} /></div>
         <div style={{ padding: 14 }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}<span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span></div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <HouseArt hue={sel.hue} status="Available" h={190} />
+      <HouseArt hue={sel.hue} status="Available" h={190} photo={poolPhoto(sel.id)} />
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--navy)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{sel.amenities.map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
       <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn>
@@ -1242,17 +1332,18 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["rent", "Rent & invoices", CreditCard], ["maint", "Maintenance", Wrench], ["swap", "Swap marketplace", Repeat]],
-  tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Maintenance", Wrench]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["maint", "Maintenance", Wrench], ["swpipe", "Swap pipeline", Handshake]],
-  agent: [["work", "Workspace", LayoutGrid]],
-  investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["work", "Overview", LayoutGrid]]
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["rent", "Rent & invoices", CreditCard], ["maint", "Maintenance", Wrench], ["swap", "Swap marketplace", Repeat], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
+  tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Maintenance", Wrench], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["maint", "Maintenance", Wrench], ["swpipe", "Swap pipeline", Handshake], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
+  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["reports", "Analytics", LineChart]],
+  investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["work", "Overview", LayoutGrid]]
 };
 function AppShell({ identity, onSignOut, onSwitchRole }) {
   const nav = NAV[identity.role] || NAV.agent;
   const [view, setView] = useState(nav[0][0]);
   const [st, setStRaw] = useState(pmLoad);
   const [nav2Open, setNav2Open] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const setSt = (next) => { setStRaw(next); pmSave(next); };
   const toast = (msg, tone) => { const id = Math.random(); setToasts(x => [...x, { id, msg, tone }]); setTimeout(() => setToasts(x => x.filter(t => t.id !== id)), 3000); };
@@ -1267,7 +1358,14 @@ function AppShell({ identity, onSignOut, onSwitchRole }) {
     if (view === "maint") return <MaintenanceScreen {...P} />;
     if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" />;
     if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" />;
-    if (view === "intel") return <IntelSoon />;
+    if (view === "intel") return <IntelScreen />;
+    if (view === "support") return <SupportServices identity={identity} toast={toast} />;
+    if (view === "plans") return <PricingScreen identity={identity} toast={toast} />;
+    if (view === "settings") return <SettingsScreen identity={identity} toast={toast} onSignOut={onSignOut} onSwitchRole={onSwitchRole} />;
+    if (view === "users") return <AdminUsers toast={toast} />;
+    if (view === "feed") return <LiveFeed identity={identity} />;
+    if (view === "crm") return <PipelineCRM identity={identity} toast={toast} />;
+    if (view === "reports") return <ReportsScreen identity={identity} toast={toast} />;
     return <WorkspaceSoon identity={identity} />;
   };
   return <div style={{ display: "flex", minHeight: "100vh", background: "var(--ivory)" }}>
@@ -1293,13 +1391,26 @@ function AppShell({ identity, onSignOut, onSwitchRole }) {
       <header style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : "Digital Property Management · Lagos"}</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div className="serif" style={{ width: 34, height: 34, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 13 }}>{identity.initials}</div>
             <div style={{ lineHeight: 1.2 }}><div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{identity.name}</div><div style={{ fontSize: 11, color: "var(--gold-2)" }}>{identity.title}</div></div>
           </div>
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setNotifOpen(o => !o)} title="Notifications" style={{ position: "relative", background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, width: 36, height: 36, display: "grid", placeItems: "center", cursor: "pointer", color: "var(--ink)" }}>
+              <Bell size={17} /><span style={{ position: "absolute", top: 7, right: 8, width: 7, height: 7, borderRadius: 999, background: "var(--gold)" }} />
+            </button>
+            {notifOpen && <div style={{ position: "absolute", right: 0, top: 44, width: 300, background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, boxShadow: "0 20px 50px rgba(10,31,60,.16)", zIndex: 50, overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--cream-line)", fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>Notifications</div>
+              {NOTIFS.map((n, i) => <div key={i} style={{ padding: "12px 16px", borderBottom: i < NOTIFS.length - 1 ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 10 }}>
+                <span style={{ width: 7, height: 7, borderRadius: 999, background: n.unread ? "var(--gold)" : "var(--cream-line)", marginTop: 5, flexShrink: 0 }} />
+                <div><div style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.4 }}>{n.text}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{n.time}</div></div>
+              </div>)}
+            </div>}
+          </div>
+          <button onClick={() => { setView("settings"); setNav2Open(false); }} title="Settings" style={{ background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, width: 36, height: 36, display: "grid", placeItems: "center", cursor: "pointer", color: "var(--ink)" }}><Settings size={17} /></button>
           <PmBtn kind="ghost" size="sm" icon={LogOut} onClick={onSignOut}>Sign out</PmBtn>
         </div>
       </header>
@@ -1381,9 +1492,11 @@ async function aiMatch(a, b) {
   return { score, note, diff, offline: !proxy.ok };
 }
 
-function SwapCardArt({ hue, verified }) {
+function SwapCardArt({ hue, verified, photo }) {
+  const [ok, setOk] = useState(!!photo);
   return <div style={{ position: "relative", height: 130, borderRadius: 10, overflow: "hidden", background: "linear-gradient(140deg, hsl(" + hue + ",42%,22%), hsl(" + (hue - 12) + ",50%,34%))" }}>
-    <svg viewBox="0 0 300 130" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: .22 }}><g fill="none" stroke="var(--gold)" strokeWidth="1.4"><path d="M50 104 L50 56 L92 34 L134 56 L134 104 Z" /><path d="M150 104 L150 66 L188 66 L188 104 Z" /><rect x="204" y="72" width="34" height="32" /></g></svg>
+    {photo && ok ? <img src={photo} alt="" onError={() => setOk(false)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <svg viewBox="0 0 300 130" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: .22 }}><g fill="none" stroke="var(--gold)" strokeWidth="1.4"><path d="M50 104 L50 56 L92 34 L134 56 L134 104 Z" /><path d="M150 104 L150 66 L188 66 L188 104 Z" /><rect x="204" y="72" width="34" height="32" /></g></svg>}
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,31,60,0) 50%, rgba(10,31,60,.45))" }} />
     <div style={{ position: "absolute", top: 10, left: 10 }}><PmPill label={verified ? "Verified" : "Pending Verification"} /></div>
   </div>;
 }
@@ -1396,7 +1509,7 @@ function SwapBrowse({ sw, setSw, toast }) {
     <H2 title="Browse swaps" sub={list.length + " listings · values shown locally and in USD"} right={<div style={{ width: 180 }}><PmSelect value={country} onChange={setCountry} options={["All", "Nigeria", "UK", "US"]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 16 }}>
       {list.map(l => <PmCard key={l.id} pad={0} style={{ overflow: "hidden" }}>
-        <SwapCardArt hue={l.hue} verified={l.verified} />
+        <SwapCardArt hue={l.hue} verified={l.verified} photo={poolPhoto(l.id)} />
         <div style={{ padding: 14 }}>
           <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{l.type}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{l.city}, {l.country}</div>
@@ -1419,7 +1532,7 @@ function MatchModal({ sw, listing, onClose, toast }) {
     <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
       {[listing, cand].map((x, i) => <React.Fragment key={i}>
         {i === 1 && <div style={{ display: "grid", placeItems: "center", color: "var(--gold-2)" }}><ArrowRightLeft size={26} /></div>}
-        <PmCard pad={12}><SwapCardArt hue={x.hue} verified={x.verified} />
+        <PmCard pad={12}><SwapCardArt hue={x.hue} verified={x.verified} photo={poolPhoto(x.id)} />
           <div className="serif" style={{ fontWeight: 600, color: "var(--ink)", marginTop: 10, fontSize: 14 }}>{x.type}</div>
           <div style={{ color: "var(--muted)", fontSize: 12 }}>{x.city}, {x.country}</div>
           <div style={{ color: "var(--ink)", fontWeight: 700, marginTop: 6 }}>{usd(toUSD(x.value, x.currency))}</div>
@@ -1481,7 +1594,7 @@ function SwapMatches({ sw, toast, goDeals }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 16 }}>
       {matches.map((m, i) => <PmCard key={m.id}>
         <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ width: 92, flexShrink: 0 }}><SwapCardArt hue={m.hue} verified={m.verified} /></div>
+          <div style={{ width: 92, flexShrink: 0 }}><SwapCardArt hue={m.hue} verified={m.verified} photo={poolPhoto(m.id)} /></div>
           <div style={{ flex: 1 }}><div className="serif" style={{ fontWeight: 600, fontSize: 14, color: "var(--ink)" }}>{m.type}</div><div style={{ color: "var(--muted)", fontSize: 12 }}>{m.city}, {m.country}</div><div style={{ color: "var(--ink)", fontWeight: 700, marginTop: 4 }}>{usd(toUSD(m.value, m.currency))}</div></div>
           <div style={{ textAlign: "center" }}><div className="serif" style={{ width: 40, height: 40, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>{92 - i * 7}</div><div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>match</div></div>
         </div>
@@ -1583,5 +1696,419 @@ function SwapHub({ identity, toast, initial }) {
     {tab === "list" && <SwapList sw={sw} setSw={setSw} toast={toast} />}
     {tab === "matches" && <SwapMatches sw={sw} toast={toast} goDeals={() => setTab("deals")} />}
     {tab === "deals" && <SwapDeals sw={sw} setSw={setSw} identity={identity} toast={toast} />}
+  </div>;
+}
+
+/* ===================================================================
+   STAGE 5: Live feed, Pipeline / CRM and Analytics
+   A market-filtered live activity feed, a pipeline board for
+   applications, offers, leads and swaps, and reporting dashboards.
+   =================================================================== */
+
+const FEED_KINDS = {
+  instruction: { label: "New instruction", icon: Building2, c: "var(--navy)" },
+  swap: { label: "New swap", icon: Repeat, c: "var(--gold-2)" },
+  application: { label: "Application", icon: Users, c: "#2F6FB0" },
+  offer: { label: "Offer", icon: Wallet, c: "#E0A106" },
+  let: { label: "Let agreed", icon: CheckCircle2, c: "#1F9D57" },
+  price: { label: "Price update", icon: LineChart, c: "var(--muted)" }
+};
+function seedFeed() {
+  const pm = pmLoad(); const sw = swLoad();
+  const ev = [];
+  pm.properties.slice(0, 6).forEach((p, i) => ev.push({ kind: "instruction", market: "Nigeria", text: p.title + " listed in " + p.area, price: money(p.rent) + "/yr", mins: 3 + i * 7 }));
+  sw.listings.slice(0, 6).forEach((l, i) => ev.push({ kind: "swap", market: l.country, text: l.type + " in " + l.city + " seeking " + l.seeking, price: usd(toUSD(l.value, l.currency)), mins: 5 + i * 9 }));
+  ev.push({ kind: "application", market: "Nigeria", text: "New application for a 3-Bed in Ikoyi", price: "", mins: 11 });
+  ev.push({ kind: "let", market: "Nigeria", text: "Let agreed on a 4-Bed in Lekki", price: "", mins: 18 });
+  ev.push({ kind: "offer", market: "UK", text: "Offer received on a London flat", price: "£712,000", mins: 26 });
+  ev.push({ kind: "price", market: "US", text: "Price update on a Brooklyn condo", price: "$598,000", mins: 34 });
+  return ev.sort((a, b) => a.mins - b.mins);
+}
+const LIVE_POOL = [
+  { kind: "instruction", market: "Nigeria", text: "New 2-Bed listed in Yaba", price: "₦3.0M/yr" },
+  { kind: "swap", market: "UK", text: "Manchester semi seeking Lagos", price: "$431,800" },
+  { kind: "application", market: "Nigeria", text: "New application for a duplex in Magodo", price: "" },
+  { kind: "offer", market: "US", text: "Offer received on an Austin house", price: "$536,000" },
+  { kind: "let", market: "Nigeria", text: "Let agreed on a studio in Surulere", price: "" },
+  { kind: "swap", market: "US", text: "Miami condo seeking Lagos", price: "$690,000" },
+  { kind: "price", market: "UK", text: "Price update on a Bristol townhouse", price: "£405,000" }
+];
+function ago(m) { return m < 1 ? "just now" : m < 60 ? m + "m ago" : Math.floor(m / 60) + "h ago"; }
+
+function LiveFeed({ identity }) {
+  const [market, setMarket] = useState("All");
+  const [events, setEvents] = useState(seedFeed);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const e = LIVE_POOL[Math.floor(Math.random() * LIVE_POOL.length)];
+      setEvents(x => [{ ...e, mins: 0, _id: Math.random() }, ...x].slice(0, 40));
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
+  const list = events.filter(e => market === "All" || e.market === market);
+  return <div>
+    <H2 title="Live feed" sub="Instructions, swaps, offers and lets across your markets" right={<div style={{ width: 180 }}><PmSelect value={market} onChange={setMarket} options={["All", "Nigeria", "UK", "US"]} /></div>} />
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 18px", borderBottom: "1px solid var(--cream-line)", color: "#1F9D57", fontWeight: 700, fontSize: 12.5 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: "#1F9D57", animation: "pulse 1.6s infinite" }} /> Live · updating in real time</div>
+      {list.map((e, i) => { const K = FEED_KINDS[e.kind]; return <div key={e._id || i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderBottom: i < list.length - 1 ? "1px solid var(--cream-line)" : "none", background: e.mins === 0 ? "var(--gold-soft)" : "transparent", transition: "background .5s" }}>
+        <div style={{ width: 38, height: 38, borderRadius: 9, background: K.c + "1f", color: K.c, display: "grid", placeItems: "center", flexShrink: 0 }}><K.icon size={18} /></div>
+        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{e.text}</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}><PmPill label={K.label} /> <span style={{ marginLeft: 6 }}>{e.market} · {ago(e.mins)}</span></div></div>
+        {e.price && <div style={{ fontWeight: 700, color: "var(--navy)", fontSize: 13.5, whiteSpace: "nowrap" }}>{e.price}</div>}
+      </div>; })}
+    </PmCard>
+    <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
+  </div>;
+}
+
+/* ---------- Pipeline / CRM ---------- */
+const CRM_COLS = ["Lead", "Qualifying", "Negotiation", "Agreed", "Completed"];
+const CRM_KIND_C = { Application: "#2F6FB0", Offer: "#E0A106", Swap: "var(--gold-2)", Lead: "var(--navy)" };
+function crmSeed() {
+  const pm = pmLoad(); const sw = swLoad(); const cards = [];
+  pm.applications.forEach((a, i) => { const p = pm.properties.find(x => x.id === a.property); cards.push({ id: "C-A" + i, name: a.tenant, kind: "Application", market: "Nigeria", detail: (p ? p.area : "") + " · " + money(a.income), stage: a.status === "Approved" ? 3 : a.status === "Rejected" ? 4 : 1 }); });
+  sw.deals.forEach((d, i) => cards.push({ id: "C-S" + i, name: d.a + " ⇄ " + d.b, kind: "Swap", market: d.aCountry, detail: "Cash " + usd(d.cash), stage: d.stage >= 11 ? 4 : d.stage >= 6 ? 3 : 2 }));
+  cards.push({ id: "C-O1", name: "Offer · 3-Bed Ikoyi", kind: "Offer", market: "Nigeria", detail: "₦11.2M/yr", stage: 2 });
+  cards.push({ id: "C-O2", name: "Offer · London flat", kind: "Offer", market: "UK", detail: "£712,000", stage: 2 });
+  cards.push({ id: "C-L1", name: "Lead · London investor", kind: "Lead", market: "UK", detail: "Seeking Lagos swap", stage: 0 });
+  cards.push({ id: "C-L2", name: "Lead · Abuja landlord", kind: "Lead", market: "Nigeria", detail: "2 properties to list", stage: 0 });
+  cards.push({ id: "C-L3", name: "Lead · Austin developer", kind: "Lead", market: "US", detail: "Portfolio enquiry", stage: 0 });
+  return { cards };
+}
+const CRM_KEY = "girard_crm_v1";
+function crmLoad() { try { const r = localStorage.getItem(CRM_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = crmSeed(); try { localStorage.setItem(CRM_KEY, JSON.stringify(s)); } catch (e) {} return s; }
+function crmSave(s) { try { localStorage.setItem(CRM_KEY, JSON.stringify(s)); } catch (e) {} }
+
+function PipelineCRM({ identity, toast }) {
+  const [crm, setCrmRaw] = useState(crmLoad);
+  const [kind, setKind] = useState("All");
+  const [market, setMarket] = useState("All");
+  const setCrm = (n) => { setCrmRaw(n); crmSave(n); };
+  const move = (id, dir) => { setCrm({ ...crm, cards: crm.cards.map(c => c.id === id ? { ...c, stage: Math.max(0, Math.min(4, c.stage + dir)) } : c) }); };
+  const cards = crm.cards.filter(c => (kind === "All" || c.kind === kind) && (market === "All" || c.market === market));
+  return <div>
+    <H2 title="Pipeline & CRM" sub={cards.length + " active items across applications, offers, leads and swaps"} right={<div style={{ display: "flex", gap: 10 }}><div style={{ width: 150 }}><PmSelect value={kind} onChange={setKind} options={["All", "Lead", "Application", "Offer", "Swap"]} /></div><div style={{ width: 140 }}><PmSelect value={market} onChange={setMarket} options={["All", "Nigeria", "UK", "US"]} /></div></div>} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12 }} className="crm-board">
+      {CRM_COLS.map((col, ci) => <div key={col} style={{ background: "var(--ivory)", borderRadius: 12, padding: 12, minHeight: 200 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13 }}>{col}</span><span style={{ background: "var(--white)", color: "var(--muted)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{cards.filter(c => c.stage === ci).length}</span></div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{cards.filter(c => c.stage === ci).map(c => <PmCard key={c.id} pad={12}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 12.5, lineHeight: 1.3 }}>{c.name}</span></div>
+          <div style={{ margin: "6px 0 8px" }}><span style={{ background: CRM_KIND_C[c.kind] + "1f", color: CRM_KIND_C[c.kind], fontWeight: 700, fontSize: 10.5, padding: "2px 7px", borderRadius: 999 }}>{c.kind}</span> <span style={{ fontSize: 11, color: "var(--muted)" }}>{c.market}</span></div>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10 }}>{c.detail}</div>
+          <div style={{ display: "flex", gap: 6 }}>{ci > 0 && <button onClick={() => move(c.id, -1)} style={{ border: "1px solid var(--cream-line)", background: "transparent", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "var(--muted)", fontSize: 12 }}>‹</button>}{ci < 4 && <button onClick={() => { move(c.id, 1); toast("Moved to " + CRM_COLS[ci + 1]); }} style={{ border: "none", background: "var(--navy)", color: "#fff", borderRadius: 6, padding: "3px 10px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Advance ›</button>}</div>
+        </PmCard>)}</div>
+      </div>)}
+    </div>
+    <style>{`@media(max-width:900px){.crm-board{grid-template-columns:1fr 1fr!important}}@media(max-width:560px){.crm-board{grid-template-columns:1fr!important}}`}</style>
+  </div>;
+}
+
+/* ---------- Analytics & reporting ---------- */
+function MiniFunnel({ data }) {
+  const max = Math.max(...data.map(d => d.v), 1);
+  return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{data.map(d => { const w = Math.max(6, d.v / max * 100); return <div key={d.label}>
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "var(--muted)", marginBottom: 3 }}><span>{d.label}</span><b style={{ color: "var(--ink)" }}>{d.v}</b></div>
+    <div style={{ height: 14, background: "var(--ivory)", borderRadius: 4, overflow: "hidden" }}><div style={{ width: w + "%", height: "100%", background: "linear-gradient(90deg, var(--navy), var(--gold))" }} /></div>
+  </div>; })}</div>;
+}
+function ReportsScreen({ identity, toast }) {
+  const pm = pmLoad(); const sw = swLoad(); const crm = crmLoad();
+  const leased = pm.properties.filter(p => p.status === "Leased").length;
+  const byMarket = [{ m: "NG", v: sw.listings.filter(l => l.country === "Nigeria").length + pm.properties.length }, { m: "UK", v: sw.listings.filter(l => l.country === "UK").length }, { m: "US", v: sw.listings.filter(l => l.country === "US").length }];
+  const income = [{ m: "Feb", v: 58 }, { m: "Mar", v: 64 }, { m: "Apr", v: 61 }, { m: "May", v: 72 }, { m: "Jun", v: 78 }, { m: "Jul", v: 83 }];
+  const funnel = CRM_COLS.map((c, i) => ({ label: c, v: crm.cards.filter(x => x.stage >= i).length }));
+  const appStatus = ["Applied", "More Info Required", "Approved", "Rejected"].map((s, i) => ({ name: s, v: pm.applications.filter(a => a.status === s).length, c: ["#2F6FB0", "#E0A106", "#1F9D57", "#D0453B"][i] }));
+  const appData = appStatus.filter(a => a.v > 0);
+  const swapStage = [{ m: "Neg", v: sw.deals.filter(d => d.stage < 6).length }, { m: "Escrow", v: sw.deals.filter(d => d.stage >= 6 && d.stage < 11).length }, { m: "Done", v: 4 }];
+  return <div>
+    <H2 title="Analytics & reporting" sub="Portfolio, pipeline and marketplace performance" right={<PmBtn kind="ghost" icon={FileText} onClick={() => toast("Report exported")}>Export report</PmBtn>} />
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 18 }}>
+      <PmStat icon={Building2} label="Listings" value={String(pm.properties.length + sw.listings.length)} sub="Management + swap" tone="var(--muted)" />
+      <PmStat icon={Home} label="Occupancy" value={Math.round(leased / pm.properties.length * 100) + "%"} />
+      <PmStat icon={LayoutGrid} label="Pipeline items" value={String(crm.cards.length)} tone="var(--muted)" />
+      <PmStat icon={Handshake} label="Active swaps" value={String(sw.deals.length)} tone="#E0A106" />
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Rental income trend (₦M)</div><MiniArea data={income} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pipeline funnel</div><MiniFunnel data={funnel} /></PmCard>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }} className="pm-grid3">
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Listings by market</div><MiniBars data={byMarket} h={170} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Swap deals by stage</div><MiniBars data={swapStage} h={170} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Applications</div>{appData.length ? <div style={{ display: "flex", alignItems: "center", gap: 12 }}><MiniDonut data={appData} size={140} /><Legend items={appData} /></div> : <div style={{ color: "var(--muted)", fontSize: 13, padding: "20px 0" }}>No applications yet.</div>}</PmCard>
+    </div>
+    <style>{`@media(max-width:900px){.pm-grid3{grid-template-columns:1fr!important}}`}</style>
+  </div>;
+}
+
+/* ===================================================================
+   STAGE 6: Market Intelligence
+   A premium, self-updating intelligence page: sold-price trends, yields,
+   planning applications, local plans and auction results, each distilled
+   by the AI Engine. A daily serverless job (api/refresh-intel) can refresh
+   the briefings; the page works from seeded intelligence without it.
+   =================================================================== */
+
+const INTEL = {
+  Nigeria: {
+    cur: "₦",
+    kpis: [{ l: "Avg price growth (12m)", v: "+8.4%", t: "#1F9D57" }, { l: "Avg gross yield", v: "6.2%", t: "var(--muted)" }, { l: "Active listings", v: "1,240", t: "var(--muted)" }, { l: "Planning approvals (Q)", v: "312", t: "var(--muted)" }],
+    priceTrend: [{ m: "Q1", v: 100 }, { m: "Q2", v: 103 }, { m: "Q3", v: 106 }, { m: "Q4", v: 105 }, { m: "Q1", v: 109 }, { m: "Q2", v: 112 }],
+    yields: [{ m: "Lekki", v: 6.8 }, { m: "Ikoyi", v: 5.4 }, { m: "Yaba", v: 7.1 }, { m: "Ikeja", v: 6.5 }, { m: "Ajah", v: 7.6 }],
+    planning: ["Lekki: 240-unit mixed-use scheme approved", "Eko Atlantic: phase 3 infrastructure filing lodged", "Yaba: tech-district densification consultation opened"],
+    auctions: ["3-Bed Ikoyi flat cleared 4% above guide", "Vacant Lekki plot withdrawn, reserve not met"],
+    localPlans: ["Lagos State regional master plan update in review", "Blue Line rail corridor flagged as value-uplift zone"]
+  },
+  UK: {
+    cur: "£",
+    kpis: [{ l: "Avg price growth (12m)", v: "+3.1%", t: "#1F9D57" }, { l: "Avg gross yield", v: "5.1%", t: "var(--muted)" }, { l: "Active listings", v: "3,880", t: "var(--muted)" }, { l: "Planning approvals (Q)", v: "1,204", t: "var(--muted)" }],
+    priceTrend: [{ m: "Q1", v: 100 }, { m: "Q2", v: 101 }, { m: "Q3", v: 102 }, { m: "Q4", v: 102 }, { m: "Q1", v: 103 }, { m: "Q2", v: 103 }],
+    yields: [{ m: "Manch", v: 6.2 }, { m: "Bristol", v: 5.5 }, { m: "B'ham", v: 6.0 }, { m: "London", v: 4.2 }, { m: "Leeds", v: 6.4 }],
+    planning: ["Manchester: 1,000-home regeneration approved", "London Zone 2: tall-building policy consultation", "Bristol: harbourside mixed-use scheme resubmitted"],
+    auctions: ["2-Bed London flat sold at guide", "Manchester terrace cleared 6% above guide"],
+    localPlans: ["Greater Manchester spatial framework adopted", "London Plan review of density standards"]
+  },
+  US: {
+    cur: "$",
+    kpis: [{ l: "Avg price growth (12m)", v: "+4.7%", t: "#1F9D57" }, { l: "Avg gross yield", v: "5.8%", t: "var(--muted)" }, { l: "Active listings", v: "6,420", t: "var(--muted)" }, { l: "Permits (Q)", v: "2,910", t: "var(--muted)" }],
+    priceTrend: [{ m: "Q1", v: 100 }, { m: "Q2", v: 102 }, { m: "Q3", v: 103 }, { m: "Q4", v: 104 }, { m: "Q1", v: 104 }, { m: "Q2", v: 105 }],
+    yields: [{ m: "Austin", v: 6.3 }, { m: "Atlanta", v: 6.9 }, { m: "Miami", v: 5.6 }, { m: "NYC", v: 4.1 }, { m: "Dallas", v: 6.7 }],
+    planning: ["Austin: mixed-use tower permit issued", "Miami: waterfront resilience overlay adopted", "Atlanta: transit-oriented rezoning advanced"],
+    auctions: ["Brooklyn condo cleared at reserve", "Austin house sold 3% above guide"],
+    localPlans: ["Austin comprehensive plan amendment", "Miami-Dade zoning modernisation phase 2"]
+  }
+};
+
+function IntelScreen() {
+  const [market, setMarket] = useState("Nigeria");
+  const d = INTEL[market];
+  const [ai, setAi] = useState({ loading: true });
+  const [refreshed, setRefreshed] = useState(new Date());
+  const brief = async () => {
+    setAi({ loading: true });
+    const r = await aiProxy(`Write a two-sentence residential property market briefing for ${market}: price growth ${d.kpis[0].v}, gross yield ${d.kpis[1].v}. Reference this planning highlight: ${d.planning[0]}. No preamble.`);
+    setAi({ loading: false, offline: !r.ok, text: r.ok ? r.text : `${market} residential values are up ${d.kpis[0].v} over the past year on a gross yield near ${d.kpis[1].v}, with demand steady across prime and mid-market segments. Supply is being shaped by schemes such as ${d.planning[0].toLowerCase()}, supporting a constructive medium-term outlook.` });
+    setRefreshed(new Date());
+  };
+  useEffect(() => { brief(); }, [market]);
+  return <div>
+    <H2 title="Market intelligence" sub={"Sold prices, yields, planning and auctions, distilled by the AI Engine"} right={<div style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 150 }}><PmSelect value={market} onChange={setMarket} options={["Nigeria", "UK", "US"]} /></div><PmBtn kind="navy" icon={Sparkles} onClick={brief}>Refresh briefing</PmBtn></div>} />
+    <div style={{ marginBottom: 16 }}><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.6 }}>{ai.text}</div><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8 }}>Last refreshed {refreshed.toLocaleString()}</div></AiPanel></div>
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      {d.kpis.map(k => <PmStat key={k.l} icon={LineChart} label={k.l} value={k.v} tone={k.t} />)}
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Sold-price index ({d.cur}, rebased to 100)</div><MiniArea data={d.priceTrend} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Gross yields by area (%)</div><MiniBars data={d.yields} h={180} /></PmCard>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }} className="pm-grid3">
+      {[["Planning applications", d.planning, Building2], ["Auction results", d.auctions, Gavel], ["Local plans", d.localPlans, FileText]].map(([title, items, Icon]) => (
+        <PmCard key={title}><div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}><Icon size={16} color="var(--gold-2)" />{title}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{items.map(x => <div key={x} style={{ display: "flex", gap: 9, fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}><span style={{ width: 5, height: 5, borderRadius: 999, background: "var(--gold)", marginTop: 7, flexShrink: 0 }} />{x}</div>)}</div>
+        </PmCard>
+      ))}
+    </div>
+    <style>{`@media(max-width:900px){.pm-grid3{grid-template-columns:1fr!important}}`}</style>
+  </div>;
+}
+
+/* ===================================================================
+   STAGE 7: Support Services concierge
+   Conveyancing, surveys, removals, furnishing, finance and insurance,
+   delivered as a managed concierge on a vetted partner network.
+   =================================================================== */
+
+const SUPPORT = [
+  { key: "conveyancing", name: "Conveyancing", icon: Scale, partner: "Aegis Legal Partners", desc: "Title searches, contracts and completion, handled by vetted solicitors.", from: "₦450,000" },
+  { key: "survey", name: "Surveys & valuation", icon: ClipboardCheck, partner: "Meridian Surveyors", desc: "Structural surveys and independent valuations before you commit.", from: "₦180,000" },
+  { key: "removals", name: "Removals", icon: Truck, partner: "SwiftMove Logistics", desc: "Packing, transport and unpacking, insured from door to door.", from: "₦120,000" },
+  { key: "furnishing", name: "Furnishing & fit-out", icon: Sofa, partner: "Atelier Interiors", desc: "Turnkey furnishing packages and full interior fit-out.", from: "₦900,000" },
+  { key: "finance", name: "Finance & mortgages", icon: Banknote, partner: "Anchor Capital", desc: "Mortgage sourcing and bridging finance advisory.", from: "On request" },
+  { key: "insurance", name: "Insurance", icon: ShieldCheck, partner: "Fortis Cover", desc: "Buildings, contents and landlord insurance, arranged fast.", from: "₦75,000" }
+];
+const SUP_KEY = "girard_support_v1";
+function supLoad() { try { const r = localStorage.getItem(SUP_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = { requests: [{ id: "SR-01", service: "Conveyancing", partner: "Aegis Legal Partners", status: "In progress", note: "Lekki 4-Bed purchase" }] }; try { localStorage.setItem(SUP_KEY, JSON.stringify(s)); } catch (e) {} return s; }
+function supSave(s) { try { localStorage.setItem(SUP_KEY, JSON.stringify(s)); } catch (e) {} }
+const SUP_STATUS_NEXT = { Requested: "Matched", Matched: "In progress", "In progress": "Completed" };
+
+function SupportServices({ identity, toast }) {
+  const [store, setStoreRaw] = useState(supLoad);
+  const [req, setReq] = useState(null);
+  const setStore = (n) => { setStoreRaw(n); supSave(n); };
+  const submit = (svc, note) => {
+    const r = { id: "SR-" + (10 + store.requests.length), service: svc.name, partner: svc.partner, status: "Requested", note: note || "" };
+    setStore({ ...store, requests: [r, ...store.requests] }); toast("Request sent to " + svc.partner, "success"); setReq(null);
+  };
+  const advance = (id) => setStore({ ...store, requests: store.requests.map(r => r.id === id ? { ...r, status: SUP_STATUS_NEXT[r.status] || r.status } : r) });
+  return <div>
+    <H2 title="Support services" sub="A managed concierge on a vetted partner network" />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16, marginBottom: 26 }}>
+      {SUPPORT.map(s => <PmCard key={s.key}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 14 }}><s.icon size={21} /></div>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--muted)" }}>from <span style={{ color: "var(--ink)" }}>{s.from}</span></span>
+        </div>
+        <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 5 }}>{s.name}</div>
+        <div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.55, marginBottom: 12 }}>{s.desc}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}><ShieldCheck size={13} color="var(--gold-2)" /> {s.partner}</span>
+          <PmBtn size="sm" icon={ConciergeBell} onClick={() => setReq(s)}>Request</PmBtn>
+        </div>
+      </PmCard>)}
+    </div>
+    <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)", marginBottom: 14 }}>My requests</div>
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      {store.requests.length === 0 ? <div style={{ padding: 20, color: "var(--muted)", fontSize: 14 }}>No requests yet. Choose a service above to get started.</div>
+        : store.requests.map((r, i) => <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", flexWrap: "wrap", gap: 10 }}>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{r.service} <span style={{ color: "var(--muted)", fontWeight: 500 }}>· {r.partner}</span></div><div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{r.id}{r.note ? " · " + r.note : ""}</div></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}><PmPill label={r.status} />{r.status !== "Completed" && <PmBtn size="sm" kind="ghost" onClick={() => advance(r.id)}>Advance</PmBtn>}</div>
+        </div>)}
+    </PmCard>
+    {req && <RequestModal svc={req} onClose={() => setReq(null)} onSubmit={submit} />}
+  </div>;
+}
+function RequestModal({ svc, onClose, onSubmit }) {
+  const [note, setNote] = useState("");
+  return <PmModal title={"Request · " + svc.name} onClose={onClose}>
+    <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, background: "var(--ivory)", borderRadius: 10, padding: 14 }}>
+      <div style={{ width: 44, height: 44, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", flexShrink: 0 }}><svc.icon size={20} /></div>
+      <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{svc.partner}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Vetted partner · from {svc.from}</div></div>
+    </div>
+    <div style={{ marginBottom: 14 }}><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Details (property, timing, requirements)</label>
+      <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} placeholder="Tell the partner what you need…" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: 12, color: "var(--ink)", fontSize: 14, fontFamily: "inherit", resize: "vertical" }} /></div>
+    <PmBtn kind="gold" icon={ConciergeBell} onClick={() => onSubmit(svc, note)}>Send request</PmBtn>
+  </PmModal>;
+}
+
+/* ===================================================================
+   STAGE 8: Pricing & subscriptions (Stripe)
+   Persona-based tiers priced in the local market currency. Subscribe
+   calls a serverless Stripe checkout; without a Stripe key it falls
+   back to a clear message, so the page always works.
+   STAGE 9: notifications, settings and admin user management.
+   =================================================================== */
+
+const NOTIFS = [
+  { text: "New application received for a 3-Bed in Ikoyi", time: "12m ago", unread: true },
+  { text: "Rent payment confirmed for INV-9001", time: "1h ago", unread: true },
+  { text: "Swap DL-01 advanced to Escrow release", time: "3h ago", unread: false },
+  { text: "Maintenance ticket MT-502 assigned to PowerFix Ltd", time: "Yesterday", unread: false }
+];
+
+const CUR_CODE = { Nigeria: "ngn", UK: "gbp", US: "usd" };
+const CUR_SYM = { Nigeria: "₦", UK: "£", US: "$" };
+const PLANS = {
+  owner: [
+    { name: "Single", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["1 property", "AI rent guidance", "Rent collection", "Maintenance requests"], cta: "Current plan" },
+    { name: "Portfolio", tag: "Popular", price: { Nigeria: "₦25,000", UK: "£29", US: "$35" }, amount: { Nigeria: 2500000, UK: 2900, US: 3500 }, feats: ["Up to 25 properties", "Full analytics dashboard", "Priority support", "Automated invoicing"], cta: "Choose Portfolio" },
+    { name: "Institutional", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Unlimited portfolio", "Dedicated account manager", "API & integrations", "Custom reporting"], cta: "Contact sales" }
+  ],
+  agent: [
+    { name: "Starter", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Up to 10 listings", "Shared pipeline", "Basic analytics"], cta: "Current plan" },
+    { name: "Professional", tag: "Popular", price: { Nigeria: "₦40,000", UK: "£49", US: "$59" }, amount: { Nigeria: 4000000, UK: 4900, US: 5900 }, feats: ["Unlimited listings", "Full CRM & pipeline", "Live feed & intelligence", "Performance analytics"], cta: "Choose Professional" },
+    { name: "Brokerage", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Team seats", "Brokerage dashboard", "Lead routing", "Priority partner access"], cta: "Contact sales" }
+  ],
+  investor: [
+    { name: "Access", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Browse swaps", "Basic market intelligence", "Live feed"], cta: "Current plan" },
+    { name: "Pro", tag: "Popular", price: { Nigeria: "₦60,000", UK: "£75", US: "$89" }, amount: { Nigeria: 6000000, UK: 7500, US: 8900 }, feats: ["Full market intelligence", "Priority swap matching", "Deal-flow alerts", "Concierge access"], cta: "Choose Pro" },
+    { name: "Institutional", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Portfolio tooling", "Dedicated analyst", "Off-market deal flow", "Custom mandates"], cta: "Contact sales" }
+  ],
+  tenant: [
+    { name: "Free", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Search & apply", "Pay rent online", "Report repairs"], cta: "Current plan" },
+    { name: "Premium", tag: "Popular", price: { Nigeria: "₦5,000", UK: "£6", US: "$7" }, amount: { Nigeria: 500000, UK: 600, US: 700 }, feats: ["Early access to listings", "Priority applications", "Rent-reporting for credit", "Concierge move-in"], cta: "Go Premium" }
+  ]
+};
+async function startCheckout(tier, market, role, toast) {
+  if (!tier.amount) { toast(tier.cta === "Contact sales" ? "Our team will reach out about the " + tier.name + " plan" : "You are on the " + tier.name + " plan"); return; }
+  try {
+    const r = await fetch("/api/create-checkout-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: role + " · " + tier.name, amount: tier.amount[market], currency: CUR_CODE[market] }) });
+    const d = await r.json();
+    if (d && d.url) { window.location.href = d.url; return; }
+    toast("Checkout is not enabled yet. Add your Stripe key to go live.", "danger");
+  } catch (e) { toast("Checkout is not enabled yet. Add your Stripe key to go live.", "danger"); }
+}
+function PricingScreen({ identity, toast }) {
+  const [market, setMarket] = useState("Nigeria");
+  const tiers = PLANS[identity.role] || PLANS.owner;
+  return <div>
+    <H2 title="Plans & pricing" sub={"Tailored to " + (ROLES.find(r => r.key === identity.role)?.name || "you") + ", billed monthly"} right={<div style={{ width: 150 }}><PmSelect value={market} onChange={setMarket} options={["Nigeria", "UK", "US"]} /></div>} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 18 }}>
+      {tiers.map(t => { const pop = t.tag === "Popular"; return <div key={t.name} style={{ background: pop ? "var(--navy)" : "var(--white)", color: pop ? "#fff" : "var(--ink)", border: "1px solid " + (pop ? "var(--navy)" : "var(--cream-line)"), borderRadius: 14, padding: 26, position: "relative", boxShadow: pop ? "0 24px 60px rgba(10,31,60,.22)" : "none" }}>
+        {t.tag && <span style={{ position: "absolute", top: 18, right: 20, background: pop ? "var(--gold)" : "var(--gold-soft)", color: pop ? "#201601" : "var(--gold-2)", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>{t.tag}</span>}
+        <div className="serif" style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>{t.name}</div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 16 }}><div className="serif" style={{ fontSize: 34, fontWeight: 600 }}>{t.price[market]}</div>{t.amount && <div style={{ color: pop ? "rgba(255,255,255,.6)" : "var(--muted)", fontSize: 13, marginBottom: 6 }}>/mo</div>}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>{t.feats.map(f => <div key={f} style={{ display: "flex", gap: 9, alignItems: "center", fontSize: 13.5, color: pop ? "rgba(255,255,255,.88)" : "var(--ink)" }}><BadgeCheck size={16} color="var(--gold)" style={{ flexShrink: 0 }} />{f}</div>)}</div>
+        <button onClick={() => startCheckout(t, market, identity.role, toast)} style={{ width: "100%", padding: "12px 0", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: "pointer", border: "none", background: pop ? "var(--gold)" : t.amount ? "var(--navy)" : "transparent", color: pop ? "#201601" : t.amount ? "#fff" : "var(--muted)", borderStyle: t.amount ? "none" : "solid", borderWidth: t.amount ? 0 : 1, borderColor: "var(--cream-line)" }}>{t.cta}</button>
+      </div>; })}
+    </div>
+    <div style={{ marginTop: 22, color: "var(--muted)", fontSize: 13, display: "flex", gap: 8, alignItems: "center" }}><ShieldCheck size={14} color="var(--gold-2)" /> Transaction fees apply per service: management from 5% of collected rent, swaps at a flat completion fee. Prices shown in {CUR_SYM[market]}.</div>
+  </div>;
+}
+
+function SettingsScreen({ identity, toast, onSignOut, onSwitchRole }) {
+  const [market, setMarket] = useState("Nigeria");
+  const [emailN, setEmailN] = useState(true);
+  const [updatesN, setUpdatesN] = useState(false);
+  return <div>
+    <H2 title="Settings" sub="Your account and preferences" />
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 16 }}>Account</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+          <div className="serif" style={{ width: 52, height: 52, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 18 }}>{identity.initials}</div>
+          <div><div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{identity.name}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{identity.email}</div></div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}><span style={{ background: "var(--gold-soft)", color: "var(--gold-2)", fontSize: 12, fontWeight: 700, padding: "5px 11px", borderRadius: 999 }}>{ROLE_TITLE[identity.role] || "Member"}</span>{identity.isFounder && <span style={{ background: "var(--navy)", color: "var(--gold)", fontSize: 12, fontWeight: 700, padding: "5px 11px", borderRadius: 999 }}>Founder</span>}</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><PmBtn kind="ghost" icon={LayoutGrid} onClick={onSwitchRole}>Change role</PmBtn><PmBtn kind="ghost" icon={LogOut} onClick={onSignOut}>Sign out</PmBtn></div>
+      </PmCard>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 16 }}>Preferences</div>
+        <div style={{ marginBottom: 16 }}><PmSelect label="Home market" value={market} onChange={setMarket} options={["Nigeria", "UK", "US"]} /></div>
+        {[["Email notifications", emailN, setEmailN], ["Product updates", updatesN, setUpdatesN]].map(([label, val, set]) => (
+          <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderTop: "1px solid var(--cream-line)" }}>
+            <span style={{ fontSize: 14, color: "var(--ink)" }}>{label}</span>
+            <button onClick={() => set(v => !v)} style={{ width: 44, height: 24, borderRadius: 999, border: "none", cursor: "pointer", background: val ? "var(--gold)" : "var(--cream-line)", position: "relative", transition: "background .2s" }}><span style={{ position: "absolute", top: 2, left: val ? 22 : 2, width: 20, height: 20, borderRadius: 999, background: "#fff", transition: "left .2s" }} /></button>
+          </div>
+        ))}
+        <PmBtn kind="gold" style={{ marginTop: 16 }} onClick={() => toast("Preferences saved")}>Save preferences</PmBtn>
+      </PmCard>
+    </div>
+    <div style={{ marginTop: 16, color: "var(--muted)", fontSize: 13 }}>{DEMO ? "Demo mode: preferences are stored on this device." : "Connected to Supabase."}</div>
+  </div>;
+}
+
+const USR_KEY = "girard_users_v1";
+function usrLoad() {
+  try { const r = localStorage.getItem(USR_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  const s = {
+    users: [
+      { name: "Ada Eze", email: "ada@example.com", role: "tenant", status: "Active" },
+      { name: "Tunde Adeyemi", email: "tunde@example.com", role: "owner", status: "Active" },
+      { name: "Chidera Okonkwo", email: "chidera@example.com", role: "tenant", status: "Active" },
+      { name: "Bola Agent", email: "bola@example.com", role: "agent", status: "Active" },
+      { name: "Ken Investor", email: "ken@example.com", role: "investor", status: "Suspended" }
+    ]
+  };
+  try { localStorage.setItem(USR_KEY, JSON.stringify(s)); } catch (e) {}
+  return s;
+}
+function usrSave(s) { try { localStorage.setItem(USR_KEY, JSON.stringify(s)); } catch (e) {} }
+function AdminUsers({ toast }) {
+  const [store, setStoreRaw] = useState(usrLoad);
+  const setStore = (n) => { setStoreRaw(n); usrSave(n); };
+  const setRole = (email, role) => setStore({ ...store, users: store.users.map(u => u.email === email ? { ...u, role } : u) });
+  const toggle = (email) => { setStore({ ...store, users: store.users.map(u => u.email === email ? { ...u, status: u.status === "Active" ? "Suspended" : "Active" } : u) }); toast("User updated"); };
+  return <div>
+    <H2 title="User management" sub={store.users.length + " accounts"} />
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+        <thead><tr style={{ background: "var(--ivory)" }}>{["User", "Role", "Status", "Actions"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
+        <tbody>{store.users.map((u, i) => <tr key={u.email} style={{ borderTop: "1px solid var(--cream-line)" }}>
+          <td style={{ padding: "13px 16px" }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>{u.name}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{u.email}</div></td>
+          <td style={{ padding: "13px 16px", minWidth: 150 }}><select value={u.role} onChange={e => setRole(u.email, e.target.value)} style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 7, padding: "7px 10px", color: "var(--ink)", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>{ROLES.map(r => <option key={r.key} value={r.key}>{r.name}</option>)}</select></td>
+          <td style={{ padding: "13px 16px" }}><PmPill label={u.status === "Active" ? "Approved" : "Rejected"} /></td>
+          <td style={{ padding: "13px 16px" }}><PmBtn size="sm" kind="ghost" onClick={() => toggle(u.email)}>{u.status === "Active" ? "Suspend" : "Activate"}</PmBtn></td>
+        </tr>)}</tbody>
+      </table></div>
+    </PmCard>
   </div>;
 }
