@@ -4,7 +4,8 @@ import {
   Globe2, MapPin, Menu, X, Home, KeyRound, Users, Briefcase, ArrowRight,
   LogOut, Mail, Lock, ArrowLeft, ChevronRight, Wallet, Wrench, FileText,
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
-  CreditCard, PenLine, Filter, LayoutDashboard, Bell, Send, Loader2, MoreHorizontal
+  CreditCard, PenLine, Filter, LayoutDashboard, Bell, Send, Loader2, MoreHorizontal,
+  Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -1241,11 +1242,11 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["rent", "Rent & invoices", CreditCard], ["maint", "Maintenance", Wrench]],
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["rent", "Rent & invoices", CreditCard], ["maint", "Maintenance", Wrench], ["swap", "Swap marketplace", Repeat]],
   tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Maintenance", Wrench]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["maint", "Maintenance", Wrench]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["maint", "Maintenance", Wrench], ["swpipe", "Swap pipeline", Handshake]],
   agent: [["work", "Workspace", LayoutGrid]],
-  investor: [["work", "Workspace", LayoutGrid]]
+  investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["work", "Overview", LayoutGrid]]
 };
 function AppShell({ identity, onSignOut, onSwitchRole }) {
   const nav = NAV[identity.role] || NAV.agent;
@@ -1264,6 +1265,9 @@ function AppShell({ identity, onSignOut, onSwitchRole }) {
     if (view === "find") return <TenantFind {...P} />;
     if (view === "rent") return <RentScreen {...P} />;
     if (view === "maint") return <MaintenanceScreen {...P} />;
+    if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" />;
+    if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" />;
+    if (view === "intel") return <IntelSoon />;
     return <WorkspaceSoon identity={identity} />;
   };
   return <div style={{ display: "flex", minHeight: "100vh", background: "var(--ivory)" }}>
@@ -1289,7 +1293,7 @@ function AppShell({ identity, onSignOut, onSwitchRole }) {
       <header style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Digital Property Management · Lagos</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1304,5 +1308,280 @@ function AppShell({ identity, onSignOut, onSwitchRole }) {
     <div style={{ position: "fixed", bottom: 20, right: 20, display: "flex", flexDirection: "column", gap: 10, zIndex: 80 }}>
       {toasts.map(t => <div key={t.id} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderLeft: "4px solid " + (t.tone === "danger" ? "#D0453B" : "#1F9D57"), borderRadius: 10, padding: "12px 16px", fontSize: 13.5, fontWeight: 600, color: "var(--ink)", maxWidth: 340, boxShadow: "0 10px 30px rgba(10,31,60,.14)" }}>{t.msg}</div>)}
     </div>
+  </div>;
+}
+
+/* ===================================================================
+   STAGE 4: Property Swap Marketplace (Nigeria, UK, US)
+   Use cases 4-5: list for swap with AI valuation, reciprocal matching
+   in a common currency, express interest and messaging, and a swap
+   wizard through KYC, due diligence, inspections, escrow, signing and
+   title transfer to completion, with handover into management.
+   =================================================================== */
+
+const FX = { "₦": 1 / 1600, "£": 1.27, "$": 1 };
+const toUSD = (v, cur) => Math.round((+v || 0) * (FX[cur] || 1));
+const usd = (v) => "$" + Number(v || 0).toLocaleString("en-US");
+const CUR_OF = { Nigeria: "₦", UK: "£", US: "$" };
+
+function swSeed() {
+  return {
+    listings: [
+      { id: "SW-01", owner: "Girard Client A", city: "Lagos", country: "Nigeria", currency: "₦", value: 480000000, type: "5-Bed Detached Duplex", seeking: "London or Manchester, UK", verified: true, hue: 205 },
+      { id: "SW-02", owner: "H. Whitmore", city: "London", country: "UK", currency: "£", value: 720000, type: "3-Bed Flat, Zone 2", seeking: "Lagos, Nigeria", verified: true, hue: 218 },
+      { id: "SW-03", owner: "M. Adeleke", city: "Abuja", country: "Nigeria", currency: "₦", value: 350000000, type: "4-Bed Terrace", seeking: "New York or Atlanta, US", verified: true, hue: 198 },
+      { id: "SW-04", owner: "J. Carter", city: "New York", country: "US", currency: "$", value: 610000, type: "2-Bed Condo, Brooklyn", seeking: "Lagos or Abuja, Nigeria", verified: true, hue: 210 },
+      { id: "SW-05", owner: "R. Okafor", city: "Lagos", country: "Nigeria", currency: "₦", value: 260000000, type: "3-Bed Apartment, Ikoyi", seeking: "Bristol or Birmingham, UK", verified: false, hue: 190 },
+      { id: "SW-06", owner: "S. Patel", city: "Manchester", country: "UK", currency: "£", value: 340000, type: "4-Bed Semi", seeking: "Lagos, Nigeria", verified: true, hue: 222 },
+      { id: "SW-07", owner: "D. Thompson", city: "Austin", country: "US", currency: "$", value: 540000, type: "3-Bed House", seeking: "Abuja, Nigeria", verified: true, hue: 206 },
+      { id: "SW-08", owner: "K. Ibrahim", city: "Lagos", country: "Nigeria", currency: "₦", value: 520000000, type: "Penthouse, Victoria Island", seeking: "Miami or New York, US", verified: true, hue: 200 },
+      { id: "SW-09", owner: "L. Bennett", city: "Bristol", country: "UK", currency: "£", value: 410000, type: "Georgian Townhouse", seeking: "Lagos, Nigeria", verified: true, hue: 224 },
+      { id: "SW-10", owner: "G. Alvarez", city: "Miami", country: "US", currency: "$", value: 690000, type: "Waterfront Condo", seeking: "Lagos, Nigeria", verified: false, hue: 208 },
+      { id: "SW-11", owner: "T. Balogun", city: "Abuja", country: "Nigeria", currency: "₦", value: 300000000, type: "4-Bed Duplex, Maitama", seeking: "Birmingham, UK", verified: true, hue: 192 }
+    ],
+    deals: [
+      { id: "DL-01", a: "Lagos 5-Bed Duplex", aCountry: "Nigeria", b: "London 3-Bed Flat", bCountry: "UK", stage: 6, cash: 240000, owed: "Owner A" },
+      { id: "DL-02", a: "Abuja 4-Bed Terrace", aCountry: "Nigeria", b: "Austin 3-Bed House", bCountry: "US", stage: 3, cash: 90000, owed: "Owner B" },
+      { id: "DL-03", a: "Lagos Penthouse VI", aCountry: "Nigeria", b: "Miami Waterfront", bCountry: "US", stage: 9, cash: 60000, owed: "Owner A" }
+    ]
+  };
+}
+const SW_KEY = "girard_swap_v1";
+function swLoad() { try { const r = localStorage.getItem(SW_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = swSeed(); try { localStorage.setItem(SW_KEY, JSON.stringify(s)); } catch (e) {} return s; }
+function swSave(s) { try { localStorage.setItem(SW_KEY, JSON.stringify(s)); } catch (e) {} }
+
+const SWAP_STAGES = ["Agree terms", "KYC both owners", "Proof of ownership", "Legal due diligence", "Inspections", "Finalise terms", "Escrow setup", "Contracts", "Digital signing", "Title transfer", "Escrow release", "Completed"];
+const STAGE_DESC = [
+  "Both owners confirm the agreed values and the cash difference needed to balance the trade.",
+  "Each owner completes KYC. Nigerian owners verify with Smile ID; UK and US owners use the international ID check.",
+  "Each owner uploads title documents (Certificate of Occupancy or title deed) for verification.",
+  "Girard's legal partners run title searches and confirm there are no liens or encumbrances.",
+  "Independent inspectors visit both properties and file condition reports.",
+  "After inspection, both owners confirm terms or renegotiate any cash adjustment.",
+  "The paying owner deposits the cash difference into a solicitor trust account.",
+  "Final swap contracts are prepared from the AI draft with jurisdiction-specific clauses.",
+  "Both owners e-sign, with notarisation arranged where a jurisdiction requires it.",
+  "Legal partners lodge the transfers with each Land Registry.",
+  "On confirmed transfer, escrow releases the cash difference and Girard's fee.",
+  "The swap is complete. Both properties can now move into Girard management."
+];
+
+async function aiValue({ type, city, country, value }) {
+  const cur = CUR_OF[country] || "₦";
+  const local = +String(value).replace(/\D/g, "") || (country === "Nigeria" ? 300000000 : country === "UK" ? 450000 : 550000);
+  const proxy = await aiProxy(`In one sentence, justify a market value near ${cur}${local.toLocaleString()} for a ${type || "property"} in ${city || "the area"}, ${country}. No preamble.`);
+  return { local, usd: toUSD(local, cur), cur, rationale: proxy.ok ? proxy.text : `Based on comparable ${(type || "property").toLowerCase()} sales in ${city || country}, this value sits within the local market range.`, offline: !proxy.ok };
+}
+async function aiMatch(a, b) {
+  const ua = toUSD(a.value, a.currency), ub = toUSD(b.value, b.currency);
+  const diff = Math.abs(ua - ub);
+  const score = Math.max(55, Math.min(97, Math.round(100 - diff / Math.max(ua, ub) * 120)));
+  const proxy = await aiProxy(`Two properties for a possible swap. A: ${a.type} in ${a.city}, valued ${usd(ua)}. B: ${b.type} in ${b.city}, valued ${usd(ub)}. In two short sentences say whether this is an equitable swap and suggest any cash adjustment. No preamble.`);
+  const note = proxy.ok ? proxy.text : `The valuations differ by ${usd(diff)}. A cash adjustment of about ${usd(diff)} from the lower-valued side would balance the exchange.`;
+  return { score, note, diff, offline: !proxy.ok };
+}
+
+function SwapCardArt({ hue, verified }) {
+  return <div style={{ position: "relative", height: 130, borderRadius: 10, overflow: "hidden", background: "linear-gradient(140deg, hsl(" + hue + ",42%,22%), hsl(" + (hue - 12) + ",50%,34%))" }}>
+    <svg viewBox="0 0 300 130" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: .22 }}><g fill="none" stroke="var(--gold)" strokeWidth="1.4"><path d="M50 104 L50 56 L92 34 L134 56 L134 104 Z" /><path d="M150 104 L150 66 L188 66 L188 104 Z" /><rect x="204" y="72" width="34" height="32" /></g></svg>
+    <div style={{ position: "absolute", top: 10, left: 10 }}><PmPill label={verified ? "Verified" : "Pending Verification"} /></div>
+  </div>;
+}
+
+function SwapBrowse({ sw, setSw, toast }) {
+  const [country, setCountry] = useState("All");
+  const [sel, setSel] = useState(null);
+  const list = sw.listings.filter(l => country === "All" || l.country === country);
+  return <div>
+    <H2 title="Browse swaps" sub={list.length + " listings · values shown locally and in USD"} right={<div style={{ width: 180 }}><PmSelect value={country} onChange={setCountry} options={["All", "Nigeria", "UK", "US"]} /></div>} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 16 }}>
+      {list.map(l => <PmCard key={l.id} pad={0} style={{ overflow: "hidden" }}>
+        <SwapCardArt hue={l.hue} verified={l.verified} />
+        <div style={{ padding: 14 }}>
+          <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{l.type}</div>
+          <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{l.city}, {l.country}</div>
+          <div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(l.value, l.currency)}</div>
+          <div style={{ color: "var(--muted)", fontSize: 12 }}>≈ {usd(toUSD(l.value, l.currency))}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0", display: "flex", gap: 5, alignItems: "center" }}><Repeat size={13} color="var(--gold-2)" /> Seeking: {l.seeking}</div>
+          <PmBtn size="sm" style={{ width: "100%", justifyContent: "center" }} onClick={() => setSel(l)}>View &amp; match</PmBtn>
+        </div>
+      </PmCard>)}
+    </div>
+    {sel && <MatchModal sw={sw} listing={sel} onClose={() => setSel(null)} toast={toast} />}
+  </div>;
+}
+
+function MatchModal({ sw, listing, onClose, toast }) {
+  const cand = sw.listings.find(s => s.id !== listing.id && s.country !== listing.country && listing.seeking.toLowerCase().includes(s.country.toLowerCase())) || sw.listings.find(s => s.country !== listing.country);
+  const [ai, setAi] = useState({ loading: true });
+  useEffect(() => { aiMatch(listing, cand).then(r => setAi({ loading: false, ...r })); }, []);
+  return <PmModal title="Reciprocal match" onClose={onClose} wide>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center" }}>
+      {[listing, cand].map((x, i) => <React.Fragment key={i}>
+        {i === 1 && <div style={{ display: "grid", placeItems: "center", color: "var(--gold-2)" }}><ArrowRightLeft size={26} /></div>}
+        <PmCard pad={12}><SwapCardArt hue={x.hue} verified={x.verified} />
+          <div className="serif" style={{ fontWeight: 600, color: "var(--ink)", marginTop: 10, fontSize: 14 }}>{x.type}</div>
+          <div style={{ color: "var(--muted)", fontSize: 12 }}>{x.city}, {x.country}</div>
+          <div style={{ color: "var(--ink)", fontWeight: 700, marginTop: 6 }}>{usd(toUSD(x.value, x.currency))}</div>
+          <div style={{ color: "var(--muted)", fontSize: 11.5 }}>{money(x.value, x.currency)}</div>
+        </PmCard>
+      </React.Fragment>)}
+    </div>
+    <div style={{ margin: "16px 0" }}><AiPanel loading={ai.loading} offline={ai.offline}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="serif" style={{ width: 52, height: 52, borderRadius: 999, display: "grid", placeItems: "center", background: "var(--navy)", color: "var(--gold)", fontWeight: 700, fontSize: 17, flexShrink: 0 }}>{ai.score}</div>
+        <div style={{ color: "var(--ink)", fontSize: 13.5, lineHeight: 1.5 }}>{ai.note}</div>
+      </div>
+    </AiPanel></div>
+    <div style={{ display: "flex", gap: 10 }}>
+      <PmBtn icon={Send} onClick={() => { toast("Interest sent to owner of " + cand.type, "success"); onClose(); }}>Express interest</PmBtn>
+      <PmBtn kind="ghost" onClick={onClose}>Close</PmBtn>
+    </div>
+  </PmModal>;
+}
+
+function SwapList({ sw, setSw, toast }) {
+  const [f, setF] = useState({ type: "", city: "", country: "Nigeria", value: "", seeking: "" });
+  const [ai, setAi] = useState(null);
+  const [done, setDone] = useState(false);
+  const cur = CUR_OF[f.country];
+  const valuate = async () => { setAi({ loading: true }); const r = await aiValue(f); setAi({ loading: false, ...r }); };
+  const submit = () => {
+    const id = "SW-" + (50 + sw.listings.length);
+    const l = { id, owner: "You", city: f.city || "Lagos", country: f.country, currency: cur, value: (ai ? ai.local : +String(f.value).replace(/\D/g, "")) || 300000000, type: f.type || "Property", seeking: f.seeking || "Cross-border", verified: false, hue: 195 + sw.listings.length % 30 };
+    setSw({ ...sw, listings: [l, ...sw.listings] }); toast("Swap listing submitted for verification"); setDone(true);
+  };
+  if (done) return <div><H2 title="List for swap" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "var(--gold-soft)", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><ShieldCheck size={26} color="var(--gold-2)" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Listing submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>Once your title document is verified it earns a Verified badge and enters the matching engine.</div><PmBtn onClick={() => { setDone(false); setAi(null); }}>List another</PmBtn></div></PmCard></div>;
+  return <div>
+    <H2 title="List a property for swap" sub="Offer your property and set what you want in return" />
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
+      <PmCard><div style={{ display: "grid", gap: 14 }}>
+        <PmField label="Property type" value={f.type} onChange={v => setF({ ...f, type: v })} placeholder="e.g. 4-Bed Detached Duplex" />
+        <div style={{ display: "flex", gap: 10 }}><div style={{ flex: 1 }}><PmField label="City" value={f.city} onChange={v => setF({ ...f, city: v })} placeholder="Lagos" /></div><div style={{ flex: 1 }}><PmSelect label="Country" value={f.country} onChange={v => setF({ ...f, country: v })} options={["Nigeria", "UK", "US"]} /></div></div>
+        <PmField label={"Your estimated value (" + cur + ")"} value={f.value} onChange={v => setF({ ...f, value: v })} placeholder="e.g. 350,000,000" />
+        <PmField label="What you're seeking" value={f.seeking} onChange={v => setF({ ...f, seeking: v })} placeholder="e.g. London or Manchester, UK" />
+        <PmBtn kind="navy" icon={Sparkles} onClick={valuate}>Get AI valuation</PmBtn>
+      </div></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>AI valuation</div>
+        {!ai ? <div style={{ color: "var(--muted)", fontSize: 14, padding: "20px 0", textAlign: "center" }}>Enter details, then request a valuation.</div>
+          : <><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Local value</div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{money(ai.local, cur)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>USD equivalent</div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{usd(ai.usd)}</div></div></div><div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5 }}>{ai.rationale}</div></AiPanel>
+            <div style={{ marginTop: 14, background: "var(--ivory)", borderRadius: 8, padding: 12, fontSize: 12.5, color: "var(--muted)" }}>A one-time listing fee applies: {f.country === "Nigeria" ? "paid via Paystack or Flutterwave" : "paid via Stripe"}.</div>
+            <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 14 }} onClick={submit}>Pay fee &amp; submit</PmBtn></>}
+      </PmCard>
+    </div>
+  </div>;
+}
+
+function SwapMatches({ sw, toast, goDeals }) {
+  const mine = sw.listings.find(l => l.owner === "You") || sw.listings.find(l => l.country === "Nigeria");
+  const matches = sw.listings.filter(l => l.country !== mine.country).slice(0, 3);
+  const [thread, setThread] = useState(null);
+  return <div>
+    <H2 title="My matches" sub={"Reciprocal matches for your " + mine.type + " in " + mine.city} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 16 }}>
+      {matches.map((m, i) => <PmCard key={m.id}>
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ width: 92, flexShrink: 0 }}><SwapCardArt hue={m.hue} verified={m.verified} /></div>
+          <div style={{ flex: 1 }}><div className="serif" style={{ fontWeight: 600, fontSize: 14, color: "var(--ink)" }}>{m.type}</div><div style={{ color: "var(--muted)", fontSize: 12 }}>{m.city}, {m.country}</div><div style={{ color: "var(--ink)", fontWeight: 700, marginTop: 4 }}>{usd(toUSD(m.value, m.currency))}</div></div>
+          <div style={{ textAlign: "center" }}><div className="serif" style={{ width: 40, height: 40, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>{92 - i * 7}</div><div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>match</div></div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <PmBtn size="sm" icon={MessageSquare} onClick={() => setThread(m)}>Message</PmBtn>
+          <PmBtn size="sm" kind="gold" icon={Handshake} onClick={() => { toast("Swap initiated, opening pipeline", "success"); goDeals(); }}>Initiate swap</PmBtn>
+        </div>
+      </PmCard>)}
+    </div>
+    {thread && <ThreadModal match={thread} onClose={() => setThread(null)} />}
+  </div>;
+}
+
+function ThreadModal({ match, onClose }) {
+  const [msgs, setMsgs] = useState([{ me: false, text: "Hi, I saw your Lagos property and I'm interested in swapping with my " + match.type + " in " + match.city + "." }, { me: true, text: "Great to hear from you. The valuations look close. Shall we discuss the cash adjustment?" }]);
+  const [input, setInput] = useState("");
+  const endRef = useRef(null);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  const send = () => { if (!input.trim()) return; setMsgs(x => [...x, { me: true, text: input }]); setInput(""); };
+  return <PmModal title={"Chat · owner of " + match.type} onClose={onClose}>
+    <div style={{ display: "flex", flexDirection: "column", height: 340 }}>
+      <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+        {msgs.map((m, i) => <div key={i} style={{ alignSelf: m.me ? "flex-end" : "flex-start", maxWidth: "80%", background: m.me ? "var(--navy)" : "var(--ivory)", color: m.me ? "#fff" : "var(--ink)", padding: "10px 13px", borderRadius: 12, fontSize: 13.5, lineHeight: 1.5 }}>{m.text}</div>)}
+        <div ref={endRef} />
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder="Type a message…" style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 13.5 }} />
+        <PmBtn icon={Send} onClick={send}>Send</PmBtn>
+      </div>
+    </div>
+  </PmModal>;
+}
+
+function SwapDeals({ sw, setSw, identity, toast }) {
+  const [open, setOpen] = useState(null);
+  const advance = (d) => { const ns = Math.min(11, d.stage + 1); setSw({ ...sw, deals: sw.deals.map(x => x.id === d.id ? { ...x, stage: ns } : x) }); setOpen(o => o ? { ...o, stage: ns } : o); toast(ns === 11 ? "Swap completed. Both properties can move into management." : "Advanced to " + SWAP_STAGES[ns]); };
+  const cancel = (d, msg) => { setSw({ ...sw, deals: sw.deals.filter(x => x.id !== d.id) }); toast(msg, "danger"); setOpen(null); };
+  return <div>
+    <H2 title={identity.role === "admin" ? "Swap pipeline" : "My swaps"} sub="Every active cross-border deal and its current stage" />
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      <PmStat icon={Handshake} label="Initiated" value={String(sw.deals.length + 5)} />
+      <PmStat icon={Clock} label="In progress" value={String(sw.deals.filter(d => d.stage < 11).length)} tone="#E0A106" />
+      <PmStat icon={CheckCircle2} label="Completed" value="4" />
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {sw.deals.map(d => <PmCard key={d.id}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", display: "flex", gap: 8, alignItems: "center" }}>{d.a} <ArrowRightLeft size={15} color="var(--gold-2)" /> {d.b}</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{d.id} · cash difference {usd(d.cash)} owed to {d.owed}</div></div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}><PmPill label={d.stage >= 11 ? "Completed" : d.stage >= 6 ? "In Escrow" : "In Negotiation"} /><PmBtn size="sm" onClick={() => setOpen(d)}>Manage</PmBtn></div>
+        </div>
+        <div style={{ marginTop: 12, display: "flex", gap: 4 }}>{SWAP_STAGES.map((s, i) => <div key={i} title={s} style={{ flex: 1, height: 6, borderRadius: 3, background: i <= d.stage ? "var(--gold)" : "var(--cream-line)" }} />)}</div>
+        <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>Stage {d.stage + 1}/12 · {SWAP_STAGES[d.stage]}</div>
+      </PmCard>)}
+    </div>
+    {open && <SwapWizard deal={open} onClose={() => setOpen(null)} onAdvance={() => advance(open)} onCancel={cancel} />}
+  </div>;
+}
+
+function SwapWizard({ deal, onClose, onAdvance, onCancel }) {
+  const StageIcon = [Scale, ShieldCheck, FileText, Gavel, ClipboardCheck, Handshake, Banknote, FileText, PenLine, Building2, Banknote, CheckCircle2][deal.stage];
+  return <PmModal title={deal.id + " · " + SWAP_STAGES[deal.stage]} onClose={onClose} wide>
+    <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+      {SWAP_STAGES.map((s, i) => <div key={i} style={{ width: 22, height: 22, borderRadius: 999, display: "grid", placeItems: "center", background: i < deal.stage ? "#1F9D57" : i === deal.stage ? "var(--gold)" : "var(--cream-line)", color: i <= deal.stage ? (i === deal.stage ? "var(--navy)" : "#fff") : "var(--muted)", fontSize: 11, fontWeight: 800 }}>{i < deal.stage ? <Check size={12} /> : i + 1}</div>)}
+    </div>
+    <PmCard pad={16} style={{ background: "var(--ivory)", border: "none" }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <div style={{ color: "var(--gold-2)", marginTop: 2 }}>{StageIcon && <StageIcon size={20} />}</div>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>{SWAP_STAGES[deal.stage]}</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.55 }}>{STAGE_DESC[deal.stage]}</div></div>
+      </div>
+    </PmCard>
+    {deal.stage === 10 && <div style={{ background: "var(--gold-soft)", borderRadius: 8, padding: 12, marginTop: 12, fontSize: 13, color: "var(--ink)" }}>Escrow will release {usd(deal.cash)} to {deal.owed} and deduct Girard's transaction fee.</div>}
+    <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+      {deal.stage < 11 ? <>
+        <PmBtn icon={ArrowRight} onClick={onAdvance}>Advance to {SWAP_STAGES[deal.stage + 1]}</PmBtn>
+        <PmBtn kind="ghost" onClick={() => onCancel(deal, "Deal paused: due diligence flag raised")}>Raise issue</PmBtn>
+        <PmBtn kind="ghost" onClick={() => onCancel(deal, "Party withdrew, earnest money forfeited per policy")}>Party backs out</PmBtn>
+      </> : <PmBtn kind="gold" icon={CheckCircle2} onClick={onClose}>Swap completed</PmBtn>}
+    </div>
+  </PmModal>;
+}
+
+function IntelSoon() {
+  return <div><H2 title="Market intelligence" sub="Sold prices, planning applications, local plans, auctions and yields" />
+    <PmCard><div style={{ textAlign: "center", padding: 34 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", margin: "0 auto 14px", display: "grid", placeItems: "center" }}><LineChart size={26} /></div><div className="serif" style={{ fontWeight: 600, fontSize: 20, color: "var(--ink)" }}>Arriving in the next stage</div><div style={{ color: "var(--muted)", marginTop: 8, maxWidth: 460, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>A premium, self-updating intelligence page pulling public data on sold prices, planning applications, local plans, auction results and yields, each item summarised by Girard.</div></div></PmCard>
+  </div>;
+}
+
+const SWAP_TABS = [["browse", "Browse", Search], ["list", "List for swap", Plus], ["matches", "My matches", ArrowRightLeft], ["deals", "Deals", Handshake]];
+function SwapHub({ identity, toast, initial }) {
+  const [tab, setTab] = useState(initial || "browse");
+  const [sw, setSwRaw] = useState(swLoad);
+  const setSw = (n) => { setSwRaw(n); swSave(n); };
+  const tabs = identity.role === "admin" ? SWAP_TABS.filter(t => t[0] === "browse" || t[0] === "deals") : SWAP_TABS;
+  return <div>
+    <div style={{ display: "flex", gap: 6, marginBottom: 22, borderBottom: "1px solid var(--cream-line)", flexWrap: "wrap" }}>
+      {tabs.map(([k, label, Icon]) => <button key={k} onClick={() => setTab(k)} style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", borderBottom: "2px solid " + (tab === k ? "var(--gold)" : "transparent"), color: tab === k ? "var(--ink)" : "var(--muted)", fontWeight: tab === k ? 700 : 500, fontSize: 14, padding: "10px 6px", cursor: "pointer", marginBottom: -1 }}><Icon size={15} />{label}</button>)}
+    </div>
+    {tab === "browse" && <SwapBrowse sw={sw} setSw={setSw} toast={toast} />}
+    {tab === "list" && <SwapList sw={sw} setSw={setSw} toast={toast} />}
+    {tab === "matches" && <SwapMatches sw={sw} toast={toast} goDeals={() => setTab("deals")} />}
+    {tab === "deals" && <SwapDeals sw={sw} setSw={setSw} identity={identity} toast={toast} />}
   </div>;
 }
