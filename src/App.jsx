@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
   ArrowUpRight, Building2, Repeat, LineChart, Sparkles, ShieldCheck,
-  Globe2, MapPin, Menu, X, Home, KeyRound, Users, Briefcase, ArrowRight
+  Globe2, MapPin, Menu, X, Home, KeyRound, Users, Briefcase, ArrowRight,
+  LogOut, Mail, Lock, ArrowLeft, ChevronRight, Wallet, Wrench, FileText,
+  Search, LayoutGrid
 } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
 
 /* Girard Property Estate Limited
    Stage 1, rebuilt: editorial-luxury landing.
@@ -161,7 +164,7 @@ function ListingCard({ l }) {
 
 const Rule = ({ light }) => <div style={{ width: 54, height: 2, background: "var(--gold)", opacity: light ? 1 : .9 }} />;
 
-export default function App() {
+function Landing({ onStart, onSignIn }) {
   const [region, setRegion] = useState("International");
   const [menu, setMenu] = useState(false);
   const [tick, setTick] = useState(0);
@@ -226,8 +229,8 @@ export default function App() {
             <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#capabilities">Capabilities</a>
             <a className="nav-link" href="#who">Who we serve</a>
-            <a className="btn-line on-navy" href="#" style={{ padding: "9px 18px" }}>Sign in</a>
-            <a className="btn-gold" href="#">Get started <ArrowUpRight size={16} /></a>
+            <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 18px" }}>Sign in</a>
+            <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
           </nav>
           <button className="burger" onClick={() => setMenu(m => !m)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", color: "#fff" }}>{menu ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
@@ -236,7 +239,7 @@ export default function App() {
             <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#capabilities">Capabilities</a>
             <a className="nav-link" href="#who">Who we serve</a>
-            <a className="btn-gold" href="#" style={{ justifyContent: "center" }}>Get started</a>
+            <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
           </div>
         )}
       </header>
@@ -256,7 +259,7 @@ export default function App() {
                 Girard brings digital property management and cross-border swaps onto one governed platform, built for owners, tenants, agents and investors across Nigeria, the UK and beyond.
               </p>
               <div style={{ display: "flex", gap: 12, marginTop: 32, flexWrap: "wrap" }}>
-                <a className="btn-gold" href="#">Get started <ArrowUpRight size={16} /></a>
+                <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
                 <a className="btn-line on-navy" href="#platform">Explore the platform</a>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 30, color: "rgba(255,255,255,.6)", fontSize: 13 }}>
@@ -342,7 +345,7 @@ export default function App() {
                 {rotated.map((l, i) => <ListingCard key={l.title + i} l={l} />)}
               </div>
               <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-                <a className="btn-gold" href="#" style={{ boxShadow: "0 12px 34px rgba(0,0,0,.4)" }}>Sign in to view live listings <ArrowUpRight size={16} /></a>
+                <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ boxShadow: "0 12px 34px rgba(0,0,0,.4)" }}>Sign in to view live listings <ArrowUpRight size={16} /></a>
               </div>
             </div>
             <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.55)", marginTop: 14, textAlign: "center" }}>Values shown in {R.cur}. The full feed unlocks on sign-in.</div>
@@ -403,8 +406,8 @@ export default function App() {
           <h2 className="serif" style={{ fontSize: "clamp(34px,5vw,60px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Begin with Girard.</h2>
           <p style={{ color: "rgba(255,255,255,.74)", fontSize: 17, marginTop: 16, maxWidth: 540, margin: "16px auto 0", lineHeight: 1.65 }}>Create an account, tell us who you are, and step into a property platform that works across borders.</p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 32, flexWrap: "wrap" }}>
-            <a className="btn-gold" href="#">Get started <ArrowUpRight size={16} /></a>
-            <a className="btn-line on-navy" href="#">Speak with Girard <ArrowRight size={16} /></a>
+            <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
+            <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Speak with Girard <ArrowRight size={16} /></a>
           </div>
         </div>
       </section>
@@ -431,5 +434,337 @@ export default function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/* ===================================================================
+   STAGE 2: deployable stack + entry flow
+   Supabase auth when configured, a local demo store otherwise, a role
+   picker, per-account identity resolved by sign-in email, and a
+   role-aware home shell. Env vars: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY.
+   =================================================================== */
+
+const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+const DEMO = !supabase;
+
+const ROLES = [
+  { key: "owner", name: "Owner / Landlord", icon: Home, blurb: "List and manage rentals, collect rent and track income." },
+  { key: "tenant", name: "Tenant", icon: KeyRound, blurb: "Find a home, apply, pay rent and request repairs." },
+  { key: "agent", name: "Agent", icon: Users, blurb: "Run instructions, applications and offers in one pipeline." },
+  { key: "investor", name: "Investor / Developer", icon: Briefcase, blurb: "Deal flow, market intelligence and cross-border swaps." },
+  { key: "admin", name: "Platform Admin", icon: ShieldCheck, blurb: "Oversee listings, users, verification and the swap pipeline." }
+];
+const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate Agent", investor: "Investor & Developer", admin: "Platform Administration" };
+
+/* Per-account identity, resolved by sign-in email.
+   Edit this map with your real team so each person is greeted by name and title. */
+const FOUNDERS = {
+  "principal@girard.example": { name: "Girard Principal", title: "Founder & Principal", greeting: "Welcome back" },
+  "operations@girard.example": { name: "Operations Lead", title: "Platform Administration", greeting: "Welcome back" }
+};
+function initialsOf(name) { return (name || "G").split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0, 2).toUpperCase(); }
+function resolveIdentity(email, role) {
+  const key = (email || "").toLowerCase().trim();
+  const f = FOUNDERS[key];
+  if (f) return { email: key, role, name: f.name, title: f.title, greeting: f.greeting, initials: initialsOf(f.name), isFounder: true };
+  const local = (key.split("@")[0] || "there").replace(/[._-]+/g, " ").trim();
+  const name = local ? local.replace(/\b\w/g, c => c.toUpperCase()) : "There";
+  return { email: key, role, name, title: ROLE_TITLE[role] || "Member", greeting: "Welcome", initials: initialsOf(name), isFounder: false };
+}
+
+/* auth adapters */
+async function authRestore() {
+  if (!DEMO) {
+    const { data } = await supabase.auth.getSession();
+    const u = data.session?.user;
+    return u ? { email: u.email, role: u.user_metadata?.role || null } : null;
+  }
+  const email = localStorage.getItem("girard_session");
+  if (!email) return null;
+  const accts = JSON.parse(localStorage.getItem("girard_accounts") || "{}");
+  return { email, role: accts[email]?.role || null };
+}
+async function authSignUp(email, password, role) {
+  if (!DEMO) {
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { role } } });
+    if (error) throw new Error(error.message);
+    if (!data.session) {
+      const r = await supabase.auth.signInWithPassword({ email, password });
+      if (r.error) throw new Error("Account created. Please check your email to confirm, then sign in.");
+    }
+    return { email, role };
+  }
+  const key = email.toLowerCase().trim();
+  const accts = JSON.parse(localStorage.getItem("girard_accounts") || "{}");
+  if (accts[key]) throw new Error("An account with that email already exists. Please sign in.");
+  accts[key] = { password, role };
+  localStorage.setItem("girard_accounts", JSON.stringify(accts));
+  localStorage.setItem("girard_session", key);
+  return { email: key, role };
+}
+async function authSignIn(email, password) {
+  if (!DEMO) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    return { email: data.user.email, role: data.user.user_metadata?.role || null };
+  }
+  const key = email.toLowerCase().trim();
+  const accts = JSON.parse(localStorage.getItem("girard_accounts") || "{}");
+  const a = accts[key];
+  if (!a || a.password !== password) throw new Error("We do not recognise that email and password.");
+  localStorage.setItem("girard_session", key);
+  return { email: key, role: a.role || null };
+}
+async function authSetRole(role) {
+  if (!DEMO) { await supabase.auth.updateUser({ data: { role } }); return; }
+  const email = localStorage.getItem("girard_session");
+  const accts = JSON.parse(localStorage.getItem("girard_accounts") || "{}");
+  if (accts[email]) { accts[email].role = role; localStorage.setItem("girard_accounts", JSON.stringify(accts)); }
+}
+async function authSignOut() {
+  if (!DEMO) { await supabase.auth.signOut(); return; }
+  localStorage.removeItem("girard_session");
+}
+
+function BrandMark({ dark }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <svg viewBox="0 0 100 100" width="30" height="30"><rect x="6" y="6" width="88" height="88" rx="6" fill="none" stroke="var(--gold)" strokeWidth="6" /><path d="M30 74 L30 50 L46 38 L62 50 L62 74 Z M62 74 L62 44 L74 52 L74 74 Z" fill={dark ? "var(--navy)" : "#fff"} /><rect x="42" y="56" width="8" height="8" fill="var(--gold)" /></svg>
+      <span className="serif" style={{ fontSize: 19, fontWeight: 600, color: dark ? "var(--ink)" : "#fff" }}>Girard</span>
+    </div>
+  );
+}
+
+function EntryStyles() {
+  return <style>{`
+    .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
+    .eyebrow{font-size:12px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase}
+    .btn-gold{background:var(--gold);color:#201601;border:none;padding:13px 24px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .18s;letter-spacing:.2px}
+    .btn-gold:hover{background:var(--gold-2)}
+    .btn-gold:disabled{cursor:default}
+    .btn-line{background:transparent;padding:12px 22px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s}
+    .btn-line.on-navy{border:1px solid rgba(255,255,255,.28);color:#fff}
+    .btn-line.on-navy:hover{border-color:var(--gold);color:var(--gold)}
+    .btn-line.on-ivory{border:1px solid var(--cream-line);color:var(--ink)}
+    .btn-line.on-ivory:hover{border-color:var(--navy)}
+    .field{width:100%;background:#0B2340;border:1px solid var(--navy-line);border-radius:4px;padding:13px 14px 13px 42px;color:#fff;font-size:14.5px;outline:none;transition:border-color .18s}
+    .field:focus{border-color:var(--gold)}
+    .field::placeholder{color:#6E829A}
+    .role-card{text-align:left;width:100%;background:var(--navy-2);border:1px solid var(--navy-line);border-radius:10px;padding:22px;cursor:pointer;transition:border-color .18s,transform .1s,background .18s;color:#fff}
+    .role-card:hover{border-color:var(--gold);background:#0E2A4E;transform:translateY(-2px)}
+    .tile{background:var(--white);border:1px solid var(--cream-line);border-radius:10px;padding:22px;transition:transform .18s,box-shadow .18s}
+    .tile:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(10,31,60,.10)}
+    @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .rise{animation:rise .7s ease both}
+    @media(max-width:840px){.auth-grid{grid-template-columns:1fr!important}.auth-brand{display:none!important}}
+  `}</style>;
+}
+
+function RolePage({ onPick, onSignIn, onBack }) {
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--navy)", color: "#fff", display: "flex", flexDirection: "column" }}>
+      <div className="wrap" style={{ paddingTop: 26, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20 }}>
+        <button onClick={onBack} className="btn-line on-navy" style={{ padding: "8px 14px" }}><ArrowLeft size={15} /> Back</button>
+        <div style={{ marginRight: "auto", marginLeft: 20 }}><BrandMark /></div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,.7)" }}>Have an account? <a href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ color: "var(--gold)", fontWeight: 600 }}>Sign in</a></div>
+      </div>
+      <div className="wrap" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingTop: 40, paddingBottom: 60, maxWidth: 1000 }}>
+        <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Welcome to Girard</div>
+        <h1 className="serif" style={{ fontSize: "clamp(32px,5vw,52px)", fontWeight: 600, letterSpacing: -.5, marginBottom: 10 }}>Which best describes you?</h1>
+        <p style={{ color: "rgba(255,255,255,.7)", fontSize: 16, marginBottom: 34, maxWidth: 560, lineHeight: 1.6 }}>Choose your role and Girard tailors the platform, tools and pricing to you. You can change this later.</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 16 }}>
+          {ROLES.map(r => (
+            <button key={r.key} className="role-card rise" onClick={() => onPick(r.key)}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center" }}><r.icon size={22} /></div>
+                <ChevronRight size={18} color="var(--gold)" />
+              </div>
+              <div className="serif" style={{ fontSize: 20, fontWeight: 600, marginBottom: 6 }}>{r.name}</div>
+              <div style={{ color: "rgba(255,255,255,.68)", fontSize: 13.5, lineHeight: 1.5 }}>{r.blurb}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const isSignup = mode === "signup";
+  const submit = async () => {
+    setErr("");
+    if (!email || !password) { setErr("Please enter your email and password."); return; }
+    if (isSignup && password.length < 6) { setErr("Password must be at least 6 characters."); return; }
+    setBusy(true);
+    try {
+      const res = isSignup ? await authSignUp(email, password, role) : await authSignIn(email, password);
+      if (!isSignup && !res.role) { onNeedRole(res.email); return; }
+      onAuthed(resolveIdentity(res.email, res.role || role));
+    } catch (e) { setErr(e.message || "Something went wrong. Please try again."); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="auth-grid" style={{ minHeight: "100vh", background: "var(--navy)", color: "#fff", display: "grid", gridTemplateColumns: "1.1fr 1fr" }}>
+      <div className="auth-brand" style={{ background: "var(--navy-2)", padding: "48px 56px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", borderRight: "1px solid var(--navy-line)" }}>
+        <BrandMark />
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <h2 className="serif" style={{ fontSize: 40, fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Managed with <span style={{ fontStyle: "italic", color: "var(--gold)" }}>discipline.</span></h2>
+          <p style={{ color: "rgba(255,255,255,.7)", marginTop: 16, fontSize: 15.5, maxWidth: 360, lineHeight: 1.6 }}>One governed platform for owners, tenants, agents and investors across Nigeria, the UK and beyond.</p>
+        </div>
+        <div style={{ position: "absolute", bottom: -10, left: 0, right: 0, height: 200, opacity: .5 }}><Skyline /></div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", position: "relative", zIndex: 2 }}>&copy; 2026 Girard Property Estate Limited</div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 28px" }}>
+        <div style={{ width: "100%", maxWidth: 380 }}>
+          <button onClick={onBack} className="btn-line on-navy" style={{ padding: "7px 13px", marginBottom: 26 }}><ArrowLeft size={14} /> Back</button>
+          <h1 className="serif" style={{ fontSize: 30, fontWeight: 600, marginBottom: 6 }}>{isSignup ? "Create your account" : "Welcome back"}</h1>
+          <p style={{ color: "rgba(255,255,255,.65)", fontSize: 14, marginBottom: 22 }}>{isSignup ? <>Joining as <span style={{ color: "var(--gold)", fontWeight: 600 }}>{ROLES.find(r => r.key === role)?.name || "a member"}</span>.</> : "Sign in to your Girard account."}</p>
+          {DEMO && <div style={{ background: "rgba(198,161,91,.12)", border: "1px solid rgba(198,161,91,.35)", borderRadius: 6, padding: "10px 12px", fontSize: 12.5, color: "var(--gold)", marginBottom: 18, lineHeight: 1.5 }}>Demo mode. Accounts are saved on this device only until Supabase is connected.</div>}
+          <div style={{ position: "relative", marginBottom: 12 }}><Mail size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /></div>
+          <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} /></div>
+          {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{err}</div>}
+          <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", opacity: busy ? .7 : 1, marginTop: 4 }}>{busy ? "Please wait\u2026" : isSignup ? "Create account" : "Sign in"} <ArrowUpRight size={16} /></button>
+          <div style={{ textAlign: "center", marginTop: 18, fontSize: 13.5, color: "rgba(255,255,255,.65)" }}>
+            {isSignup ? "Already have an account? " : "New to Girard? "}
+            <a href="#" onClick={e => { e.preventDefault(); onToggle(); }} style={{ color: "var(--gold)", fontWeight: 600 }}>{isSignup ? "Sign in" : "Create one"}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const HOME_TILES = {
+  owner: [
+    { icon: Building2, label: "List a property", note: "Add a rental with AI-recommended rent" },
+    { icon: Users, label: "Applications", note: "Review and approve tenants" },
+    { icon: Wallet, label: "Rent & income", note: "Collection, receipts and analytics" },
+    { icon: Wrench, label: "Maintenance", note: "Track and resolve tickets" }
+  ],
+  tenant: [
+    { icon: Search, label: "Find a home", note: "Browse and filter listings" },
+    { icon: FileText, label: "My application", note: "Apply and sign your lease" },
+    { icon: Wallet, label: "Pay rent", note: "Secure online payment" },
+    { icon: Wrench, label: "Report a repair", note: "Raise a maintenance request" }
+  ],
+  agent: [
+    { icon: Building2, label: "Instructions", note: "Manage your listings" },
+    { icon: LayoutGrid, label: "Applications & offers", note: "One pipeline built for volume" },
+    { icon: LineChart, label: "Performance", note: "Track conversion and activity" }
+  ],
+  investor: [
+    { icon: LineChart, label: "Market intelligence", note: "Sold prices, yields and local plans" },
+    { icon: Repeat, label: "Swap marketplace", note: "Reciprocal cross-border matches" },
+    { icon: Briefcase, label: "Deal flow", note: "Opportunities and partnerships" }
+  ],
+  admin: [
+    { icon: ShieldCheck, label: "Verify listings", note: "Approve and badge properties" },
+    { icon: Users, label: "Users", note: "Manage accounts and roles" },
+    { icon: Repeat, label: "Swap pipeline", note: "Oversee every active deal" },
+    { icon: LineChart, label: "Reports", note: "Platform analytics" }
+  ]
+};
+
+function HomeShell({ identity, onSignOut, onSwitchRole }) {
+  const hr = new Date().getHours();
+  const part = hr < 12 ? "morning" : hr < 17 ? "afternoon" : "evening";
+  const tiles = HOME_TILES[identity.role] || HOME_TILES.owner;
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--ivory)" }}>
+      <header style={{ background: "var(--navy)", color: "#fff", borderBottom: "1px solid var(--navy-line)" }}>
+        <div className="wrap" style={{ height: 66, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <BrandMark />
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div className="serif" style={{ width: 36, height: 36, borderRadius: 999, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>{identity.initials}</div>
+              <div style={{ lineHeight: 1.2 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{identity.name}</div>
+                <div style={{ fontSize: 11, color: "var(--gold)" }}>{identity.title}</div>
+              </div>
+            </div>
+            <button onClick={onSignOut} className="btn-line on-navy" style={{ padding: "7px 13px" }}><LogOut size={14} /> Sign out</button>
+          </div>
+        </div>
+      </header>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 70 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 12 }}>{identity.greeting}</div>
+            <h1 className="serif" style={{ fontSize: "clamp(30px,4.4vw,48px)", fontWeight: 600, letterSpacing: -.5, color: "var(--ink)" }}>Good {part}, {identity.name.split(" ")[0]}.</h1>
+            <p style={{ color: "var(--muted)", fontSize: 16, marginTop: 10, maxWidth: 580, lineHeight: 1.6 }}>Your {ROLES.find(r => r.key === identity.role)?.name || "member"} workspace. The tools below come online as we build out the platform.</p>
+          </div>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--navy)", color: "var(--gold)", padding: "8px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 700 }}><ShieldCheck size={14} /> {ROLE_TITLE[identity.role] || "Member"}</span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 18, marginTop: 36 }}>
+          {tiles.map(t => (
+            <div key={t.label} className="tile">
+              <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 16 }}><t.icon size={21} /></div>
+              <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 5 }}>{t.label}</div>
+              <div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.5, marginBottom: 12 }}>{t.note}</div>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", background: "var(--gold-soft)", padding: "3px 9px", borderRadius: 4 }}>Coming next</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 40, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <button onClick={onSwitchRole} className="btn-line on-ivory">Change role</button>
+          <span style={{ fontSize: 13, color: "var(--muted)" }}>{DEMO ? "Demo mode: connect Supabase to save accounts across devices." : "Connected to Supabase."}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [view, setView] = useState("loading");
+  const [mode, setMode] = useState("signin");
+  const [role, setRole] = useState(null);
+  const [identity, setIdentity] = useState(null);
+  const [pendingEmail, setPendingEmail] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    authRestore().then(s => {
+      if (!live) return;
+      if (s && s.role) { setIdentity(resolveIdentity(s.email, s.role)); setView("home"); }
+      else if (s && !s.role) { setPendingEmail(s.email); setView("role"); }
+      else setView("landing");
+    }).catch(() => { if (live) setView("landing"); });
+    return () => { live = false; };
+  }, []);
+
+  const goHome = (id) => { setIdentity(id); setView("home"); };
+
+  if (view === "loading") return <div style={{ minHeight: "100vh", background: "var(--navy)", display: "grid", placeItems: "center" }}><EntryStyles /><BrandMark /></div>;
+
+  return (
+    <>
+      <EntryStyles />
+      {view === "landing" && <Landing
+        onStart={() => { setRole(null); setMode("signup"); setView("role"); }}
+        onSignIn={() => { setMode("signin"); setView("auth"); }} />}
+      {view === "role" && <RolePage
+        onPick={(r) => {
+          if (pendingEmail) { authSetRole(r).then(() => { goHome(resolveIdentity(pendingEmail, r)); setPendingEmail(null); }); }
+          else { setRole(r); setMode("signup"); setView("auth"); }
+        }}
+        onSignIn={() => { setMode("signin"); setView("auth"); }}
+        onBack={() => setView(identity ? "home" : "landing")} />}
+      {view === "auth" && <AuthPage mode={mode} role={role}
+        onAuthed={goHome}
+        onNeedRole={(email) => { setPendingEmail(email); setView("role"); }}
+        onToggle={() => setMode(m => m === "signup" ? "signin" : "signup")}
+        onBack={() => setView(mode === "signup" ? "role" : "landing")} />}
+      {view === "home" && identity && <HomeShell identity={identity}
+        onSignOut={async () => { await authSignOut(); setIdentity(null); setRole(null); setPendingEmail(null); setView("landing"); }}
+        onSwitchRole={() => { setPendingEmail(identity.email); setView("role"); }} />}
+    </>
   );
 }
