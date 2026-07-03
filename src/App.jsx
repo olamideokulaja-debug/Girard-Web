@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ArrowUpRight, Building2, Repeat, LineChart, Sparkles, ShieldCheck,
   Globe2, MapPin, Menu, X, Home, KeyRound, Users, Briefcase, ArrowRight,
@@ -286,6 +286,93 @@ const ADVANTAGES = [
    Example: { name: "Full Name", role: "Managing Director", photo: "/img/team-1.jpg" } */
 const TEAM = [];
 
+function Reveal({ children, style }) {
+  const ref = useRef(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setShown(true); io.disconnect(); } }, { threshold: 0.12 });
+    io.observe(el); return () => io.disconnect();
+  }, []);
+  return <div ref={ref} style={{ opacity: shown ? 1 : 0, transform: shown ? "none" : "translateY(26px)", transition: "opacity .7s ease, transform .7s ease", ...style }}>{children}</div>;
+}
+function CountUp({ to, dur = 1300, prefix = "", suffix = "" }) {
+  const ref = useRef(null); const [started, setStarted] = useState(false); const [n, setN] = useState(0);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setStarted(true); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(el); return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!started) return; let raf; const t0 = performance.now();
+    const step = t => { const q = Math.min(1, (t - t0) / dur); setN(Math.round(to * (1 - Math.pow(1 - q, 3)))); if (q < 1) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step); return () => cancelAnimationFrame(raf);
+  }, [started, to, dur]);
+  return <span ref={ref}>{prefix}{n.toLocaleString()}{suffix}</span>;
+}
+const BGAL = ["/img/bourdillon_tower.jpg", "/img/bourdillon_lobby.jpg", "/img/bourdillon_living.jpg", "/img/bourdillon_bedroom.jpg", "/img/bourdillon_pool.jpg", "/img/bourdillon_entrance.jpg"];
+function BourdillonGallery() {
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => { if (paused) return; const id = setInterval(() => setI(x => (x + 1) % BGAL.length), 4000); return () => clearInterval(id); }, [paused]);
+  return <div style={{ position: "relative", minHeight: 480, overflow: "hidden" }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+    {BGAL.map((src, idx) => <img key={src} src={src} alt="1 Bourdillon Residences" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: idx === i ? 1 : 0, transition: "opacity .8s ease" }} />)}
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(6,17,42,0) 55%, rgba(6,17,42,.5))", pointerEvents: "none" }} />
+    <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", padding: "0 16px" }}>
+      {BGAL.map((src, idx) => <button key={src} onClick={() => setI(idx)} aria-label={"View " + (idx + 1)} style={{ width: idx === i ? 26 : 10, height: 10, borderRadius: 999, border: "none", cursor: "pointer", background: idx === i ? "var(--gold)" : "rgba(255,255,255,.55)", transition: "all .3s" }} />)}
+    </div>
+  </div>;
+}
+function RoiCalculator() {
+  const [price, setPrice] = useState(95000000);
+  const [rent, setRent] = useState(9500000);
+  const [costPct, setCostPct] = useState(20);
+  const ngn = v => "₦" + Math.round(v).toLocaleString();
+  const gross = price > 0 ? (rent / price * 100) : 0;
+  const net = price > 0 ? (rent * (1 - costPct / 100) / price * 100) : 0;
+  const payback = rent > 0 ? price / (rent * (1 - costPct / 100)) : 0;
+  const slider = { width: "100%", accentColor: "#C6A15B", margin: "8px 0 2px" };
+  const results = [
+    { label: "Gross yield", value: gross.toFixed(1) + "%", c: "#3B82F6" },
+    { label: "Net yield", value: net.toFixed(1) + "%", c: "#10B981" },
+    { label: "Monthly income", value: ngn(rent / 12), c: "#8B5CF6" },
+    { label: "Payback", value: payback.toFixed(1) + " yrs", c: "#F59E0B" }
+  ];
+  const rows = [
+    { label: "Property price", val: ngn(price), v: price, set: setPrice, min: 10000000, max: 500000000, step: 1000000 },
+    { label: "Expected annual rent", val: ngn(rent), v: rent, set: setRent, min: 500000, max: 60000000, step: 100000 },
+    { label: "Annual costs", val: costPct + "%", v: costPct, set: setCostPct, min: 0, max: 50, step: 1 }
+  ];
+  return <section style={{ background: "var(--ivory)", padding: "88px 0" }}>
+    <div className="wrap">
+      <Reveal>
+        <div style={{ maxWidth: 640, marginBottom: 34 }}>
+          <Rule light />
+          <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Buy-to-let</div>
+          <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Estimate your returns.</h2>
+          <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 12, lineHeight: 1.6, maxWidth: 520 }}>Move the sliders to model a buy-to-let investment. Figures are indicative; speak with Girard for a tailored analysis.</p>
+        </div>
+      </Reveal>
+      <div className="roi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: 26 }}>
+          {rows.map(r => <div key={r.label} style={{ marginBottom: 18 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink)" }}>{r.label}</span><span className="serif" style={{ fontSize: 16, fontWeight: 600, color: "var(--navy)" }}>{r.val}</span></div>
+            <input type="range" min={r.min} max={r.max} step={r.step} value={r.v} onChange={e => r.set(Number(e.target.value))} style={slider} />
+          </div>)}
+        </div>
+        <div style={{ background: "var(--navy)", borderRadius: 14, padding: 26, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignContent: "center" }}>
+          {results.map(r => <div key={r.label} style={{ background: "rgba(255,255,255,.05)", border: "1px solid var(--navy-line)", borderRadius: 12, padding: 18 }}>
+            <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.65)", fontWeight: 600 }}>{r.label}</div>
+            <div className="serif" style={{ fontSize: 28, fontWeight: 600, color: r.c, marginTop: 6 }}>{r.value}</div>
+          </div>)}
+          <div style={{ gridColumn: "1 / -1", marginTop: 4 }}><a className="btn-gold" href="#contact" style={{ width: "100%", justifyContent: "center" }}>Speak to an adviser <ArrowUpRight size={16} /></a></div>
+        </div>
+      </div>
+      <style>{`@media(max-width:820px){.roi-grid{grid-template-columns:1fr!important}}`}</style>
+    </div>
+  </section>;
+}
+
 function Landing({ onStart, onSignIn }) {
   const [region, setRegion] = useState("International");
   const [menu, setMenu] = useState(false);
@@ -298,6 +385,13 @@ function Landing({ onStart, onSignIn }) {
     const b = setInterval(() => setOffset(o => (o + 1) % R.listings.length), 3600);
     return () => { clearInterval(a); clearInterval(b); };
   }, [region, R.listings.length]);
+
+  useEffect(() => {
+    const els = document.querySelectorAll("section .wrap");
+    const io = new IntersectionObserver((entries) => entries.forEach(e => { if (e.isIntersecting) { e.target.style.opacity = 1; e.target.style.transform = "none"; io.unobserve(e.target); } }), { threshold: 0.08 });
+    els.forEach(el => { el.style.opacity = 0; el.style.transform = "translateY(22px)"; el.style.transition = "opacity .7s ease, transform .7s ease"; io.observe(el); });
+    return () => io.disconnect();
+  }, []);
 
   const rotated = [...R.listings.slice(offset), ...R.listings.slice(0, offset)];
   const instr = R.instr[tick % R.instr.length];
@@ -457,14 +551,14 @@ function Landing({ onStart, onSignIn }) {
       {/* FEATURED DEVELOPMENT */}
       <section style={{ background: "var(--navy)", color: "#fff" }}>
         <div className="feat-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-          <Photo src="/img/bourdillon_tower.jpg" hue={210} alt="1 Bourdillon Residences, Ikoyi" style={{ minHeight: 480 }} />
+          <BourdillonGallery />
           <div style={{ padding: "72px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Featured development</div>
             <h2 className="serif" style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>1 Bourdillon Residences</h2>
             <div style={{ color: "var(--gold-soft)", fontWeight: 600, marginTop: 8, letterSpacing: 1, fontSize: 13 }}>IKOYI, LAGOS · AN ADDRESS OF DISTINCTION</div>
             <p style={{ color: "rgba(255,255,255,.74)", fontSize: 15.5, lineHeight: 1.7, margin: "18px 0 24px", maxWidth: 460 }}>A refined expression of vertical luxury: 40 bespoke residences with panoramic water views, floor-to-ceiling glazing, a rooftop infinity pool and round-the-clock concierge.</p>
             <div style={{ display: "flex", gap: 28, marginBottom: 26, flexWrap: "wrap" }}>
-              {[["40", "Bespoke units"], ["110m", "Max height"], ["2,039", "sq.m plot"]].map(([n, l]) => <div key={l}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--gold)" }}>{n}</div><div style={{ fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>{l}</div></div>)}
+              {[[40, "Bespoke units", ""], [110, "Max height", "m"], [2039, "sq.m plot", ""]].map(([to, l, suf]) => <div key={l}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--gold)" }}><CountUp to={to} suffix={suf} /></div><div style={{ fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>{l}</div></div>)}
             </div>
             <div><a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Enquire about 1 Bourdillon <ArrowUpRight size={16} /></a></div>
           </div>
@@ -539,6 +633,8 @@ function Landing({ onStart, onSignIn }) {
           <style>{`@media(max-width:760px){.adv-grid{grid-template-columns:1fr!important}}`}</style>
         </div>
       </section>
+
+      <RoiCalculator />
 
       {/* WHO WE SERVE */}
       <section id="who" style={{ background: "var(--ivory)", padding: "88px 0" }}>
