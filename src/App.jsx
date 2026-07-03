@@ -6,7 +6,7 @@ import {
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
   CreditCard, PenLine, Filter, LayoutDashboard, Bell, Send, Loader2, MoreHorizontal,
   Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
-  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone
+  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -266,25 +266,32 @@ function Photo({ src, hue = 212, alt = "", style, radius = 0, overlay, className
 const MGMT_CAPS = ["Facility & infrastructure management", "Lease administration", "Service charge management", "Maintenance oversight", "Vendor coordination", "Security operations", "Utilities management", "Financial reporting"];
 const INV_CAPS = ["Development partnerships", "Income-producing assets", "Land banking strategies", "Institutional investment platforms"];
 const SERVICES = [
-  { icon: Building2, t: "Real Estate Development", d: "End-to-end development of premium residential and mixed-use projects, from concept and design through to delivery, to premium architectural and engineering standards." },
-  { icon: ShieldCheck, t: "Property & Estate Management", d: "Full end-to-end management of residential and commercial property, with technology-enabled monitoring, asset preservation and tenant satisfaction at its core." },
-  { icon: Wallet, t: "Buy-to-Let Investment Solutions", d: "Structured buy-to-let opportunities with managed lettings and clear reporting, designed to generate reliable rental income for investors." },
-  { icon: TrendingUp, t: "Real Estate Investment & Partnerships", d: "Secure, high-yield investment models with disciplined due diligence, strong governance and transparent reporting across partnerships and income-producing assets." },
-  { icon: ClipboardCheck, t: "Real Estate Advisory & Transaction Support", d: "Expert advisory and hands-on support through acquisitions, disposals and transactions, guided by a strong legal and governance framework." }
+  { icon: Building2, t: "Real Estate Development", d: "Premium residential, commercial and mixed-use properties engineered for durability, sustainability and elevated lifestyle experiences, guided by disciplined planning, architectural excellence and strict compliance with international standards." },
+  { icon: ShieldCheck, t: "Property & Estate Management", d: "End-to-end management of residential and commercial assets, ensuring operational efficiency, tenant satisfaction and long-term asset preservation, with technology-enabled real-time monitoring and data-driven performance tracking." },
+  { icon: ConciergeBell, t: "Short Let & Airbnb Management", d: "Professional management of short-let and serviced residences, with positioning, guest operations and upkeep handled end-to-end so owners earn optimised returns from the hospitality market." },
+  { icon: Wallet, t: "Buy-to-Let Investment Solutions", d: "A structured pathway for investors seeking stable rental income and long-term wealth creation through professionally selected residential assets, each evaluated with rigorous financial modelling and risk assessment." },
+  { icon: TrendingUp, t: "Real Estate Investment & Partnerships", d: "Secure investment models supported by disciplined due diligence, strong governance and transparent reporting, aligning investor objectives with sustainable asset performance and controlled risk exposure." },
+  { icon: ClipboardCheck, t: "Real Estate Advisory & Transaction Support", d: "Holistic advisory across legal, financial, compliance, development strategy and transaction execution, enabling informed decisions across acquisitions, disposals, restructuring and project feasibility." }
 ];
 const ADVANTAGES = [
-  "Technology-powered operations",
-  "Strong legal and governance framework",
-  "Deep development and asset management expertise",
-  "High-performing, multidimensional leadership",
-  "Investor-centred transparency",
-  "Compliance with international best practices",
-  "Premium architectural and engineering standards"
+  { t: "Technology-powered operations", d: "Digital systems drive real-time monitoring, streamlined communication and data-driven performance across every asset." },
+  { t: "Strong legal & governance framework", d: "Clear legal structures, compliance protocols and performance accountability standards govern every engagement." },
+  { t: "Deep development & asset management expertise", d: "A fully integrated approach from site acquisition through delivery and long-term asset stewardship." },
+  { t: "High-performing, multidimensional leadership", d: "Seasoned professionals in real estate law, project development, finance, governance and estate management." },
+  { t: "Investor-centred transparency", d: "Transparent reporting frameworks and rigorous due diligence keep investors informed and protected." },
+  { t: "Compliance with international best practices", d: "Compliance with global standards in building, safety, governance and financial reporting." },
+  { t: "Premium architectural & engineering standards", d: "Developments that balance aesthetics, functionality, environmental responsibility and investor performance." }
 ];
 
 /* Leadership. Add your real team and the section appears automatically.
    Example: { name: "Full Name", role: "Managing Director", photo: "/img/team-1.jpg" } */
-const TEAM = [];
+const TEAM = [
+  { name: "Dr. Olamide Okulaja", role: "Executive Chairman", photo: "/img/team-1.jpg", bio: "A respected healthcare executive and entrepreneur with over two decades across clinical practice, public health and healthcare management, and CEO of Genesys Health Information Systems. His expertise in systems reform, policy and strategic leadership guides Girard's mission of excellence and impact." },
+  { name: "Jennifer Kaja", role: "CEO / Managing Director", photo: "/img/team-2.jpg", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
+  { name: "Pedro Cabulo", role: "Chief Strategy & Partnerships Officer", photo: "/img/team-3.jpg", bio: "Leads corporate strategy and cultivates the partnerships that power Girard's growth and investment platforms." },
+  { name: "Olayinka O. Odunlami", role: "Finance, Operations & Management", photo: "/img/team-4.jpg", bio: "Drives financial discipline, operational excellence and management systems across the Girard portfolio." },
+  { name: "Engr. Tomi Adebayo", role: "Projects Director", photo: "/img/team-5.jpg", bio: "Oversees project delivery, engineering standards and construction quality across Girard developments." }
+];
 
 function Reveal({ children, style }) {
   const ref = useRef(null);
@@ -447,6 +454,8 @@ function Landing({ onStart, onSignIn }) {
           </div>
           <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 30 }}>
             <a className="nav-link" href="#about">About</a>
+            <a className="nav-link" href="#listings">Listings</a>
+            <a className="nav-link" href="#leadership">Leadership</a>
             <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#who">Who we serve</a>
@@ -459,6 +468,8 @@ function Landing({ onStart, onSignIn }) {
         {menu && (
           <div className="wrap" style={{ paddingBottom: 18, display: "flex", flexDirection: "column", gap: 14 }}>
             <a className="nav-link" href="#about">About</a>
+            <a className="nav-link" href="#listings">Listings</a>
+            <a className="nav-link" href="#leadership">Leadership</a>
             <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#who">Who we serve</a>
@@ -525,6 +536,23 @@ function Landing({ onStart, onSignIn }) {
             <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 18 }}>Girard Property Estate Limited is a premier real estate development and asset management company dedicated to elevating the standards of luxury, urban living and sustainable property investment across Nigeria's rapidly evolving landscape.</p>
             <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 14 }}>Driven by a leadership team of seasoned professionals in real estate law, project development, finance, governance and estate management, the company upholds an unyielding commitment to quality, compliance and strategic growth.</p>
           </div>
+          <div className="vm-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 34 }}>
+            <div style={{ background: "var(--navy)", color: "#fff", borderRadius: 14, padding: 26 }}>
+              <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 10 }}>Our vision</div>
+              <p style={{ fontSize: 15.5, lineHeight: 1.65, color: "rgba(255,255,255,.86)" }}>To elevate the standards of luxury, urban living and sustainable property investment across Nigeria's rapidly evolving real estate landscape.</p>
+            </div>
+            <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: 26 }}>
+              <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 10 }}>Our mission</div>
+              <p style={{ fontSize: 15.5, lineHeight: 1.65, color: "var(--ink)" }}>To deliver world-class developments and professional asset management that blend architectural distinction with lifestyle functionality and long-term value creation, upheld by an unyielding commitment to quality, compliance and strategic growth.</p>
+            </div>
+          </div>
+          <div style={{ marginTop: 30 }}>
+            <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 16 }}>Our core values</div>
+            <div className="val-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 16 }}>
+              {[["Integrity", "Anchored on transparency, sound governance and ethical practice."], ["Precision", "Disciplined planning, rigorous due diligence and strict compliance."], ["Innovation", "Technology-powered operations and advanced digital modelling."], ["Quality & Compliance", "Premium standards aligned with international best practices."], ["Strategic Growth", "Long-term value creation for clients, partners and communities."]].map(([t, d]) => <div key={t} style={{ borderTop: "2px solid var(--gold)", paddingTop: 12 }}><div className="serif" style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{t}</div><div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6, lineHeight: 1.55 }}>{d}</div></div>)}
+            </div>
+          </div>
+          <style>{`@media(max-width:820px){.vm-grid{grid-template-columns:1fr!important}.val-grid{grid-template-columns:1fr 1fr!important}}`}</style>
         </div>
       </section>
 
@@ -590,32 +618,8 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>
 
-      {/* LISTINGS TEASER */}
-      <section style={{ background: "var(--ivory)", padding: "84px 0" }}>
-        <div className="wrap">
-          <div style={{ marginBottom: 30 }}>
-            <Rule light />
-            <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Live on Girard</div>
-            <h2 className="serif sec-h" style={{ color: "var(--ink)", maxWidth: 560 }}>Instructions and swaps, moving in real time.</h2>
-          </div>
-          <div style={{ background: "var(--navy)", borderRadius: 10, padding: 26, position: "relative", overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#fff", marginBottom: 18 }}>
-              <Globe2 size={16} color="var(--gold)" />
-              <span className="serif" style={{ color: "var(--gold)", fontWeight: 600, fontSize: 15 }}>{R.tag}.</span>
-              <span style={{ color: "rgba(255,255,255,.72)", fontSize: 14 }}>{R.line}</span>
-            </div>
-            <div style={{ position: "relative" }}>
-              <div style={{ display: "flex", gap: 14, overflow: "hidden", filter: "blur(3px)", opacity: .95, WebkitMaskImage: "linear-gradient(90deg,#000 68%,transparent)", maskImage: "linear-gradient(90deg,#000 68%,transparent)" }}>
-                {rotated.map((l, i) => <ListingCard key={l.title + i} l={l} />)}
-              </div>
-              <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-                <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ boxShadow: "0 12px 34px rgba(0,0,0,.4)" }}>Sign in to view live listings <ArrowUpRight size={16} /></a>
-              </div>
-            </div>
-            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.55)", marginTop: 14, textAlign: "center" }}>Values shown in {R.cur}. The full feed unlocks on sign-in.</div>
-          </div>
-        </div>
-      </section>
+      {/* PUBLIC LISTINGS */}
+      <PublicListings onSignIn={onSignIn} />
 
       {/* WHY CHOOSE GIRARD */}
       <section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
@@ -626,8 +630,8 @@ function Landing({ onStart, onSignIn }) {
             <h2 className="serif sec-h">Strategic advantages that set us apart.</h2>
           </div>
           <div className="adv-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "14px 40px" }}>
-            {ADVANTAGES.map(a => <div key={a} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--navy-line)" }}>
-              <BadgeCheck size={20} color="var(--gold)" style={{ flexShrink: 0 }} /><span style={{ fontSize: 15.5, color: "rgba(255,255,255,.9)" }}>{a}</span>
+            {ADVANTAGES.map(a => <div key={a.t} style={{ display: "flex", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--navy-line)" }}>
+              <BadgeCheck size={20} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} /><div><div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{a.t}</div><div style={{ fontSize: 13, color: "rgba(255,255,255,.66)", marginTop: 3, lineHeight: 1.55 }}>{a.d}</div></div>
             </div>)}
           </div>
           <style>{`@media(max-width:760px){.adv-grid{grid-template-columns:1fr!important}}`}</style>
@@ -656,26 +660,29 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>
 
-      {/* LEADERSHIP (renders only when TEAM has entries) */}
+      {/* LEADERSHIP */}
       {TEAM.length > 0 && (
-        <section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
+        <section id="leadership" style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
           <div className="wrap">
-            <div style={{ maxWidth: 640, marginBottom: 44 }}>
+            <div style={{ maxWidth: 780, marginBottom: 40 }}>
               <Rule />
-              <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Leadership</div>
-              <h2 className="serif sec-h">The team behind Girard.</h2>
+              <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Our people</div>
+              <h2 className="serif sec-h">Our leadership.</h2>
+              <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65 }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships.</p>
             </div>
-            <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 22 }}>
+            <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
               {TEAM.map(t => (
-                <div key={t.name} className="team-card">
-                  <Photo src={t.photo} hue={208} alt={t.name} style={{ height: 220 }} />
-                  <div style={{ padding: 16 }}>
-                    <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{t.name}</div>
-                    <div style={{ fontSize: 12.5, color: "var(--gold-2)", fontWeight: 600, marginTop: 3 }}>{t.role}</div>
+                <div key={t.name} style={{ background: "var(--white)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  <div style={{ height: 260, background: "var(--navy-2)" }}><img src={t.photo} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} /></div>
+                  <div style={{ padding: 20, flex: 1 }}>
+                    <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{t.name}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--gold-2)", fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: .5 }}>{t.role}</div>
+                    <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 12, lineHeight: 1.6 }}>{t.bio}</p>
                   </div>
                 </div>
               ))}
             </div>
+            <style>{`@media(max-width:900px){.team-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.team-grid{grid-template-columns:1fr!important}}`}</style>
           </div>
         </section>
       )}
@@ -687,8 +694,8 @@ function Landing({ onStart, onSignIn }) {
         <div style={{ position: "absolute", inset: 0, opacity: .5 }}><Skyline /></div>
         <div className="wrap" style={{ textAlign: "center", position: "relative" }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}><div style={{ width: 54, height: 2, background: "var(--gold)" }} /></div>
-          <h2 className="serif" style={{ fontSize: "clamp(34px,5vw,58px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Begin with Girard.</h2>
-          <p style={{ color: "rgba(255,255,255,.74)", fontSize: 17, marginTop: 16, maxWidth: 540, margin: "16px auto 0", lineHeight: 1.65 }}>Create an account, tell us who you are, and step into a property platform that works across borders.</p>
+          <h2 className="serif" style={{ fontSize: "clamp(34px,5vw,58px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Let's build something enduring.</h2>
+          <p style={{ color: "rgba(255,255,255,.74)", fontSize: 17, marginTop: 16, maxWidth: 600, margin: "16px auto 0", lineHeight: 1.65 }}>A comprehensive suite of real estate solutions tailored to investors, homeowners, institutions and development partners seeking reliability and excellence, delivering strong occupancy, enduring desirability and resilient capital appreciation.</p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 30, flexWrap: "wrap" }}>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
             <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Speak with Girard <ArrowRight size={16} /></a>
@@ -713,7 +720,7 @@ function Landing({ onStart, onSignIn }) {
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
             <div>&copy; 2026 Girard Property Estate Limited. All rights reserved.</div>
-            <div>Governance-first. This platform is not a substitute for legal or financial advice.</div>
+            <div style={{ display: "flex", gap: 16 }}>{["Facebook", "Twitter", "YouTube"].map(soc => <span key={soc} style={{ color: "rgba(255,255,255,.55)" }}>{soc}</span>)}</div>
           </div>
         </div>
       </footer>
@@ -1684,10 +1691,10 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Maintenance", Wrench], ["swap", "Swap marketplace", Repeat], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Maintenance", Wrench], ["swap", "Swap marketplace", Repeat], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
   tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Maintenance", Wrench], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["reminders", "Rent reminders", BellRing], ["maint", "Maintenance", Wrench], ["swpipe", "Swap pipeline", Handshake], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
-  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["reports", "Analytics", LineChart]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Maintenance", Wrench], ["swpipe", "Swap pipeline", Handshake], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
+  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reports", "Analytics", LineChart]],
   investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["work", "Overview", LayoutGrid]]
 };
 function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
@@ -1723,6 +1730,8 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "financials") return <FinancialsScreen />;
     if (view === "signups") return <SignupsScreen />;
     if (view === "reminders") return <RentRemindersScreen toast={toast} />;
+    if (view === "enquiries") return <EnquiriesScreen toast={toast} />;
+    if (view === "sales") return <SalesBoard toast={toast} />;
     if (view === "feed") return <LiveFeed identity={identity} />;
     if (view === "crm") return <PipelineCRM identity={identity} toast={toast} />;
     if (view === "reports") return <ReportsScreen identity={identity} toast={toast} />;
@@ -1751,7 +1760,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       <header style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : "Digital Property Management · Lagos"}</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "1 Bourdillon · Sales board" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2660,4 +2669,225 @@ function RentRemindersScreen({ toast }) {
       <PmBtn kind="gold" icon={BellRing} onClick={() => { send(preview); setPreview(null); }}>Send now</PmBtn>
     </PmModal>}
   </div>;
+}
+
+/* ===================================================================
+   Public listings, enquiries, viewings and WhatsApp notifications
+   =================================================================== */
+const OFFICE_WA = "2348058733019";
+function waLink(phone, text) { const n = String(phone || OFFICE_WA).replace(/[^0-9]/g, ""); return "https://wa.me/" + n + (text ? "?text=" + encodeURIComponent(text) : ""); }
+async function sendWhatsApp(to, message) {
+  try { const r = await fetch("/api/whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to, message }) }); const d = await r.json(); return !!(d && d.sent); } catch (e) { return false; }
+}
+const ENQ_KEY = "girard_enquiries_v1";
+function enqLoad() {
+  try { const r = localStorage.getItem(ENQ_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  const seed = { items: [
+    { id: "ENQ-1001", type: "Viewing", propId: "PR-BOURDILLON", propTitle: "1 Bourdillon Residences", area: "Ikoyi", name: "Chuka Obi", phone: "+2348031111111", email: "chuka@example.com", message: "", date: "2026-07-20", time: "11:00", status: "New", createdAt: Date.now() - 3600000 },
+    { id: "ENQ-1002", type: "Enquiry", propId: "", propTitle: "3-Bed Flat, Lekki", area: "Lekki", name: "Aisha Bello", phone: "+2348032222222", email: "aisha@example.com", message: "Is this still available and what is the service charge?", date: "", time: "", status: "Contacted", createdAt: Date.now() - 7200000 }
+  ] };
+  try { localStorage.setItem(ENQ_KEY, JSON.stringify(seed)); } catch (e) {}
+  return seed;
+}
+function enqSave(s) { try { localStorage.setItem(ENQ_KEY, JSON.stringify(s)); } catch (e) {} }
+function enqRecToRow(r) { return { id: r.id, type: r.type, prop_id: r.propId || null, prop_title: r.propTitle, area: r.area || null, name: r.name, phone: r.phone, email: r.email || null, message: r.message || null, date: r.date || null, time: r.time || null, status: r.status }; }
+function enqRowToRec(r) { return { id: r.id, type: r.type, propId: r.prop_id, propTitle: r.prop_title, area: r.area, name: r.name, phone: r.phone, email: r.email, message: r.message, date: r.date, time: r.time, status: r.status, createdAt: r.created_at }; }
+function enqMirrorCrm(rec) {
+  try { const crm = crmLoad(); crm.cards = [{ id: "C-EN" + rec.id, name: (rec.type === "Viewing" ? "Viewing · " : "Enquiry · ") + rec.name, kind: "Lead", market: "Nigeria", detail: rec.propTitle + (rec.type === "Viewing" ? " · " + rec.date + " " + rec.time : ""), stage: 0 }, ...crm.cards]; crmSave(crm); } catch (e) {}
+}
+async function enqInsert(rec) {
+  enqMirrorCrm(rec);
+  if (supabase) { try { const { error } = await supabase.from("enquiries").insert([enqRecToRow(rec)]); if (!error) return true; } catch (e) {} }
+  const st = enqLoad(); enqSave({ items: [rec, ...st.items] });
+  return false;
+}
+async function enqFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("enquiries").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(enqRowToRec); } catch (e) {} }
+  return enqLoad().items;
+}
+async function enqSetStatusRemote(id, status) {
+  if (supabase) { try { await supabase.from("enquiries").update({ status }).eq("id", id); return; } catch (e) {} }
+  const st = enqLoad(); enqSave({ items: st.items.map(x => x.id === id ? { ...x, status } : x) });
+}
+
+function LeadModal({ mode, property, onClose }) {
+  const [f, setF] = useState({ name: "", phone: "", email: "", message: "", date: "", time: "10:00" });
+  const [done, setDone] = useState(null);
+  const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", color: "var(--ink)", fontSize: 14, marginBottom: 10, fontFamily: "inherit" };
+  const valid = f.name.trim() && f.phone.trim() && (mode !== "viewing" || f.date);
+  const submit = () => {
+    if (!valid) return;
+    const rec = { id: "ENQ-" + Date.now(), type: mode === "viewing" ? "Viewing" : "Enquiry", propId: property.id, propTitle: property.title, area: property.area, name: f.name, phone: f.phone, email: f.email, message: f.message, date: f.date, time: f.time, status: "New", createdAt: Date.now() };
+    enqInsert(rec);
+    sendWhatsApp(OFFICE_WA, "New " + rec.type + " from " + f.name + " (" + f.phone + ") for " + property.title + (mode === "viewing" ? " on " + f.date + " at " + f.time : ""));
+    const msg = mode === "viewing"
+      ? "Hello Girard, I'd like to book a viewing of " + property.title + " (" + property.area + ") on " + f.date + " at " + f.time + ". My name is " + f.name + " (" + f.phone + ")."
+      : "Hello Girard, I'm enquiring about " + property.title + " (" + property.area + "). My name is " + f.name + " (" + f.phone + ")." + (f.message ? " " + f.message : "");
+    setDone(msg);
+  };
+  return <div style={{ position: "fixed", inset: 0, background: "rgba(6,17,42,.62)", zIndex: 200, display: "grid", placeItems: "center", padding: 18 }} onClick={onClose}>
+    <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 16, padding: 26, width: "min(440px, 100%)", maxHeight: "90vh", overflow: "auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+        <div><div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>{done ? "Request received" : mode === "viewing" ? "Book a viewing" : "Make an enquiry"}</div><div style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>{property.title} · {property.area}</div></div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><X size={20} /></button>
+      </div>
+      {done ? <div>
+        <div style={{ background: "rgba(31,157,87,.1)", color: "#1F9D57", borderRadius: 10, padding: 14, fontSize: 13.5, marginBottom: 14 }}>Thank you, {f.name}. The Girard team will contact you shortly on {f.phone}.</div>
+        <a href={waLink(OFFICE_WA, done)} target="_blank" rel="noreferrer" className="btn-gold" style={{ width: "100%", justifyContent: "center", marginBottom: 8 }}>Continue on WhatsApp <ArrowUpRight size={16} /></a>
+        <button onClick={onClose} className="btn-line on-ivory" style={{ width: "100%", justifyContent: "center" }}>Done</button>
+      </div> : <div>
+        <input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Full name *" style={inp} />
+        <input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="Phone / WhatsApp *" style={inp} />
+        <input value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="Email (optional)" style={inp} />
+        {mode === "viewing" ? <div style={{ display: "flex", gap: 10 }}>
+          <input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} style={{ ...inp, flex: 1 }} />
+          <select value={f.time} onChange={e => setF({ ...f, time: e.target.value })} style={{ ...inp, flex: 1 }}>{["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"].map(t => <option key={t} value={t}>{t}</option>)}</select>
+        </div> : <textarea value={f.message} onChange={e => setF({ ...f, message: e.target.value })} rows={3} placeholder="Your message (optional)" style={{ ...inp, resize: "vertical" }} />}
+        <button onClick={submit} disabled={!valid} className="btn-gold" style={{ width: "100%", justifyContent: "center", opacity: valid ? 1 : .5, cursor: valid ? "pointer" : "not-allowed", marginTop: 4 }}>{mode === "viewing" ? "Confirm viewing" : "Send enquiry"} <ArrowUpRight size={16} /></button>
+        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 10, textAlign: "center" }}>No account needed. We'll reach out by phone or WhatsApp.</div>
+      </div>}
+    </div>
+  </div>;
+}
+
+function PublicListings({ onSignIn }) {
+  const all = (() => { try { return pmLoad().properties || []; } catch (e) { return []; } })();
+  const avail = all.filter(p => p.status === "Available" || p.featured).slice(0, 9);
+  const [lead, setLead] = useState(null);
+  return <section id="listings" style={{ background: "var(--ivory)", padding: "88px 0" }}>
+    <div className="wrap">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 34 }}>
+        <div style={{ maxWidth: 560 }}>
+          <Rule light />
+          <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Available now</div>
+          <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Browse our listings.</h2>
+        </div>
+        <a className="btn-line on-ivory" href="#" onClick={e => { e.preventDefault(); onSignIn(); }}>Sign in for the full portfolio <ArrowRight size={16} /></a>
+      </div>
+      <div className="listing-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+        {avail.map(p => <div key={p.id} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "relative", height: 180 }}>
+            <img src={p.img || poolPhoto(p.id)} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            {p.featured && <span style={{ position: "absolute", top: 12, left: 12, background: "var(--gold)", color: "#201601", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>Featured</span>}
+          </div>
+          <div style={{ padding: 18, display: "flex", flexDirection: "column", flex: 1 }}>
+            <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{p.title}</div>
+            <div style={{ fontSize: 13, color: "var(--muted)", margin: "3px 0 10px" }}>{p.area}{p.beds ? " · " + p.beds + " bed" : ""}</div>
+            <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--navy)", marginBottom: 14 }}>{money(p.rent)}<span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 400 }}>/yr</span></div>
+            <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+              <button onClick={() => setLead({ mode: "viewing", property: p })} className="btn-gold" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Book viewing</button>
+              <button onClick={() => setLead({ mode: "enquire", property: p })} className="btn-line on-ivory" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Enquire</button>
+            </div>
+          </div>
+        </div>)}
+      </div>
+      {lead && <LeadModal mode={lead.mode} property={lead.property} onClose={() => setLead(null)} />}
+      <style>{`@media(max-width:960px){.listing-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:620px){.listing-grid{grid-template-columns:1fr!important}}`}</style>
+    </div>
+  </section>;
+}
+
+const ENQ_STATUS = ["New", "Contacted", "Viewing booked", "Closed"];
+function EnquiriesScreen({ toast }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { let on = true; enqFetch().then(x => { if (on) { setItems(x); setLoading(false); } }); return () => { on = false; }; }, []);
+  const setStatus = (id, status) => { setItems(items.map(x => x.id === id ? { ...x, status } : x)); enqSetStatusRemote(id, status); toast("Marked " + status.toLowerCase()); };
+  const newCount = items.filter(x => x.status === "New").length;
+  const viewings = items.filter(x => x.type === "Viewing").length;
+  return <div>
+    <H2 title="Enquiries & viewings" sub={supabase ? "Live leads from your database" : "Leads captured from the public listings"} />
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      <PmStat icon={Mail} label="New" value={String(newCount)} tone="#3B82F6" />
+      <PmStat icon={Calendar} label="Viewings" value={String(viewings)} tone="#8B5CF6" />
+      <PmStat icon={Users} label="Total leads" value={String(items.length)} tone="var(--muted)" />
+    </div>
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      {loading ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading enquiries…</div> : items.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>No enquiries yet.</div> : items.map((x, i) => <div key={x.id} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ width: 40, height: 40, borderRadius: 9, background: x.type === "Viewing" ? "rgba(139,92,246,.14)" : "rgba(59,130,246,.14)", color: x.type === "Viewing" ? "#8B5CF6" : "#3B82F6", display: "grid", placeItems: "center", flexShrink: 0 }}>{x.type === "Viewing" ? <Calendar size={18} /> : <Mail size={18} />}</div>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <div style={{ fontWeight: 700, color: "var(--ink)" }}>{x.name} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 12.5 }}>· {x.type}</span></div>
+          <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{x.propTitle}{x.area ? " · " + x.area : ""}{x.type === "Viewing" && x.date ? " · " + x.date + " at " + x.time : ""}</div>
+          {x.message ? <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, fontStyle: "italic" }}>&ldquo;{x.message}&rdquo;</div> : null}
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <a href={waLink(x.phone, "Hello " + x.name + ", thank you for your interest in " + x.propTitle + " with Girard Property.")} target="_blank" rel="noreferrer" title="WhatsApp" style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 8, background: "rgba(37,211,102,.16)", color: "#1FA855" }}><MessageSquare size={16} /></a>
+          <a href={"tel:" + String(x.phone).replace(/[^0-9+]/g, "")} title="Call" style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 8, border: "1px solid var(--cream-line)", color: "var(--ink)" }}><Phone size={15} /></a>
+          <select value={x.status} onChange={e => setStatus(x.id, e.target.value)} style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "7px 10px", color: "var(--ink)", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{ENQ_STATUS.map(st => <option key={st} value={st}>{st}</option>)}</select>
+        </div>
+      </div>)}
+    </PmCard>
+    <div style={{ marginTop: 14, fontSize: 12.5, color: "var(--muted)" }}>Enquiries also appear as leads in the Pipeline. WhatsApp opens a chat with the lead; automated confirmations send once WhatsApp keys are set in Vercel.</div>
+  </div>;
+}
+
+/* ===================================================================
+   1 Bourdillon Residences — unit-by-unit sales board (40 units)
+   =================================================================== */
+function unitSeed() {
+  const units = [];
+  for (let floor = 3; floor <= 22; floor++) {
+    for (let u = 0; u < 2; u++) {
+      const beds = floor >= 21 ? 4 : floor >= 14 ? 3 : 2;
+      const label = floor >= 21 ? "Penthouse" : beds + "-Bed";
+      const size = beds === 4 ? 320 : beds === 3 ? 210 : 155;
+      const price = (180 + floor * 6 + u * 4) * 1000000;
+      const id = "U" + floor + String.fromCharCode(65 + u);
+      const r = hashStr(id) % 10;
+      const status = r < 2 ? "Sold" : r < 4 ? "Reserved" : "Available";
+      units.push({ id, floor, unit: String.fromCharCode(65 + u), beds, label, size, price, status, buyer: "", phone: "" });
+    }
+  }
+  return units;
+}
+const UNIT_KEY = "girard_units_v1";
+function unitLoad() { try { const r = localStorage.getItem(UNIT_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = unitSeed(); try { localStorage.setItem(UNIT_KEY, JSON.stringify(s)); } catch (e) {} return s; }
+function unitSave(s) { try { localStorage.setItem(UNIT_KEY, JSON.stringify(s)); } catch (e) {} }
+const U_COLORS = { Available: "#10B981", Reserved: "#F59E0B", Sold: "#D0453B" };
+function moneyShort(n) { return "\u20a6" + (n >= 1e9 ? (n / 1e9).toFixed(1) + "b" : (n / 1e6).toFixed(0) + "m"); }
+
+function SalesBoard({ toast }) {
+  const [units, setUnitsRaw] = useState(unitLoad);
+  const [sel, setSel] = useState(null);
+  const [filter, setFilter] = useState("All");
+  const setUnits = (n) => { setUnitsRaw(n); unitSave(n); };
+  const save = (u) => { setUnits(units.map(x => x.id === u.id ? u : x)); setSel(null); toast("Unit " + u.id.slice(1) + " · " + u.status.toLowerCase(), "success"); };
+  const sold = units.filter(u => u.status === "Sold");
+  const reserved = units.filter(u => u.status === "Reserved");
+  const avail = units.filter(u => u.status === "Available");
+  const committedValue = sold.reduce((s, u) => s + u.price, 0) + reserved.reduce((s, u) => s + u.price, 0);
+  const shown = units.filter(u => filter === "All" || u.status === filter);
+  const kpis = [
+    { icon: CheckCircle2, label: "Sold", value: String(sold.length), c: "#D0453B", bg: "#FDECEA" },
+    { icon: Clock, label: "Reserved", value: String(reserved.length), c: "#F59E0B", bg: "#FEF4E3" },
+    { icon: Home, label: "Available", value: String(avail.length), c: "#10B981", bg: "#E7F7F0" },
+    { icon: TrendingUp, label: "Committed value", value: moneyShort(committedValue), c: "#3B82F6", bg: "#EAF2FE" }
+  ];
+  return <div>
+    <H2 title="1 Bourdillon · Sales board" sub="Unit-by-unit availability for the 40 residences" right={<div style={{ width: 160 }}><PmSelect value={filter} onChange={setFilter} options={["All", "Available", "Reserved", "Sold"]} /></div>} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }} className="dash-kpi">
+      {kpis.map(k => <CStat key={k.label} icon={k.icon} label={k.label} value={k.value} c={k.c} bg={k.bg} />)}
+    </div>
+    <PmCard>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>{Object.keys(U_COLORS).map(k => <span key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--muted)" }}><span style={{ width: 12, height: 12, borderRadius: 3, background: U_COLORS[k] }} />{k}</span>)}</div>
+      <div className="unit-grid" style={{ display: "grid", gridTemplateColumns: "repeat(8,1fr)", gap: 8 }}>
+        {shown.map(u => <button key={u.id} onClick={() => setSel(u)} style={{ border: "1px solid " + U_COLORS[u.status] + "66", background: U_COLORS[u.status] + "14", borderRadius: 8, padding: "10px 6px", cursor: "pointer", textAlign: "center" }}>
+          <div style={{ fontWeight: 800, color: "var(--ink)", fontSize: 13 }}>{u.id.slice(1)}</div>
+          <div style={{ fontSize: 10.5, color: "var(--muted)" }}>{u.beds}-bed</div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: U_COLORS[u.status] }}>{moneyShort(u.price)}</div>
+        </button>)}
+      </div>
+      <style>{`@media(max-width:800px){.unit-grid{grid-template-columns:repeat(5,1fr)!important}}@media(max-width:480px){.unit-grid{grid-template-columns:repeat(3,1fr)!important}}`}</style>
+    </PmCard>
+    {sel && <UnitModal unit={sel} onClose={() => setSel(null)} onSave={save} />}
+  </div>;
+}
+function UnitModal({ unit, onClose, onSave }) {
+  const [u, setU] = useState(unit);
+  return <PmModal title={"Unit " + unit.id.slice(1) + " · Floor " + unit.floor} onClose={onClose}>
+    <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>{[["Type", unit.label], ["Size", unit.size + " sqm"], ["Price", moneyShort(unit.price)]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 100, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 16 }}>{v}</div></div>)}</div>
+    <div style={{ marginBottom: 12 }}><PmSelect label="Status" value={u.status} onChange={v => setU({ ...u, status: v })} options={["Available", "Reserved", "Sold"]} /></div>
+    {u.status !== "Available" && <div><PmField label="Buyer name" value={u.buyer} onChange={v => setU({ ...u, buyer: v })} placeholder="Full name" /><PmField label="Buyer phone" value={u.phone} onChange={v => setU({ ...u, phone: v })} placeholder="+234..." /></div>}
+    <PmBtn kind="gold" onClick={() => onSave(u)} style={{ marginTop: 6 }}>Save unit</PmBtn>
+  </PmModal>;
 }
