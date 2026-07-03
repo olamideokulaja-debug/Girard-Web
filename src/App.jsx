@@ -1276,21 +1276,98 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
 }
 
 /* ---------- APPLICATIONS (owner/admin) ---------- */
+function hashStr(s) { let h = 0; s = String(s); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+const GUARANTOR_NAMES = ["Mr. BABATunde Coker", "Mrs. Amaka Obi", "Engr. Yusuf Danladi", "Dr. Ronke Adebayo", "Mr. Chukwuma Eze"];
+const EMPLOYERS = ["Zenith Corporate Services", "MTN Nigeria", "Access Bank Plc", "Dangote Group", "Andela Nigeria"];
+function appChecks(app, rent) {
+  const h = hashStr(app.id);
+  return [
+    { k: "Affordability", doc: "Bank statement (6 months)", type: "bank", ok: app.income >= rent * 0.4 },
+    { k: "Employment verified", doc: "Letter of employment", type: "employment", ok: true },
+    { k: "Guarantor provided", doc: "Guarantor undertaking", type: "guarantor", ok: h % 5 !== 0 },
+    { k: "Previous landlord reference", doc: "Landlord reference", type: "reference", ok: h % 4 !== 0 },
+    { k: "KYC (BVN / NIN)", doc: "Identity verification", type: "kyc", ok: true },
+    { k: "Advance-rent capacity", doc: "Proof of funds", type: "funds", ok: h % 3 !== 0 }
+  ];
+}
+function DocRow({ children }) { return <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid var(--cream-line)", fontSize: 13 }}>{children}</div>; }
+function docBody(type, app, p, rent) {
+  const h = hashStr(app.id);
+  const salaryM = Math.round(app.income / 12);
+  const emp = EMPLOYERS[h % EMPLOYERS.length];
+  const gua = GUARANTOR_NAMES[h % GUARANTOR_NAMES.length];
+  const nin = String(21000000000 + (h % 8999999999));
+  const bvn = String(22000000000 + ((h * 7) % 7999999999));
+  if (type === "bank") return <div>
+    <div style={{ fontWeight: 700, color: "var(--ink)" }}>First Bank of Nigeria</div>
+    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Statement of account · {app.tenant}</div>
+    <DocRow><span style={{ color: "var(--muted)" }}>Salary credit</span><b style={{ color: "#1F9D57" }}>+{money(salaryM)}</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Salary credit</span><b style={{ color: "#1F9D57" }}>+{money(salaryM)}</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Card & transfers</span><b>-{money(Math.round(salaryM * .5))}</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Average monthly inflow</span><b>{money(salaryM)}</b></DocRow>
+    <div style={{ marginTop: 10, fontWeight: 700, color: "var(--ink)" }}>Closing balance: {money(salaryM * 2)}</div>
+  </div>;
+  if (type === "employment") return <div>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Letter of Employment</div>
+    <p style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6 }}>This is to confirm that {app.tenant} is employed at {emp} and earns a gross monthly salary of {money(salaryM)}. Their employment is confirmed and in good standing.</p>
+    <div style={{ marginTop: 14, fontSize: 13, color: "var(--muted)" }}>Human Resources, {emp}</div>
+  </div>;
+  if (type === "guarantor") return <div>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Guarantor Undertaking</div>
+    <DocRow><span style={{ color: "var(--muted)" }}>Guarantor</span><b>{gua}</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Relationship</span><b>Employer / colleague</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Occupation</span><b>Senior manager</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Address</span><b>Ikoyi, Lagos</b></DocRow>
+    <p style={{ fontSize: 13, color: "var(--ink)", marginTop: 10, lineHeight: 1.6 }}>I agree to stand as guarantor for {app.tenant} and accept liability in the event of default.</p>
+  </div>;
+  if (type === "reference") return <div>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Previous Landlord Reference</div>
+    <p style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6 }}>{app.tenant} rented from me for two years. Rent was paid promptly each cycle and the property was kept in excellent condition. I recommend them without reservation.</p>
+    <div style={{ marginTop: 14, fontSize: 13, color: "var(--muted)" }}>Former landlord · +234 803 000 0000</div>
+  </div>;
+  if (type === "kyc") return <div>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Identity Verification</div>
+    <DocRow><span style={{ color: "var(--muted)" }}>Full name</span><b>{app.tenant}</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>NIN</span><b>••• ••• {nin.slice(-4)}</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>BVN</span><b>•••••• {bvn.slice(-4)}</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Status</span><b style={{ color: "#1F9D57" }}>Verified via NIMC / BVN</b></DocRow>
+  </div>;
+  return <div>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Proof of Funds</div>
+    <DocRow><span style={{ color: "var(--muted)" }}>Bank</span><b>GTBank</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Available balance</span><b style={{ color: "#1F9D57" }}>{money(Math.round(rent * 1.2))}</b></DocRow>
+    <DocRow><span style={{ color: "var(--muted)" }}>Advance rent required</span><b>{money(rent)}</b></DocRow>
+    <p style={{ fontSize: 13, color: "var(--ink)", marginTop: 10 }}>Funds are sufficient to cover the advance rent.</p>
+  </div>;
+}
+function DocViewer({ app, p, check, onClose }) {
+  const rent = p ? p.rent : 0;
+  return <PmModal title={check.doc} onClose={onClose}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+      <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{check.doc}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{app.tenant} · {check.k}</div></div>
+      <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: check.ok ? "rgba(31,157,87,.14)" : "var(--gold-soft)", color: check.ok ? "#1F9D57" : "var(--gold-2)" }}>{check.ok ? "Received" : "Awaiting upload"}</span>
+    </div>
+    <div style={{ background: "#fff", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 20, minHeight: 120 }}>
+      {check.ok ? docBody(check.type, app, p, rent) : <div style={{ color: "var(--muted)", textAlign: "center", padding: "34px 0" }}>This document has not been uploaded yet.</div>}
+    </div>
+    <div style={{ marginTop: 10, fontSize: 11.5, color: "var(--muted)" }}>Sample document shown for demonstration.</div>
+  </PmModal>;
+}
 function ApplicationsScreen({ st, setSt, toast }) {
   const [lease, setLease] = useState(null);
   const [review, setReview] = useState(null);
   const act = (id, status) => { setSt({ ...st, applications: st.applications.map(a => a.id === id ? { ...a, status } : a) }); toast("Application " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
   const onAct = (id, s) => { act(id, s); setReview(null); };
   return <div>
-    <H2 title="Applications" sub="Review tenant applications, screening results and approve" />
+    <H2 title="Applications" sub="Review tenant documents and approve" />
     <PmCard pad={0} style={{ overflow: "hidden" }}>
       <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
-        <thead><tr style={{ background: "var(--ivory)" }}>{["Applicant", "Property", "Income", "Score", "Status", "Actions"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
-        <tbody>{st.applications.map(a => { const p = propOf(st, a.property); return <tr key={a.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
+        <thead><tr style={{ background: "var(--ivory)" }}>{["Applicant", "Property", "Income", "Documents", "Status", "Actions"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
+        <tbody>{st.applications.map(a => { const p = propOf(st, a.property); const chk = appChecks(a, p ? p.rent : 0); const got = chk.filter(c => c.ok).length; return <tr key={a.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
           <td style={{ padding: "13px 16px" }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>{a.tenant}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{a.note}</div></td>
           <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{p ? p.title : a.property}<div style={{ fontSize: 11.5, color: "var(--muted)" }}>{p ? p.area : ""}</div></td>
           <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{money(a.income)}</td>
-          <td style={{ padding: "13px 16px" }}><b style={{ color: a.score > 720 ? "#1F9D57" : a.score > 650 ? "#E0A106" : "#D0453B" }}>{a.score}</b></td>
+          <td style={{ padding: "13px 16px" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: got === chk.length ? "#1F9D57" : "var(--gold-2)" }}><FileText size={14} />{got}/{chk.length}</span></td>
           <td style={{ padding: "13px 16px" }}><PmPill label={a.status} /></td>
           <td style={{ padding: "13px 16px" }}>{a.status === "Approved" ? <PmBtn size="sm" kind="gold" icon={FileText} onClick={() => setLease(a)}>Generate lease</PmBtn> : a.status === "Rejected" ? <span style={{ color: "var(--muted)", fontSize: 12.5 }}>Closed</span> : <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={Search} onClick={() => setReview(a)}>Review</PmBtn><PmBtn size="sm" onClick={() => act(a.id, "Approved")}>Approve</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => act(a.id, "Rejected")}>Reject</PmBtn></div>}</td>
         </tr>; })}</tbody>
@@ -1303,20 +1380,22 @@ function ApplicationsScreen({ st, setSt, toast }) {
 function ReviewModal({ st, app, onClose, onAct }) {
   const p = propOf(st, app.property);
   const rent = p ? p.rent : 0;
-  const checks = [
-    { k: "Affordability", ok: app.income >= rent * 0.4, d: money(app.income) + " income" },
-    { k: "Credit score", ok: app.score > 650, d: String(app.score) },
-    { k: "Employment", ok: true, d: "Verified" },
-    { k: "References", ok: app.score > 620, d: app.score > 620 ? "2 provided" : "Pending" }
-  ];
+  const checks = appChecks(app, rent);
+  const [doc, setDoc] = useState(null);
+  const got = checks.filter(c => c.ok).length;
   return <PmModal title={"Review application"} onClose={onClose}>
     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-      <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " · " + p.area : app.property}</div></div>
-      <div style={{ textAlign: "right" }}><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Screening score</div><div className="serif" style={{ fontSize: 26, fontWeight: 600, color: app.score > 720 ? "#1F9D57" : app.score > 650 ? "#E0A106" : "#D0453B" }}>{app.score}</div></div>
+      <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " · " + p.area : app.property} · Income {money(app.income)}</div></div>
+      <div style={{ textAlign: "right" }}><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Documents</div><div className="serif" style={{ fontSize: 22, fontWeight: 600, color: got === checks.length ? "#1F9D57" : "var(--gold-2)" }}>{got}/{checks.length}</div></div>
     </div>
     {app.note && <div style={{ background: "var(--ivory)", borderRadius: 8, padding: 12, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>{app.note}</div>}
-    <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 18 }}>{checks.map(c => <div key={c.k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5 }}><span style={{ width: 20, height: 20, borderRadius: 999, background: c.ok ? "rgba(31,157,87,.14)" : "rgba(208,69,59,.14)", color: c.ok ? "#1F9D57" : "#D0453B", display: "grid", placeItems: "center", flexShrink: 0 }}>{c.ok ? <Check size={13} /> : <X size={13} />}</span><b style={{ color: "var(--ink)" }}>{c.k}</b><span style={{ color: "var(--muted)", marginLeft: "auto" }}>{c.d}</span></div>)}</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>{checks.map(c => <div key={c.k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, padding: "8px 10px", background: "var(--ivory-2)", borderRadius: 8 }}>
+      <span style={{ width: 20, height: 20, borderRadius: 999, background: c.ok ? "rgba(31,157,87,.15)" : "rgba(184,147,74,.18)", color: c.ok ? "#1F9D57" : "var(--gold-2)", display: "grid", placeItems: "center", flexShrink: 0 }}>{c.ok ? <Check size={13} /> : <Clock size={12} />}</span>
+      <div style={{ minWidth: 0 }}><b style={{ color: "var(--ink)" }}>{c.k}</b><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{c.doc}</div></div>
+      <button onClick={() => setDoc(c)} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid var(--cream-line)", borderRadius: 7, padding: "5px 10px", cursor: "pointer", color: "var(--ink)", fontSize: 12.5, fontWeight: 600, flexShrink: 0 }}><FileText size={13} /> View</button>
+    </div>)}</div>
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><PmBtn kind="gold" icon={Check} onClick={() => onAct(app.id, "Approved")}>Approve</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "More Info Required")}>Request info</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "Rejected")}>Reject</PmBtn></div>
+    {doc && <DocViewer app={app} p={p} check={doc} onClose={() => setDoc(null)} />}
   </PmModal>;
 }
 function LeaseModal({ st, setSt, app, onClose, toast }) {
