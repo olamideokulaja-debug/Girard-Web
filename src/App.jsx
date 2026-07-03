@@ -18,24 +18,24 @@ import { createClient } from "@supabase/supabase-js";
 
 const REGIONS = {
   Nigeria: {
-    cur: "‚Ç¶", tag: "Lagos & Abuja",
+    cur: "₦", tag: "Lagos & Abuja",
     line: "A 30-property Lagos portfolio under management, opening to landlords across Nigeria.",
     listings: [
-      { title: "4-Bed Detached Duplex", place: "Lekki Phase 1, Lagos", price: "‚Ç¶8.4M / yr", kind: "To let" },
-      { title: "3-Bed Apartment", place: "Ikoyi, Lagos", price: "‚Ç¶11.2M / yr", kind: "To let" },
-      { title: "5-Bed Duplex", place: "Maitama, Abuja", price: "‚Ç¶350M", kind: "For swap" },
-      { title: "2-Bed Flat", place: "Yaba, Lagos", price: "‚Ç¶3.0M / yr", kind: "To let" }
+      { title: "4-Bed Detached Duplex", place: "Lekki Phase 1, Lagos", price: "₦8.4M / yr", kind: "To let" },
+      { title: "3-Bed Apartment", place: "Ikoyi, Lagos", price: "₦11.2M / yr", kind: "To let" },
+      { title: "5-Bed Duplex", place: "Maitama, Abuja", price: "₦350M", kind: "For swap" },
+      { title: "2-Bed Flat", place: "Yaba, Lagos", price: "₦3.0M / yr", kind: "To let" }
     ],
     instr: ["New instruction: 4-Bed in Magodo, Lagos", "New instruction: Penthouse on Victoria Island", "New swap: Abuja terrace seeking London"]
   },
   UK: {
-    cur: "¬£", tag: "London & regions",
+    cur: "£", tag: "London & regions",
     line: "Cross-border management and swaps between the United Kingdom and Nigeria.",
     listings: [
-      { title: "3-Bed Flat, Zone 2", place: "Islington, London", price: "¬£2,950 / mo", kind: "To let" },
-      { title: "4-Bed Semi", place: "Didsbury, Manchester", price: "¬£720,000", kind: "For swap" },
-      { title: "2-Bed Conversion", place: "Clifton, Bristol", price: "¬£1,650 / mo", kind: "To let" },
-      { title: "Georgian Townhouse", place: "Bath", price: "¬£410,000", kind: "For swap" }
+      { title: "3-Bed Flat, Zone 2", place: "Islington, London", price: "£2,950 / mo", kind: "To let" },
+      { title: "4-Bed Semi", place: "Didsbury, Manchester", price: "£720,000", kind: "For swap" },
+      { title: "2-Bed Conversion", place: "Clifton, Bristol", price: "£1,650 / mo", kind: "To let" },
+      { title: "Georgian Townhouse", place: "Bath", price: "£410,000", kind: "For swap" }
     ],
     instr: ["New instruction: 2-Bed in Clapham, London", "New swap: London flat seeking Lagos", "New instruction: Family home, Birmingham"]
   },
@@ -398,7 +398,7 @@ function Landing({ onStart, onSignIn }) {
           <div style={{ padding: "72px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Featured development</div>
             <h2 className="serif" style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>1 Bourdillon Residences</h2>
-            <div style={{ color: "var(--gold-soft)", fontWeight: 600, marginTop: 8, letterSpacing: 1, fontSize: 13 }}>IKOYI, LAGOS ¬∑ AN ADDRESS OF DISTINCTION</div>
+            <div style={{ color: "var(--gold-soft)", fontWeight: 600, marginTop: 8, letterSpacing: 1, fontSize: 13 }}>IKOYI, LAGOS · AN ADDRESS OF DISTINCTION</div>
             <p style={{ color: "rgba(255,255,255,.74)", fontSize: 15.5, lineHeight: 1.7, margin: "18px 0 24px", maxWidth: 460 }}>A refined expression of vertical luxury: 40 bespoke residences with panoramic water views, floor-to-ceiling glazing, a rooftop infinity pool and round-the-clock concierge.</p>
             <div style={{ display: "flex", gap: 28, marginBottom: 26, flexWrap: "wrap" }}>
               {[["40", "Bespoke units"], ["110m", "Max height"], ["2,039", "sq.m plot"]].map(([n, l]) => <div key={l}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--gold)" }}>{n}</div><div style={{ fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>{l}</div></div>)}
@@ -762,7 +762,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
           <div style={{ position: "relative", marginBottom: 12 }}><Mail size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} /></div>
           {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{err}</div>}
-          <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", opacity: busy ? .7 : 1, marginTop: 4 }}>{busy ? "Please wait‚Ä¶" : isSignup ? "Create account" : "Sign in"} <ArrowUpRight size={16} /></button>
+          <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", opacity: busy ? .7 : 1, marginTop: 4 }}>{busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"} <ArrowUpRight size={16} /></button>
           <div style={{ textAlign: "center", marginTop: 18, fontSize: 13.5, color: "rgba(255,255,255,.65)" }}>
             {isSignup ? "Already have an account? " : "New to Girard? "}
             <a href="#" onClick={e => { e.preventDefault(); onToggle(); }} style={{ color: "var(--gold)", fontWeight: 600 }}>{isSignup ? "Sign in" : "Create one"}</a>
@@ -970,7 +970,7 @@ const PM_KEY = "girard_pm_v3";
 function pmLoad() { try { const r = localStorage.getItem(PM_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = pmSeed(); try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 function pmSave(s) { try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} }
 
-const money = (a, c) => (c || "‚Ç¶") + Number(a || 0).toLocaleString("en-NG");
+const money = (a, c) => (c || "₦") + Number(a || 0).toLocaleString("en-NG");
 const propOf = (st, id) => st.properties.find(p => p.id === id);
 
 async function aiProxy(prompt, system) {
@@ -985,12 +985,12 @@ async function aiProxy(prompt, system) {
 }
 async function aiRent({ type, area, beds, amenities }) {
   const annual = baseRent(area, +beds || 0);
-  const proxy = await aiProxy(`In one sentence, explain why an annual rent near ‚Ç¶${annual.toLocaleString()} is competitive for a ${beds}-bed ${type} in ${area}, Lagos with amenities ${(amenities || []).join(", ") || "standard"}. No preamble.`);
+  const proxy = await aiProxy(`In one sentence, explain why an annual rent near ₦${annual.toLocaleString()} is competitive for a ${beds}-bed ${type} in ${area}, Lagos with amenities ${(amenities || []).join(", ") || "standard"}. No preamble.`);
   const rationale = proxy.ok ? proxy.text : `Based on comparable ${beds}-bed ${type.toLowerCase()} listings in ${area} and its amenity profile, this sits within the prevailing market band.`;
   return { annual, monthly: Math.round(annual / 12), rationale, offline: !proxy.ok };
 }
 async function aiLease({ tenant, prop }) {
-  const proxy = await aiProxy(`Draft a concise residential tenancy agreement (about 160 words) under Nigerian tenancy law. Landlord: Girard Property Estate Limited. Tenant: ${tenant}. Property: ${prop.title} at ${prop.address}. Annual rent: ‚Ç¶${prop.rent.toLocaleString()}. Term: 12 months from 1 August 2026. Include parties, rent, term and three standard obligations. Plain text, no markdown.`);
+  const proxy = await aiProxy(`Draft a concise residential tenancy agreement (about 160 words) under Nigerian tenancy law. Landlord: Girard Property Estate Limited. Tenant: ${tenant}. Property: ${prop.title} at ${prop.address}. Annual rent: ₦${prop.rent.toLocaleString()}. Term: 12 months from 1 August 2026. Include parties, rent, term and three standard obligations. Plain text, no markdown.`);
   if (proxy.ok) return { text: proxy.text, offline: false };
   return {
     offline: true,
@@ -1045,8 +1045,8 @@ function PmModal({ title, onClose, children, wide }) {
 }
 function AiPanel({ loading, offline, children }) {
   return <div style={{ background: "var(--gold-soft)", border: "1px solid var(--gold)", borderRadius: 10, padding: 14 }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold-2)", fontWeight: 700, fontSize: 12.5, marginBottom: 8 }}><Sparkles size={14} /> AI Engine{offline ? <span style={{ color: "var(--muted)", fontWeight: 600 }}> ¬∑ offline estimate</span> : null}</div>
-    {loading ? <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--muted)", fontSize: 13 }}><Loader2 size={15} className="spin" /> Analysing market data‚Ä¶</div> : children}</div>;
+    <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold-2)", fontWeight: 700, fontSize: 12.5, marginBottom: 8 }}><Sparkles size={14} /> AI Engine{offline ? <span style={{ color: "var(--muted)", fontWeight: 600 }}> · offline estimate</span> : null}</div>
+    {loading ? <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--muted)", fontSize: 13 }}><Loader2 size={15} className="spin" /> Analysing market data…</div> : children}</div>;
 }
 function HouseArt({ hue = 200, status, h = 140, photo }) {
   const [ok, setOk] = useState(!!photo);
@@ -1108,28 +1108,28 @@ function OwnerDash({ st, identity }) {
   const occData = [{ name: "Leased", v: leased, c: "#10B981" }, { name: "Available", v: st.properties.length - leased, c: "#F59E0B" }];
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
   const activity = [
-    { icon: Users, t: "New application ¬∑ 3-Bed Ikoyi", s: "12m ago" },
-    { icon: Wallet, t: "Rent received ¬∑ INV-9001", s: "1h ago" },
-    { icon: Wrench, t: "Ticket resolved ¬∑ Living room AC", s: "3h ago" },
-    { icon: Building2, t: "New instruction ¬∑ Penthouse VI", s: "Yesterday" }
+    { icon: Users, t: "New application · 3-Bed Ikoyi", s: "12m ago" },
+    { icon: Wallet, t: "Rent received · INV-9001", s: "1h ago" },
+    { icon: Wrench, t: "Ticket resolved · Living room AC", s: "3h ago" },
+    { icon: Building2, t: "New instruction · Penthouse VI", s: "Yesterday" }
   ];
   return <div>
     <H2 title={"Good day, " + identity.firstName} sub="Girard-managed portfolio at a glance" right={<span style={{ color: "var(--muted)", fontSize: 13 }}>{today}</span>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
-      <CStat icon={Wallet} label="Monthly income" value="‚Ç¶83.4M" sub="‚ñ≤ 6.4% vs May" c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={Wallet} label="Monthly income" value="₦83.4M" sub="▲ 6.4% vs May" c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={Building2} label="Properties" value={String(st.properties.length)} sub="Under management" c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={Home} label="Occupancy" value={occ + "%"} sub={leased + " leased"} c="#10B981" bg="#E7F7F0" />
       <CStat icon={Wrench} label="Open tickets" value={String(st.tickets.filter(t => t.status !== "Resolved").length)} sub="1 emergency" c="#F59E0B" bg="#FEF4E3" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
       <PmCard>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>Rental income trend</div><span style={{ fontSize: 12, color: "var(--muted)" }}>‚Ç¶ millions</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>Rental income trend</div><span style={{ fontSize: 12, color: "var(--muted)" }}>₦ millions</span></div>
         <MiniArea data={income} w={720} h={230} color="#6366F1" fill="#3B82F6" />
       </PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Occupancy</div><div style={{ display: "flex", alignItems: "center", gap: 14 }}><MiniDonut data={occData} size={150} /><Legend items={occData} /></div></PmCard>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }} className="pm-grid2">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Rent by area (‚Ç¶M)</div><MiniBars data={byArea} w={640} h={210} colors={CHART_COLORS} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Rent by area (₦M)</div><MiniBars data={byArea} w={640} h={210} colors={CHART_COLORS} /></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Recent activity</div><div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{activity.map((a, i) => { const cc = CHART_COLORS[i % CHART_COLORS.length]; return <div key={i} style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 32, height: 32, borderRadius: 8, background: cc + "1f", color: cc, display: "grid", placeItems: "center", flexShrink: 0 }}><a.icon size={15} /></div><div style={{ minWidth: 0 }}><div style={{ fontSize: 12.5, color: "var(--ink)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.t}</div><div style={{ fontSize: 11, color: "var(--muted)" }}>{a.s}</div></div></div>; })}</div></PmCard>
     </div>
     <style>{`@media(max-width:900px){.dash-kpi{grid-template-columns:1fr 1fr!important}.pm-grid2{grid-template-columns:1fr!important}}`}</style>
@@ -1150,7 +1150,7 @@ function PropertiesScreen({ st, setSt, identity }) {
         <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} photo={p.img || poolPhoto(p.id)} /></div>
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
-          <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} ¬∑ {p.beds || "Studio"} bed</div>
+          <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}<span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span></div><PmBtn size="sm" onClick={() => setSel(p)}>View</PmBtn></div>
         </div></PmCard>)}
     </div>
@@ -1199,7 +1199,7 @@ function AddPropertyScreen({ st, setSt, toast }) {
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pricing</div>
         {!ai ? <div style={{ color: "var(--muted)", fontSize: 14, padding: "20px 0", textAlign: "center" }}>Enter details, then request an AI recommendation.</div>
           : <><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended annual</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.annual)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Monthly</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthly)}</div></div></div><div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5 }}>{ai.rationale}</div></AiPanel>
-            <div style={{ marginTop: 14 }}><PmField label="Your set rent (‚Ç¶/yr)" value={price} onChange={setPrice} /></div>
+            <div style={{ marginTop: 14 }}><PmField label="Your set rent (₦/yr)" value={price} onChange={setPrice} /></div>
             {price && ai.annual && Math.abs(+price - ai.annual) / ai.annual > 0.15 && <div style={{ color: "#E0A106", fontSize: 12.5, marginTop: 6, display: "flex", gap: 6 }}><AlertTriangle size={14} /> Differs from the AI recommendation by more than 15%. This may affect time-to-let.</div>}
             <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>Submit listing</PmBtn></>}
       </PmCard>
@@ -1220,7 +1220,7 @@ function TenantFind({ st, setSt, identity, toast }) {
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden" }}>
         <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" photo={p.img || poolPhoto(p.id)} /></div>
         <div style={{ padding: 14 }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
-          <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} ¬∑ {p.beds || "Studio"} bed</div>
+          <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}<span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span></div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
         </div></PmCard>)}
     </div>
@@ -1254,12 +1254,12 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
       setResult(r); toast("Application " + r.toLowerCase(), r === "Rejected" ? "danger" : "success");
     }, 1300);
   };
-  return <PmModal title={"Apply ¬∑ " + prop.title} onClose={onClose}>
+  return <PmModal title={"Apply · " + prop.title} onClose={onClose}>
     <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>{["Details", "Documents", "Screening"].map((s, i) => <div key={s} style={{ flex: 1, textAlign: "center", fontSize: 11.5, fontWeight: 700, color: i <= step ? "var(--gold-2)" : "var(--muted)", borderBottom: "3px solid " + (i <= step ? "var(--gold)" : "var(--cream-line)"), paddingBottom: 8 }}>{s}</div>)}</div>
     {step === 0 && <div style={{ display: "grid", gap: 12 }}>
       <PmField label="Full name" value={f.name} onChange={v => setF({ ...f, name: v })} />
       <PmField label="Employer" value={f.employer} onChange={v => setF({ ...f, employer: v })} />
-      <PmField label="Annual income (‚Ç¶)" value={f.income} onChange={v => setF({ ...f, income: v })} placeholder="e.g. 18,000,000" />
+      <PmField label="Annual income (₦)" value={f.income} onChange={v => setF({ ...f, income: v })} placeholder="e.g. 18,000,000" />
       <PmField label="Reference contact" value={f.ref} onChange={v => setF({ ...f, ref: v })} />
       <PmBtn onClick={() => setStep(1)} disabled={!f.name || !f.income}>Continue</PmBtn>
     </div>}
@@ -1267,7 +1267,7 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
       {["Government ID", "Proof of income", "Employment letter"].map(d => <div key={d} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px dashed var(--cream-line)", borderRadius: 9, padding: 13 }}><span style={{ color: "var(--ink)", fontSize: 13.5, fontWeight: 600 }}>{d}</span><PmBtn kind="soft" size="sm" icon={Upload}>Upload</PmBtn></div>)}
       <PmBtn onClick={submit}>Submit application</PmBtn>
     </div>}
-    {step === 2 && <div style={{ textAlign: "center", padding: "10px 0" }}>{!result ? <div style={{ color: "var(--muted)" }}><Loader2 size={30} className="spin" style={{ color: "var(--gold-2)" }} /><div style={{ marginTop: 12, fontWeight: 600 }}>Running automated screening‚Ä¶</div><div style={{ fontSize: 12.5 }}>Credit, rent-to-income and reference checks</div></div>
+    {step === 2 && <div style={{ textAlign: "center", padding: "10px 0" }}>{!result ? <div style={{ color: "var(--muted)" }}><Loader2 size={30} className="spin" style={{ color: "var(--gold-2)" }} /><div style={{ marginTop: 12, fontWeight: 600 }}>Running automated screening…</div><div style={{ fontSize: 12.5 }}>Credit, rent-to-income and reference checks</div></div>
       : <div><div style={{ width: 58, height: 58, borderRadius: 999, margin: "0 auto 12px", display: "grid", placeItems: "center", background: (result === "Approved" ? "#1F9D57" : result === "Rejected" ? "#D0453B" : "#E0A106") + "22" }}>{result === "Approved" ? <Check size={28} color="#1F9D57" /> : result === "Rejected" ? <X size={28} color="#D0453B" /> : <AlertTriangle size={26} color="#E0A106" />}</div>
         <div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{result}</div>
         <div style={{ color: "var(--muted)", fontSize: 13.5, margin: "8px 0 16px", lineHeight: 1.5 }}>{result === "Approved" ? "Your profile meets Girard's criteria. The owner will issue a lease to e-sign." : result === "Rejected" ? "The rent-to-income ratio is outside the acceptable range. Try other properties." : "We need a guarantor's details before final approval."}</div>
@@ -1311,7 +1311,7 @@ function ReviewModal({ st, app, onClose, onAct }) {
   ];
   return <PmModal title={"Review application"} onClose={onClose}>
     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-      <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " ¬∑ " + p.area : app.property}</div></div>
+      <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " · " + p.area : app.property}</div></div>
       <div style={{ textAlign: "right" }}><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Screening score</div><div className="serif" style={{ fontSize: 26, fontWeight: 600, color: app.score > 720 ? "#1F9D57" : app.score > 650 ? "#E0A106" : "#D0453B" }}>{app.score}</div></div>
     </div>
     {app.note && <div style={{ background: "var(--ivory)", borderRadius: 8, padding: 12, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>{app.note}</div>}
@@ -1387,7 +1387,7 @@ function PayModal({ inv, onClose, onPaid }) {
     </div>
     <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Payment gateway</label>
     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["Paystack", "Flutterwave"].map(g => <button key={g} onClick={() => setGw(g)} style={{ flex: 1, border: "1px solid " + (gw === g ? "var(--gold)" : "var(--cream-line)"), background: gw === g ? "var(--gold-soft)" : "transparent", color: gw === g ? "var(--gold-2)" : "var(--muted)", borderRadius: 8, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>{g}</button>)}</div>
-    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} onClick={() => { setLoading(true); setTimeout(onPaid, 1200); }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing‚Ä¶" : "Pay " + money(total) + " via " + gw}</PmBtn>
+    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} onClick={() => { setLoading(true); setTimeout(onPaid, 1200); }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
   </PmModal>;
 }
 
@@ -1399,13 +1399,13 @@ function MaintenanceScreen({ st, setSt, identity, toast }) {
   const move = (id, status, vendor) => { setSt({ ...st, tickets: st.tickets.map(t => t.id === id ? { ...t, status, vendor: vendor || t.vendor } : t) }); toast("Ticket " + status.toLowerCase()); };
   return <div>
     <H2 title="Maintenance" sub={mine ? "Report an issue and track it" : "Assign vendors and resolve tickets"} right={mine ? <PmBtn icon={Plus} onClick={() => setReport(true)}>Report issue</PmBtn> : null} />
-    {mine ? <div style={{ display: "grid", gap: 12 }}>{st.tickets.map(t => { const p = propOf(st, t.property); return <PmCard key={t.id}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}><div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)" }}>{t.category} ¬∑ {p ? p.area : ""}</div><div style={{ color: "var(--muted)", fontSize: 13, marginTop: 3 }}>{t.desc}</div></div><div style={{ display: "flex", gap: 8, alignItems: "center" }}>{t.priority === "Emergency" && <PmPill label="Emergency" />}<PmPill label={t.status} /></div></div></PmCard>; })}</div>
+    {mine ? <div style={{ display: "grid", gap: 12 }}>{st.tickets.map(t => { const p = propOf(st, t.property); return <PmCard key={t.id}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}><div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)" }}>{t.category} · {p ? p.area : ""}</div><div style={{ color: "var(--muted)", fontSize: 13, marginTop: 3 }}>{t.desc}</div></div><div style={{ display: "flex", gap: 8, alignItems: "center" }}>{t.priority === "Emergency" && <PmPill label="Emergency" />}<PmPill label={t.status} /></div></div></PmCard>; })}</div>
       : <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }} className="pm-kanban">{cols.map(c => <div key={c} style={{ background: "var(--ivory)", borderRadius: 12, padding: 12, minHeight: 180 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, alignItems: "center" }}><span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>{c}</span><span style={{ background: "var(--white)", color: "var(--muted)", borderRadius: 999, padding: "2px 9px", fontSize: 11.5, fontWeight: 700 }}>{st.tickets.filter(t => t.status === c).length}</span></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{st.tickets.filter(t => t.status === c).map(t => { const p = propOf(st, t.property); return <PmCard key={t.id} pad={12}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13 }}>{t.category}</span>{t.priority === "Emergency" && <PmPill label="Emergency" />}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, marginBottom: 8, lineHeight: 1.4 }}>{t.desc}</div>
-          <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 8 }}>{p ? p.area : ""} ¬∑ {t.tenant}{t.vendor ? " ¬∑ " + t.vendor : ""}</div>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 8 }}>{p ? p.area : ""} · {t.tenant}{t.vendor ? " · " + t.vendor : ""}</div>
           {t.status === "Open" && <PmBtn size="sm" onClick={() => move(t.id, "Assigned", "PowerFix Ltd")}>Assign vendor</PmBtn>}
           {t.status === "Assigned" && <PmBtn size="sm" kind="soft" onClick={() => move(t.id, "Resolved")}>Mark resolved</PmBtn>}
           {t.status === "Resolved" && <PmBtn size="sm" kind="ghost" onClick={() => move(t.id, "Open")}>Reopen</PmBtn>}
@@ -1425,7 +1425,7 @@ function ReportModal({ st, setSt, identity, onClose, toast }) {
   return <PmModal title="Report maintenance issue" onClose={onClose}>
     <div style={{ display: "grid", gap: 14 }}>
       <PmSelect label="Category" value={cat} onChange={setCat} options={["Plumbing", "Electrical", "AC / HVAC", "Structural", "Appliance", "Other"]} />
-      <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Description</label><textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="Describe the issue‚Ä¶" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: 12, color: "var(--ink)", fontSize: 14, fontFamily: "inherit", resize: "vertical" }} /></div>
+      <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Description</label><textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="Describe the issue…" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: 12, color: "var(--ink)", fontSize: 14, fontFamily: "inherit", resize: "vertical" }} /></div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px dashed var(--cream-line)", borderRadius: 9, padding: 12 }}><span style={{ color: "var(--ink)", fontSize: 13.5, fontWeight: 600 }}>Attach photo</span><PmBtn kind="soft" size="sm" icon={Upload}>Upload</PmBtn></div>
       <label style={{ display: "flex", gap: 9, alignItems: "center", color: "var(--ink)", fontSize: 13.5, cursor: "pointer" }}><input type="checkbox" checked={emergency} onChange={e => setEmergency(e.target.checked)} /> Flag as emergency (safety at risk)</label>
       {emergency && <div style={{ color: "#D0453B", fontSize: 12.5, display: "flex", gap: 6 }}><AlertTriangle size={15} /> For gas leaks or severe hazards call the 24hr line: 0700 GIRARD</div>}
@@ -1512,7 +1512,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       <header style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace ¬∑ Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services ¬∑ Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders ¬∑ Automatic" : "Digital Property Management ¬∑ Lagos"}</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1564,25 +1564,25 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
    title transfer to completion, with handover into management.
    =================================================================== */
 
-const FX = { "‚Ç¶": 1 / 1600, "¬£": 1.27, "$": 1 };
+const FX = { "₦": 1 / 1600, "£": 1.27, "$": 1 };
 const toUSD = (v, cur) => Math.round((+v || 0) * (FX[cur] || 1));
 const usd = (v) => "$" + Number(v || 0).toLocaleString("en-US");
-const CUR_OF = { Nigeria: "‚Ç¶", UK: "¬£", US: "$" };
+const CUR_OF = { Nigeria: "₦", UK: "£", US: "$" };
 
 function swSeed() {
   return {
     listings: [
-      { id: "SW-01", owner: "Girard Client A", city: "Lagos", country: "Nigeria", currency: "‚Ç¶", value: 480000000, type: "5-Bed Detached Duplex", seeking: "London or Manchester, UK", verified: true, hue: 205 },
-      { id: "SW-02", owner: "H. Whitmore", city: "London", country: "UK", currency: "¬£", value: 720000, type: "3-Bed Flat, Zone 2", seeking: "Lagos, Nigeria", verified: true, hue: 218 },
-      { id: "SW-03", owner: "M. Adeleke", city: "Abuja", country: "Nigeria", currency: "‚Ç¶", value: 350000000, type: "4-Bed Terrace", seeking: "New York or Atlanta, US", verified: true, hue: 198 },
+      { id: "SW-01", owner: "Girard Client A", city: "Lagos", country: "Nigeria", currency: "₦", value: 480000000, type: "5-Bed Detached Duplex", seeking: "London or Manchester, UK", verified: true, hue: 205 },
+      { id: "SW-02", owner: "H. Whitmore", city: "London", country: "UK", currency: "£", value: 720000, type: "3-Bed Flat, Zone 2", seeking: "Lagos, Nigeria", verified: true, hue: 218 },
+      { id: "SW-03", owner: "M. Adeleke", city: "Abuja", country: "Nigeria", currency: "₦", value: 350000000, type: "4-Bed Terrace", seeking: "New York or Atlanta, US", verified: true, hue: 198 },
       { id: "SW-04", owner: "J. Carter", city: "New York", country: "US", currency: "$", value: 610000, type: "2-Bed Condo, Brooklyn", seeking: "Lagos or Abuja, Nigeria", verified: true, hue: 210 },
-      { id: "SW-05", owner: "R. Okafor", city: "Lagos", country: "Nigeria", currency: "‚Ç¶", value: 260000000, type: "3-Bed Apartment, Ikoyi", seeking: "Bristol or Birmingham, UK", verified: false, hue: 190 },
-      { id: "SW-06", owner: "S. Patel", city: "Manchester", country: "UK", currency: "¬£", value: 340000, type: "4-Bed Semi", seeking: "Lagos, Nigeria", verified: true, hue: 222 },
+      { id: "SW-05", owner: "R. Okafor", city: "Lagos", country: "Nigeria", currency: "₦", value: 260000000, type: "3-Bed Apartment, Ikoyi", seeking: "Bristol or Birmingham, UK", verified: false, hue: 190 },
+      { id: "SW-06", owner: "S. Patel", city: "Manchester", country: "UK", currency: "£", value: 340000, type: "4-Bed Semi", seeking: "Lagos, Nigeria", verified: true, hue: 222 },
       { id: "SW-07", owner: "D. Thompson", city: "Austin", country: "US", currency: "$", value: 540000, type: "3-Bed House", seeking: "Abuja, Nigeria", verified: true, hue: 206 },
-      { id: "SW-08", owner: "K. Ibrahim", city: "Lagos", country: "Nigeria", currency: "‚Ç¶", value: 520000000, type: "Penthouse, Victoria Island", seeking: "Miami or New York, US", verified: true, hue: 200 },
-      { id: "SW-09", owner: "L. Bennett", city: "Bristol", country: "UK", currency: "¬£", value: 410000, type: "Georgian Townhouse", seeking: "Lagos, Nigeria", verified: true, hue: 224 },
+      { id: "SW-08", owner: "K. Ibrahim", city: "Lagos", country: "Nigeria", currency: "₦", value: 520000000, type: "Penthouse, Victoria Island", seeking: "Miami or New York, US", verified: true, hue: 200 },
+      { id: "SW-09", owner: "L. Bennett", city: "Bristol", country: "UK", currency: "£", value: 410000, type: "Georgian Townhouse", seeking: "Lagos, Nigeria", verified: true, hue: 224 },
       { id: "SW-10", owner: "G. Alvarez", city: "Miami", country: "US", currency: "$", value: 690000, type: "Waterfront Condo", seeking: "Lagos, Nigeria", verified: false, hue: 208 },
-      { id: "SW-11", owner: "T. Balogun", city: "Abuja", country: "Nigeria", currency: "‚Ç¶", value: 300000000, type: "4-Bed Duplex, Maitama", seeking: "Birmingham, UK", verified: true, hue: 192 }
+      { id: "SW-11", owner: "T. Balogun", city: "Abuja", country: "Nigeria", currency: "₦", value: 300000000, type: "4-Bed Duplex, Maitama", seeking: "Birmingham, UK", verified: true, hue: 192 }
     ],
     deals: [
       { id: "DL-01", a: "Lagos 5-Bed Duplex", aCountry: "Nigeria", b: "London 3-Bed Flat", bCountry: "UK", stage: 6, cash: 240000, owed: "Owner A" },
@@ -1612,7 +1612,7 @@ const STAGE_DESC = [
 ];
 
 async function aiValue({ type, city, country, value }) {
-  const cur = CUR_OF[country] || "‚Ç¶";
+  const cur = CUR_OF[country] || "₦";
   const local = +String(value).replace(/\D/g, "") || (country === "Nigeria" ? 300000000 : country === "UK" ? 450000 : 550000);
   const proxy = await aiProxy(`In one sentence, justify a market value near ${cur}${local.toLocaleString()} for a ${type || "property"} in ${city || "the area"}, ${country}. No preamble.`);
   return { local, usd: toUSD(local, cur), cur, rationale: proxy.ok ? proxy.text : `Based on comparable ${(type || "property").toLowerCase()} sales in ${city || country}, this value sits within the local market range.`, offline: !proxy.ok };
@@ -1640,7 +1640,7 @@ function SwapBrowse({ sw, setSw, toast }) {
   const [sel, setSel] = useState(null);
   const list = sw.listings.filter(l => country === "All" || l.country === country);
   return <div>
-    <H2 title="Browse swaps" sub={list.length + " listings ¬∑ values shown locally and in USD"} right={<div style={{ width: 180 }}><PmSelect value={country} onChange={setCountry} options={["All", "Nigeria", "UK", "US"]} /></div>} />
+    <H2 title="Browse swaps" sub={list.length + " listings · values shown locally and in USD"} right={<div style={{ width: 180 }}><PmSelect value={country} onChange={setCountry} options={["All", "Nigeria", "UK", "US"]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 16 }}>
       {list.map(l => <PmCard key={l.id} pad={0} style={{ overflow: "hidden" }}>
         <SwapCardArt hue={l.hue} verified={l.verified} photo={poolPhoto(l.id)} />
@@ -1648,7 +1648,7 @@ function SwapBrowse({ sw, setSw, toast }) {
           <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{l.type}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{l.city}, {l.country}</div>
           <div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(l.value, l.currency)}</div>
-          <div style={{ color: "var(--muted)", fontSize: 12 }}>‚âà {usd(toUSD(l.value, l.currency))}</div>
+          <div style={{ color: "var(--muted)", fontSize: 12 }}>≈ {usd(toUSD(l.value, l.currency))}</div>
           <div style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0", display: "flex", gap: 5, alignItems: "center" }}><Repeat size={13} color="var(--gold-2)" /> Seeking: {l.seeking}</div>
           <PmBtn size="sm" style={{ width: "100%", justifyContent: "center" }} onClick={() => setSel(l)}>View &amp; match</PmBtn>
         </div>
@@ -1748,14 +1748,14 @@ function ThreadModal({ match, onClose }) {
   const endRef = useRef(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
   const send = () => { if (!input.trim()) return; setMsgs(x => [...x, { me: true, text: input }]); setInput(""); };
-  return <PmModal title={"Chat ¬∑ owner of " + match.type} onClose={onClose}>
+  return <PmModal title={"Chat · owner of " + match.type} onClose={onClose}>
     <div style={{ display: "flex", flexDirection: "column", height: 340 }}>
       <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
         {msgs.map((m, i) => <div key={i} style={{ alignSelf: m.me ? "flex-end" : "flex-start", maxWidth: "80%", background: m.me ? "var(--navy)" : "var(--ivory)", color: m.me ? "#fff" : "var(--ink)", padding: "10px 13px", borderRadius: 12, fontSize: 13.5, lineHeight: 1.5 }}>{m.text}</div>)}
         <div ref={endRef} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder="Type a message‚Ä¶" style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 13.5 }} />
+        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder="Type a message…" style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 13.5 }} />
         <PmBtn icon={Send} onClick={send}>Send</PmBtn>
       </div>
     </div>
@@ -1776,11 +1776,11 @@ function SwapDeals({ sw, setSw, identity, toast }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {sw.deals.map(d => <PmCard key={d.id}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", display: "flex", gap: 8, alignItems: "center" }}>{d.a} <ArrowRightLeft size={15} color="var(--gold-2)" /> {d.b}</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{d.id} ¬∑ cash difference {usd(d.cash)} owed to {d.owed}</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", display: "flex", gap: 8, alignItems: "center" }}>{d.a} <ArrowRightLeft size={15} color="var(--gold-2)" /> {d.b}</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{d.id} · cash difference {usd(d.cash)} owed to {d.owed}</div></div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}><PmPill label={d.stage >= 11 ? "Completed" : d.stage >= 6 ? "In Escrow" : "In Negotiation"} /><PmBtn size="sm" onClick={() => setOpen(d)}>Manage</PmBtn></div>
         </div>
         <div style={{ marginTop: 12, display: "flex", gap: 4 }}>{SWAP_STAGES.map((s, i) => <div key={i} title={s} style={{ flex: 1, height: 6, borderRadius: 3, background: i <= d.stage ? "var(--gold)" : "var(--cream-line)" }} />)}</div>
-        <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>Stage {d.stage + 1}/12 ¬∑ {SWAP_STAGES[d.stage]}</div>
+        <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>Stage {d.stage + 1}/12 · {SWAP_STAGES[d.stage]}</div>
       </PmCard>)}
     </div>
     {open && <SwapWizard deal={open} onClose={() => setOpen(null)} onAdvance={() => advance(open)} onCancel={cancel} />}
@@ -1789,7 +1789,7 @@ function SwapDeals({ sw, setSw, identity, toast }) {
 
 function SwapWizard({ deal, onClose, onAdvance, onCancel }) {
   const StageIcon = [Scale, ShieldCheck, FileText, Gavel, ClipboardCheck, Handshake, Banknote, FileText, PenLine, Building2, Banknote, CheckCircle2][deal.stage];
-  return <PmModal title={deal.id + " ¬∑ " + SWAP_STAGES[deal.stage]} onClose={onClose} wide>
+  return <PmModal title={deal.id + " · " + SWAP_STAGES[deal.stage]} onClose={onClose} wide>
     <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
       {SWAP_STAGES.map((s, i) => <div key={i} style={{ width: 22, height: 22, borderRadius: 999, display: "grid", placeItems: "center", background: i < deal.stage ? "#1F9D57" : i === deal.stage ? "var(--gold)" : "var(--cream-line)", color: i <= deal.stage ? (i === deal.stage ? "var(--navy)" : "#fff") : "var(--muted)", fontSize: 11, fontWeight: 800 }}>{i < deal.stage ? <Check size={12} /> : i + 1}</div>)}
     </div>
@@ -1854,18 +1854,18 @@ function seedFeed() {
   sw.listings.slice(0, 6).forEach((l, i) => ev.push({ kind: "swap", market: l.country, text: l.type + " in " + l.city + " seeking " + l.seeking, price: usd(toUSD(l.value, l.currency)), mins: 5 + i * 9 }));
   ev.push({ kind: "application", market: "Nigeria", text: "New application for a 3-Bed in Ikoyi", price: "", mins: 11 });
   ev.push({ kind: "let", market: "Nigeria", text: "Let agreed on a 4-Bed in Lekki", price: "", mins: 18 });
-  ev.push({ kind: "offer", market: "UK", text: "Offer received on a London flat", price: "¬£712,000", mins: 26 });
+  ev.push({ kind: "offer", market: "UK", text: "Offer received on a London flat", price: "£712,000", mins: 26 });
   ev.push({ kind: "price", market: "US", text: "Price update on a Brooklyn condo", price: "$598,000", mins: 34 });
   return ev.sort((a, b) => a.mins - b.mins);
 }
 const LIVE_POOL = [
-  { kind: "instruction", market: "Nigeria", text: "New 2-Bed listed in Yaba", price: "‚Ç¶3.0M/yr" },
+  { kind: "instruction", market: "Nigeria", text: "New 2-Bed listed in Yaba", price: "₦3.0M/yr" },
   { kind: "swap", market: "UK", text: "Manchester semi seeking Lagos", price: "$431,800" },
   { kind: "application", market: "Nigeria", text: "New application for a duplex in Magodo", price: "" },
   { kind: "offer", market: "US", text: "Offer received on an Austin house", price: "$536,000" },
   { kind: "let", market: "Nigeria", text: "Let agreed on a studio in Surulere", price: "" },
   { kind: "swap", market: "US", text: "Miami condo seeking Lagos", price: "$690,000" },
-  { kind: "price", market: "UK", text: "Price update on a Bristol townhouse", price: "¬£405,000" }
+  { kind: "price", market: "UK", text: "Price update on a Bristol townhouse", price: "£405,000" }
 ];
 function ago(m) { return m < 1 ? "just now" : m < 60 ? m + "m ago" : Math.floor(m / 60) + "h ago"; }
 
@@ -1883,10 +1883,10 @@ function LiveFeed({ identity }) {
   return <div>
     <H2 title="Live feed" sub="Instructions, swaps, offers and lets across your markets" right={<div style={{ width: 180 }}><PmSelect value={market} onChange={setMarket} options={["All", "Nigeria", "UK", "US"]} /></div>} />
     <PmCard pad={0} style={{ overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 18px", borderBottom: "1px solid var(--cream-line)", color: "#1F9D57", fontWeight: 700, fontSize: 12.5 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: "#1F9D57", animation: "pulse 1.6s infinite" }} /> Live ¬∑ updating in real time</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 18px", borderBottom: "1px solid var(--cream-line)", color: "#1F9D57", fontWeight: 700, fontSize: 12.5 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: "#1F9D57", animation: "pulse 1.6s infinite" }} /> Live · updating in real time</div>
       {list.map((e, i) => { const K = FEED_KINDS[e.kind]; return <div key={e._id || i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderBottom: i < list.length - 1 ? "1px solid var(--cream-line)" : "none", background: e.mins === 0 ? "var(--gold-soft)" : "transparent", transition: "background .5s" }}>
         <div style={{ width: 38, height: 38, borderRadius: 9, background: K.c + "1f", color: K.c, display: "grid", placeItems: "center", flexShrink: 0 }}><K.icon size={18} /></div>
-        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{e.text}</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}><PmPill label={K.label} /> <span style={{ marginLeft: 6 }}>{e.market} ¬∑ {ago(e.mins)}</span></div></div>
+        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{e.text}</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}><PmPill label={K.label} /> <span style={{ marginLeft: 6 }}>{e.market} · {ago(e.mins)}</span></div></div>
         {e.price && <div style={{ fontWeight: 700, color: "var(--navy)", fontSize: 13.5, whiteSpace: "nowrap" }}>{e.price}</div>}
       </div>; })}
     </PmCard>
@@ -1899,13 +1899,13 @@ const CRM_COLS = ["Lead", "Qualifying", "Negotiation", "Agreed", "Completed"];
 const CRM_KIND_C = { Application: "#2F6FB0", Offer: "#E0A106", Swap: "var(--gold-2)", Lead: "var(--navy)" };
 function crmSeed() {
   const pm = pmLoad(); const sw = swLoad(); const cards = [];
-  pm.applications.forEach((a, i) => { const p = pm.properties.find(x => x.id === a.property); cards.push({ id: "C-A" + i, name: a.tenant, kind: "Application", market: "Nigeria", detail: (p ? p.area : "") + " ¬∑ " + money(a.income), stage: a.status === "Approved" ? 3 : a.status === "Rejected" ? 4 : 1 }); });
-  sw.deals.forEach((d, i) => cards.push({ id: "C-S" + i, name: d.a + " ‚áÑ " + d.b, kind: "Swap", market: d.aCountry, detail: "Cash " + usd(d.cash), stage: d.stage >= 11 ? 4 : d.stage >= 6 ? 3 : 2 }));
-  cards.push({ id: "C-O1", name: "Offer ¬∑ 3-Bed Ikoyi", kind: "Offer", market: "Nigeria", detail: "‚Ç¶11.2M/yr", stage: 2 });
-  cards.push({ id: "C-O2", name: "Offer ¬∑ London flat", kind: "Offer", market: "UK", detail: "¬£712,000", stage: 2 });
-  cards.push({ id: "C-L1", name: "Lead ¬∑ London investor", kind: "Lead", market: "UK", detail: "Seeking Lagos swap", stage: 0 });
-  cards.push({ id: "C-L2", name: "Lead ¬∑ Abuja landlord", kind: "Lead", market: "Nigeria", detail: "2 properties to list", stage: 0 });
-  cards.push({ id: "C-L3", name: "Lead ¬∑ Austin developer", kind: "Lead", market: "US", detail: "Portfolio enquiry", stage: 0 });
+  pm.applications.forEach((a, i) => { const p = pm.properties.find(x => x.id === a.property); cards.push({ id: "C-A" + i, name: a.tenant, kind: "Application", market: "Nigeria", detail: (p ? p.area : "") + " · " + money(a.income), stage: a.status === "Approved" ? 3 : a.status === "Rejected" ? 4 : 1 }); });
+  sw.deals.forEach((d, i) => cards.push({ id: "C-S" + i, name: d.a + " ⇄ " + d.b, kind: "Swap", market: d.aCountry, detail: "Cash " + usd(d.cash), stage: d.stage >= 11 ? 4 : d.stage >= 6 ? 3 : 2 }));
+  cards.push({ id: "C-O1", name: "Offer · 3-Bed Ikoyi", kind: "Offer", market: "Nigeria", detail: "₦11.2M/yr", stage: 2 });
+  cards.push({ id: "C-O2", name: "Offer · London flat", kind: "Offer", market: "UK", detail: "£712,000", stage: 2 });
+  cards.push({ id: "C-L1", name: "Lead · London investor", kind: "Lead", market: "UK", detail: "Seeking Lagos swap", stage: 0 });
+  cards.push({ id: "C-L2", name: "Lead · Abuja landlord", kind: "Lead", market: "Nigeria", detail: "2 properties to list", stage: 0 });
+  cards.push({ id: "C-L3", name: "Lead · Austin developer", kind: "Lead", market: "US", detail: "Portfolio enquiry", stage: 0 });
   return { cards };
 }
 const CRM_KEY = "girard_crm_v1";
@@ -1928,7 +1928,7 @@ function PipelineCRM({ identity, toast }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 12.5, lineHeight: 1.3 }}>{c.name}</span></div>
           <div style={{ margin: "6px 0 8px" }}><span style={{ background: CRM_KIND_C[c.kind] + "1f", color: CRM_KIND_C[c.kind], fontWeight: 700, fontSize: 10.5, padding: "2px 7px", borderRadius: 999 }}>{c.kind}</span> <span style={{ fontSize: 11, color: "var(--muted)" }}>{c.market}</span></div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10 }}>{c.detail}</div>
-          <div style={{ display: "flex", gap: 6 }}>{ci > 0 && <button onClick={() => move(c.id, -1)} style={{ border: "1px solid var(--cream-line)", background: "transparent", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "var(--muted)", fontSize: 12 }}>‚Äπ</button>}{ci < 4 && <button onClick={() => { move(c.id, 1); toast("Moved to " + CRM_COLS[ci + 1]); }} style={{ border: "none", background: "var(--navy)", color: "#fff", borderRadius: 6, padding: "3px 10px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Advance ‚Ä∫</button>}</div>
+          <div style={{ display: "flex", gap: 6 }}>{ci > 0 && <button onClick={() => move(c.id, -1)} style={{ border: "1px solid var(--cream-line)", background: "transparent", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "var(--muted)", fontSize: 12 }}>‹</button>}{ci < 4 && <button onClick={() => { move(c.id, 1); toast("Moved to " + CRM_COLS[ci + 1]); }} style={{ border: "none", background: "var(--navy)", color: "#fff", borderRadius: 6, padding: "3px 10px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Advance ›</button>}</div>
         </PmCard>)}</div>
       </div>)}
     </div>
@@ -1962,7 +1962,7 @@ function ReportsScreen({ identity, toast }) {
       <PmStat icon={Handshake} label="Active swaps" value={String(sw.deals.length)} tone="#E0A106" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Rental income trend (‚Ç¶M)</div><MiniArea data={income} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Rental income trend (₦M)</div><MiniArea data={income} /></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pipeline funnel</div><MiniFunnel data={funnel} /></PmCard>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }} className="pm-grid3">
@@ -1984,7 +1984,7 @@ function ReportsScreen({ identity, toast }) {
 
 const INTEL = {
   Nigeria: {
-    cur: "‚Ç¶",
+    cur: "₦",
     kpis: [{ l: "Avg price growth (12m)", v: "+8.4%", t: "#1F9D57" }, { l: "Avg gross yield", v: "6.2%", t: "var(--muted)" }, { l: "Active listings", v: "1,240", t: "var(--muted)" }, { l: "Planning approvals (Q)", v: "312", t: "var(--muted)" }],
     priceTrend: [{ m: "Q1", v: 100 }, { m: "Q2", v: 103 }, { m: "Q3", v: 106 }, { m: "Q4", v: 105 }, { m: "Q1", v: 109 }, { m: "Q2", v: 112 }],
     yields: [{ m: "Lekki", v: 6.8 }, { m: "Ikoyi", v: 5.4 }, { m: "Yaba", v: 7.1 }, { m: "Ikeja", v: 6.5 }, { m: "Ajah", v: 7.6 }],
@@ -1993,7 +1993,7 @@ const INTEL = {
     localPlans: ["Lagos State regional master plan update in review", "Blue Line rail corridor flagged as value-uplift zone"]
   },
   UK: {
-    cur: "¬£",
+    cur: "£",
     kpis: [{ l: "Avg price growth (12m)", v: "+3.1%", t: "#1F9D57" }, { l: "Avg gross yield", v: "5.1%", t: "var(--muted)" }, { l: "Active listings", v: "3,880", t: "var(--muted)" }, { l: "Planning approvals (Q)", v: "1,204", t: "var(--muted)" }],
     priceTrend: [{ m: "Q1", v: 100 }, { m: "Q2", v: 101 }, { m: "Q3", v: 102 }, { m: "Q4", v: 102 }, { m: "Q1", v: 103 }, { m: "Q2", v: 103 }],
     yields: [{ m: "Manch", v: 6.2 }, { m: "Bristol", v: 5.5 }, { m: "B'ham", v: 6.0 }, { m: "London", v: 4.2 }, { m: "Leeds", v: 6.4 }],
@@ -2052,12 +2052,12 @@ function IntelScreen() {
    =================================================================== */
 
 const SUPPORT = [
-  { key: "conveyancing", name: "Conveyancing", icon: Scale, partner: "Aegis Legal Partners", desc: "Title searches, contracts and completion, handled by vetted solicitors.", from: "‚Ç¶450,000" },
-  { key: "survey", name: "Surveys & valuation", icon: ClipboardCheck, partner: "Meridian Surveyors", desc: "Structural surveys and independent valuations before you commit.", from: "‚Ç¶180,000" },
-  { key: "removals", name: "Removals", icon: Truck, partner: "SwiftMove Logistics", desc: "Packing, transport and unpacking, insured from door to door.", from: "‚Ç¶120,000" },
-  { key: "furnishing", name: "Furnishing & fit-out", icon: Sofa, partner: "Atelier Interiors", desc: "Turnkey furnishing packages and full interior fit-out.", from: "‚Ç¶900,000" },
+  { key: "conveyancing", name: "Conveyancing", icon: Scale, partner: "Aegis Legal Partners", desc: "Title searches, contracts and completion, handled by vetted solicitors.", from: "₦450,000" },
+  { key: "survey", name: "Surveys & valuation", icon: ClipboardCheck, partner: "Meridian Surveyors", desc: "Structural surveys and independent valuations before you commit.", from: "₦180,000" },
+  { key: "removals", name: "Removals", icon: Truck, partner: "SwiftMove Logistics", desc: "Packing, transport and unpacking, insured from door to door.", from: "₦120,000" },
+  { key: "furnishing", name: "Furnishing & fit-out", icon: Sofa, partner: "Atelier Interiors", desc: "Turnkey furnishing packages and full interior fit-out.", from: "₦900,000" },
   { key: "finance", name: "Finance & mortgages", icon: Banknote, partner: "Anchor Capital", desc: "Mortgage sourcing and bridging finance advisory.", from: "On request" },
-  { key: "insurance", name: "Insurance", icon: ShieldCheck, partner: "Fortis Cover", desc: "Buildings, contents and landlord insurance, arranged fast.", from: "‚Ç¶75,000" }
+  { key: "insurance", name: "Insurance", icon: ShieldCheck, partner: "Fortis Cover", desc: "Buildings, contents and landlord insurance, arranged fast.", from: "₦75,000" }
 ];
 const SUP_KEY = "girard_support_v1";
 function supLoad() { try { const r = localStorage.getItem(SUP_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = { requests: [{ id: "SR-01", service: "Conveyancing", partner: "Aegis Legal Partners", status: "In progress", note: "Lekki 4-Bed purchase" }] }; try { localStorage.setItem(SUP_KEY, JSON.stringify(s)); } catch (e) {} return s; }
@@ -2093,7 +2093,7 @@ function SupportServices({ identity, toast }) {
     <PmCard pad={0} style={{ overflow: "hidden" }}>
       {store.requests.length === 0 ? <div style={{ padding: 20, color: "var(--muted)", fontSize: 14 }}>No requests yet. Choose a service above to get started.</div>
         : store.requests.map((r, i) => <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", flexWrap: "wrap", gap: 10 }}>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{r.service} <span style={{ color: "var(--muted)", fontWeight: 500 }}>¬∑ {r.partner}</span></div><div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{r.id}{r.note ? " ¬∑ " + r.note : ""}</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{r.service} <span style={{ color: "var(--muted)", fontWeight: 500 }}>· {r.partner}</span></div><div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{r.id}{r.note ? " · " + r.note : ""}</div></div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}><PmPill label={r.status} />{r.status !== "Completed" && <PmBtn size="sm" kind="ghost" onClick={() => advance(r.id)}>Advance</PmBtn>}</div>
         </div>)}
     </PmCard>
@@ -2102,13 +2102,13 @@ function SupportServices({ identity, toast }) {
 }
 function RequestModal({ svc, onClose, onSubmit }) {
   const [note, setNote] = useState("");
-  return <PmModal title={"Request ¬∑ " + svc.name} onClose={onClose}>
+  return <PmModal title={"Request · " + svc.name} onClose={onClose}>
     <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, background: "var(--ivory)", borderRadius: 10, padding: 14 }}>
       <div style={{ width: 44, height: 44, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", flexShrink: 0 }}><svc.icon size={20} /></div>
-      <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{svc.partner}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Vetted partner ¬∑ from {svc.from}</div></div>
+      <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{svc.partner}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Vetted partner · from {svc.from}</div></div>
     </div>
     <div style={{ marginBottom: 14 }}><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Details (property, timing, requirements)</label>
-      <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} placeholder="Tell the partner what you need‚Ä¶" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: 12, color: "var(--ink)", fontSize: 14, fontFamily: "inherit", resize: "vertical" }} /></div>
+      <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} placeholder="Tell the partner what you need…" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: 12, color: "var(--ink)", fontSize: 14, fontFamily: "inherit", resize: "vertical" }} /></div>
     <PmBtn kind="gold" icon={ConciergeBell} onClick={() => onSubmit(svc, note)}>Send request</PmBtn>
   </PmModal>;
 }
@@ -2129,32 +2129,32 @@ const NOTIFS = [
 ];
 
 const CUR_CODE = { Nigeria: "ngn", UK: "gbp", US: "usd" };
-const CUR_SYM = { Nigeria: "‚Ç¶", UK: "¬£", US: "$" };
+const CUR_SYM = { Nigeria: "₦", UK: "£", US: "$" };
 const PLANS = {
   owner: [
-    { name: "Single", tag: "Free", price: { Nigeria: "‚Ç¶0", UK: "¬£0", US: "$0" }, amount: null, feats: ["1 property", "AI rent guidance", "Rent collection", "Maintenance requests"], cta: "Current plan" },
-    { name: "Portfolio", tag: "Popular", price: { Nigeria: "‚Ç¶25,000", UK: "¬£29", US: "$35" }, amount: { Nigeria: 2500000, UK: 2900, US: 3500 }, feats: ["Up to 25 properties", "Full analytics dashboard", "Priority support", "Automated invoicing"], cta: "Choose Portfolio" },
+    { name: "Single", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["1 property", "AI rent guidance", "Rent collection", "Maintenance requests"], cta: "Current plan" },
+    { name: "Portfolio", tag: "Popular", price: { Nigeria: "₦25,000", UK: "£29", US: "$35" }, amount: { Nigeria: 2500000, UK: 2900, US: 3500 }, feats: ["Up to 25 properties", "Full analytics dashboard", "Priority support", "Automated invoicing"], cta: "Choose Portfolio" },
     { name: "Institutional", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Unlimited portfolio", "Dedicated account manager", "API & integrations", "Custom reporting"], cta: "Contact sales" }
   ],
   agent: [
-    { name: "Starter", tag: "Free", price: { Nigeria: "‚Ç¶0", UK: "¬£0", US: "$0" }, amount: null, feats: ["Up to 10 listings", "Shared pipeline", "Basic analytics"], cta: "Current plan" },
-    { name: "Professional", tag: "Popular", price: { Nigeria: "‚Ç¶40,000", UK: "¬£49", US: "$59" }, amount: { Nigeria: 4000000, UK: 4900, US: 5900 }, feats: ["Unlimited listings", "Full CRM & pipeline", "Live feed & intelligence", "Performance analytics"], cta: "Choose Professional" },
+    { name: "Starter", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Up to 10 listings", "Shared pipeline", "Basic analytics"], cta: "Current plan" },
+    { name: "Professional", tag: "Popular", price: { Nigeria: "₦40,000", UK: "£49", US: "$59" }, amount: { Nigeria: 4000000, UK: 4900, US: 5900 }, feats: ["Unlimited listings", "Full CRM & pipeline", "Live feed & intelligence", "Performance analytics"], cta: "Choose Professional" },
     { name: "Brokerage", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Team seats", "Brokerage dashboard", "Lead routing", "Priority partner access"], cta: "Contact sales" }
   ],
   investor: [
-    { name: "Access", tag: "Free", price: { Nigeria: "‚Ç¶0", UK: "¬£0", US: "$0" }, amount: null, feats: ["Browse swaps", "Basic market intelligence", "Live feed"], cta: "Current plan" },
-    { name: "Pro", tag: "Popular", price: { Nigeria: "‚Ç¶60,000", UK: "¬£75", US: "$89" }, amount: { Nigeria: 6000000, UK: 7500, US: 8900 }, feats: ["Full market intelligence", "Priority swap matching", "Deal-flow alerts", "Concierge access"], cta: "Choose Pro" },
+    { name: "Access", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Browse swaps", "Basic market intelligence", "Live feed"], cta: "Current plan" },
+    { name: "Pro", tag: "Popular", price: { Nigeria: "₦60,000", UK: "£75", US: "$89" }, amount: { Nigeria: 6000000, UK: 7500, US: 8900 }, feats: ["Full market intelligence", "Priority swap matching", "Deal-flow alerts", "Concierge access"], cta: "Choose Pro" },
     { name: "Institutional", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Portfolio tooling", "Dedicated analyst", "Off-market deal flow", "Custom mandates"], cta: "Contact sales" }
   ],
   tenant: [
-    { name: "Free", tag: "Free", price: { Nigeria: "‚Ç¶0", UK: "¬£0", US: "$0" }, amount: null, feats: ["Search & apply", "Pay rent online", "Report repairs"], cta: "Current plan" },
-    { name: "Premium", tag: "Popular", price: { Nigeria: "‚Ç¶5,000", UK: "¬£6", US: "$7" }, amount: { Nigeria: 500000, UK: 600, US: 700 }, feats: ["Early access to listings", "Priority applications", "Rent-reporting for credit", "Concierge move-in"], cta: "Go Premium" }
+    { name: "Free", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Search & apply", "Pay rent online", "Report repairs"], cta: "Current plan" },
+    { name: "Premium", tag: "Popular", price: { Nigeria: "₦5,000", UK: "£6", US: "$7" }, amount: { Nigeria: 500000, UK: 600, US: 700 }, feats: ["Early access to listings", "Priority applications", "Rent-reporting for credit", "Concierge move-in"], cta: "Go Premium" }
   ]
 };
 async function startCheckout(tier, market, role, toast) {
   if (!tier.amount) { toast(tier.cta === "Contact sales" ? "Our team will reach out about the " + tier.name + " plan" : "You are on the " + tier.name + " plan"); return; }
   try {
-    const r = await fetch("/api/create-checkout-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: role + " ¬∑ " + tier.name, amount: tier.amount[market], currency: CUR_CODE[market] }) });
+    const r = await fetch("/api/create-checkout-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: role + " · " + tier.name, amount: tier.amount[market], currency: CUR_CODE[market] }) });
     const d = await r.json();
     if (d && d.url) { window.location.href = d.url; return; }
     toast("Checkout is not enabled yet. Add your Stripe key to go live.", "danger");
@@ -2267,23 +2267,23 @@ function FinancialsScreen() {
   ];
   const txns = [
     ...pm.invoices.slice(0, 4).map(i => ({ id: i.id, src: "Rent", who: i.tenant, amt: i.amount, status: i.status })),
-    { id: "SUB-2201", src: "Subscription", who: "Agent ¬∑ Professional", amt: 4000000, status: "Paid" },
+    { id: "SUB-2201", src: "Subscription", who: "Agent · Professional", amt: 4000000, status: "Paid" },
     { id: "SWP-4410", src: "Swap fee", who: "DL-01 completion", amt: 4500000, status: "Paid" }
   ];
   return <div>
     <H2 title="Financials & revenue" sub="Aggregated across management, swaps, subscriptions and services" right={<PmBtn kind="ghost" icon={FileText}>Export</PmBtn>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
-      <CStat icon={TrendingUp} label="Total revenue" value={money(total)} sub="‚ñ≤ 12.6% YTD" c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={TrendingUp} label="Total revenue" value={money(total)} sub="▲ 12.6% YTD" c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={CreditCard} label="Subscriptions (MRR)" value={money(subs)} sub="Recurring / month" c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={Wallet} label="Rent collected" value={money(rentCollected)} sub="Management" c="#10B981" bg="#E7F7F0" />
       <CStat icon={Handshake} label="Swap fees" value={money(swapFees)} sub="Completed deals" c="#F59E0B" bg="#FEF4E3" />
     </div>
     <PmCard style={{ marginBottom: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>Revenue trend</div><span style={{ fontSize: 12, color: "var(--muted)" }}>‚Ç¶ millions ¬∑ last 6 months</span></div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>Revenue trend</div><span style={{ fontSize: 12, color: "var(--muted)" }}>₦ millions · last 6 months</span></div>
       <MiniArea data={trend} w={1060} h={240} color="#059669" fill="#10B981" />
     </PmCard>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 16 }} className="pm-grid2">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Revenue by source (‚Ç¶M)</div><div style={{ display: "flex", alignItems: "center", gap: 16 }}><MiniDonut data={bySource} size={160} /><Legend items={bySource} /></div></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Revenue by source (₦M)</div><div style={{ display: "flex", alignItems: "center", gap: 16 }}><MiniDonut data={bySource} size={160} /><Legend items={bySource} /></div></PmCard>
       <PmCard pad={0} style={{ overflow: "hidden" }}>
         <div style={{ fontWeight: 700, color: "var(--ink)", padding: "16px 18px 10px" }}>Recent transactions</div>
         <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
@@ -2318,7 +2318,7 @@ function SignupsScreen() {
   return <div>
     <H2 title="Sign-ups & growth" sub="New accounts and activation across all roles" right={<PmBtn kind="ghost" icon={FileText}>Export</PmBtn>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
-      <CStat icon={UserPlus} label="Total users" value={total.toLocaleString()} sub="‚ñ≤ 355 this month" c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={UserPlus} label="Total users" value={total.toLocaleString()} sub="▲ 355 this month" c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={TrendingUp} label="New this month" value="355" sub="+18% vs June" c="#10B981" bg="#E7F7F0" />
       <CStat icon={CheckCircle2} label="Activation rate" value="71%" sub="Active / verified" c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={ShieldCheck} label="Verified" value="1,120" sub="KYC complete" c="#F59E0B" bg="#FEF4E3" />
@@ -2369,7 +2369,7 @@ function tenancySeed() {
 const REM_KEY = "girard_reminders_v1";
 function remLoad() { try { const r = localStorage.getItem(REM_KEY); if (r) return JSON.parse(r); } catch (e) {} return { sent: [] }; }
 function remSave(s) { try { localStorage.setItem(REM_KEY, JSON.stringify(s)); } catch (e) {} }
-function reminderMsg(t) { const first = t.tenant.split(" ")[0]; return "Dear " + first + ", this is a reminder from Girard Property Estate Limited that the rent for " + t.property + " (" + money(t.rent) + ") is due on " + fmtDate(t.due) + ". As this falls due in three months, we kindly ask that you begin making arrangements. For any questions, contact us on +234 906 000 1234. ‚Äî Girard Property Estate Limited"; }
+function reminderMsg(t) { const first = t.tenant.split(" ")[0]; return "Dear " + first + ", this is a reminder from Girard Property Estate Limited that the rent for " + t.property + " (" + money(t.rent) + ") is due on " + fmtDate(t.due) + ". As this falls due in three months, we kindly ask that you begin making arrangements. For any questions, contact us on +234 906 000 1234. — Girard Property Estate Limited"; }
 
 function RentRemindersScreen({ toast }) {
   const tens = tenancySeed();
@@ -2422,4 +2422,3 @@ function RentRemindersScreen({ toast }) {
     </PmModal>}
   </div>;
 }
-
