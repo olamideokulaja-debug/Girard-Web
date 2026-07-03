@@ -481,6 +481,8 @@ function Landing({ onStart, onSignIn }) {
 
       {/* HERO */}
       <section style={{ background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
+        <div className="float-orb" style={{ position: "absolute", top: -90, right: -50, width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle, rgba(198,161,91,.20), transparent 70%)", pointerEvents: "none" }} />
+        <div className="float-orb" style={{ position: "absolute", bottom: -110, left: -90, width: 380, height: 380, borderRadius: "50%", background: "radial-gradient(circle, rgba(22,53,100,.55), transparent 70%)", pointerEvents: "none", animationDelay: "2.5s" }} />
         <div className="wrap" style={{ paddingTop: 72, paddingBottom: 78, position: "relative" }}>
           <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 54, alignItems: "center" }}>
             <div className="rise">
@@ -566,7 +568,7 @@ function Landing({ onStart, onSignIn }) {
             <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 620 }}>Tailored to investors, homeowners, institutions and development partners seeking reliability and excellence, delivered to premium architectural and engineering standards.</p>
           </div>
           <div className="svc-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
-            {SERVICES.map(sv => <div key={sv.t} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: 26 }}>
+            {SERVICES.map(sv => <div key={sv.t} className="lift card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: 26 }}>
               <div style={{ width: 48, height: 48, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 16 }}><sv.icon size={22} /></div>
               <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>{sv.t}</div>
               <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{sv.d}</p>
@@ -672,7 +674,7 @@ function Landing({ onStart, onSignIn }) {
             </div>
             <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
               {TEAM.map(t => (
-                <div key={t.name} style={{ background: "var(--white)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <div key={t.name} className="lift card-soft" style={{ background: "var(--white)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                   <div style={{ height: 260, background: "var(--navy-2)" }}><img src={t.photo} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} /></div>
                   <div style={{ padding: 20, flex: 1 }}>
                     <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{t.name}</div>
@@ -1182,7 +1184,7 @@ function PmPill({ label }) {
   const c = M[label] || "var(--muted)";
   return <span style={{ background: c + "22", color: c, fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>{label}</span>;
 }
-function PmCard({ children, pad = 18, style }) { return <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: pad, ...style }}>{children}</div>; }
+function PmCard({ children, pad = 18, style }) { return <div className="card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: pad, ...style }}>{children}</div>; }
 function PmField({ label, value, onChange, placeholder, type }) {
   return <div>{label && <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>{label}</label>}
     <input type={type || "text"} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 14, outline: "none" }} /></div>;
@@ -1234,27 +1236,27 @@ function MiniArea({ data, w = 520, h = 180, color = "#B8934A", fill = "#C6A15B" 
   const gid = "ma" + String(fill).replace(/[^a-zA-Z0-9]/g, "");
   return <svg viewBox={"0 0 " + w + " " + h} width="100%" height={h}>
     <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={fill} stopOpacity=".38" /><stop offset="100%" stopColor={fill} stopOpacity="0" /></linearGradient></defs>
-    <path d={area} fill={"url(#" + gid + ")"} /><path d={line} fill="none" stroke={color} strokeWidth="2.5" />
+    <path d={area} fill={"url(#" + gid + ")"} /><path className="chart-line" d={line} fill="none" stroke={color} strokeWidth="2.5" />
     {data.map((d, i) => <text key={i} x={X(i)} y={h - 6} fontSize="11" fill="var(--muted)" textAnchor="middle">{d.m}</text>)}
   </svg>;
 }
 function MiniBars({ data, w = 520, h = 180, colors }) {
   const max = Math.max(...data.map(d => d.v)) * 1.15, bw = (w - 20) / data.length;
   return <svg viewBox={"0 0 " + w + " " + h} width="100%" height={h}>
-    {data.map((d, i) => { const bh = (d.v / max) * (h - 40); return <g key={i}><rect x={10 + i * bw + bw * .2} y={h - 24 - bh} width={bw * .6} height={bh} rx="4" fill={colors ? colors[i % colors.length] : "var(--navy)"} /><text x={10 + i * bw + bw * .5} y={h - 6} fontSize="10.5" fill="var(--muted)" textAnchor="middle">{d.m}</text></g>; })}
+    {data.map((d, i) => { const bh = (d.v / max) * (h - 40); return <g key={i}><rect className="chart-bar" style={{ animationDelay: (i * 0.05) + "s" }} x={10 + i * bw + bw * .2} y={h - 24 - bh} width={bw * .6} height={bh} rx="4" fill={colors ? colors[i % colors.length] : "var(--navy)"} /><text x={10 + i * bw + bw * .5} y={h - 6} fontSize="10.5" fill="var(--muted)" textAnchor="middle">{d.m}</text></g>; })}
   </svg>;
 }
 function MiniDonut({ data, size = 170 }) {
   const total = data.reduce((s, d) => s + d.v, 0); let acc = 0; const r = size / 2 - 14, cx = size / 2, cy = size / 2;
   const seg = data.map(d => { const a0 = acc / total * Math.PI * 2 - Math.PI / 2; acc += d.v; const a1 = acc / total * Math.PI * 2 - Math.PI / 2; const big = a1 - a0 > Math.PI ? 1 : 0; const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0), x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1); return { d: "M" + x0 + " " + y0 + " A" + r + " " + r + " 0 " + big + " 1 " + x1 + " " + y1, c: d.c }; });
-  return <svg viewBox={"0 0 " + size + " " + size} width={size} height={size}>{seg.map((s, i) => <path key={i} d={s.d} fill="none" stroke={s.c} strokeWidth="16" strokeLinecap="butt" />)}<text x={cx} y={cy + 5} textAnchor="middle" className="serif" fontSize="22" fill="var(--ink)" fontWeight="600">{total}</text></svg>;
+  return <svg className="chart-donut" viewBox={"0 0 " + size + " " + size} width={size} height={size}>{seg.map((s, i) => <path key={i} d={s.d} fill="none" stroke={s.c} strokeWidth="16" strokeLinecap="butt" />)}<text x={cx} y={cy + 5} textAnchor="middle" className="serif" fontSize="22" fill="var(--ink)" fontWeight="600">{total}</text></svg>;
 }
 function Legend({ items }) { return <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{items.map(i => <div key={i.name} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--muted)" }}><span style={{ width: 10, height: 10, borderRadius: 3, background: i.c }} />{i.name} <b style={{ color: "var(--ink)", marginLeft: "auto" }}>{i.v}</b></div>)}</div>; }
 
 /* Colourful palette + calm colour stat card for the dashboards */
 const CHART_COLORS = ["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#14B8A6", "#F43F5E", "#6366F1"];
 function CStat({ icon: Icon, label, value, sub, c = "#3B82F6", bg = "#EAF2FE" }) {
-  return <div style={{ background: bg, borderRadius: 14, padding: 18, border: "1px solid " + c + "26" }}>
+  return <div className="lift card-soft" style={{ background: bg, borderRadius: 14, padding: 18, border: "1px solid " + c + "26" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
       <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>{label}</span>
       <span style={{ width: 34, height: 34, borderRadius: 9, background: c, color: "#fff", display: "grid", placeItems: "center", flexShrink: 0 }}><Icon size={17} /></span>
@@ -1796,7 +1798,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
           <PmBtn kind="ghost" size="sm" icon={LogOut} onClick={onSignOut}>Sign out</PmBtn>
         </div>
       </header>
-      <main style={{ padding: 24, flex: 1 }}>{screen()}</main>
+      <main style={{ padding: 24, flex: 1 }}><div key={view} className="view-enter">{screen()}</div></main>
     </div>
     <div style={{ position: "fixed", bottom: 20, right: 20, display: "flex", flexDirection: "column", gap: 10, zIndex: 80 }}>
       {toasts.map(t => <div key={t.id} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderLeft: "4px solid " + (t.tone === "danger" ? "#D0453B" : "#1F9D57"), borderRadius: 10, padding: "12px 16px", fontSize: 13.5, fontWeight: 600, color: "var(--ink)", maxWidth: 340, boxShadow: "0 10px 30px rgba(10,31,60,.14)" }}>{t.msg}</div>)}
@@ -2765,7 +2767,7 @@ function PublicListings({ onSignIn }) {
         <a className="btn-line on-ivory" href="#" onClick={e => { e.preventDefault(); onSignIn(); }}>Sign in for the full portfolio <ArrowRight size={16} /></a>
       </div>
       <div className="listing-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
-        {avail.map(p => <div key={p.id} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        {avail.map(p => <div key={p.id} className="lift card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
           <div style={{ position: "relative", height: 180 }}>
             <img src={p.img || poolPhoto(p.id)} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             {p.featured && <span style={{ position: "absolute", top: 12, left: 12, background: "var(--gold)", color: "#201601", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>Featured</span>}
