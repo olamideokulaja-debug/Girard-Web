@@ -6,7 +6,7 @@ import {
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
   CreditCard, PenLine, Filter, LayoutDashboard, Bell, Send, Loader2, MoreHorizontal,
   Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
-  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog
+  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -584,18 +584,23 @@ const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate
 
 /* Per-account identity, resolved by sign-in email.
    Edit this map with your real team so each person is greeted by name and title. */
+const ADMIN_DOMAIN = "girardproperty.com";
+function isApprovedAdmin(email) { const e = (email || "").toLowerCase().trim(); return e.endsWith("@" + ADMIN_DOMAIN) || !!FOUNDERS[e]; }
 const FOUNDERS = {
+  "olamideokulaja@girardproperty.com": { name: "Olamide Okulaja", title: "Co-Founder & Administrator", greeting: "Welcome back", allAccess: true },
   "founder@girardproperty.com": { name: "Girard Founder", title: "Founder & Administrator", greeting: "Welcome back", allAccess: true },
   "admin@girardproperty.com": { name: "Girard Admin", title: "Platform Administration", greeting: "Welcome back", allAccess: true }
 };
 function initialsOf(name) { return (name || "G").split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0, 2).toUpperCase(); }
 function resolveIdentity(email, role) {
   const key = (email || "").toLowerCase().trim();
+  const approved = isApprovedAdmin(key);
+  const eff = (role === "admin" && !approved) ? "owner" : role;
   const f = FOUNDERS[key];
-  if (f) return { email: key, role, name: f.name, title: f.title, greeting: f.greeting, initials: initialsOf(f.name), isFounder: true, allAccess: !!f.allAccess };
+  if (f) { const nm = f.name; return { email: key, role: eff, name: nm, firstName: nm.split(" ")[0], title: f.title, greeting: f.greeting, initials: initialsOf(nm), isFounder: true, allAccess: approved }; }
   const local = (key.split("@")[0] || "there").replace(/[._-]+/g, " ").trim();
   const name = local ? local.replace(/\b\w/g, c => c.toUpperCase()) : "There";
-  return { email: key, role, name, title: ROLE_TITLE[role] || "Member", greeting: "Welcome", initials: initialsOf(name), isFounder: false };
+  return { email: key, role: eff, name, firstName: name.split(" ")[0], title: ROLE_TITLE[eff] || "Member", greeting: "Welcome", initials: initialsOf(name), isFounder: false, allAccess: approved };
 }
 
 /* auth adapters */
@@ -728,6 +733,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
     setErr("");
     if (!email || !password) { setErr("Please enter your email and password."); return; }
     if (isSignup && password.length < 6) { setErr("Password must be at least 6 characters."); return; }
+    if (isSignup && role === "admin" && !isApprovedAdmin(email)) { setErr("Admin access is limited to approved @girardproperty.com accounts."); return; }
     setBusy(true);
     try {
       const res = isSignup ? await authSignUp(email, password, role) : await authSignIn(email, password);
@@ -823,7 +829,7 @@ function HomeShell({ identity, onSignOut, onSwitchRole }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
           <div>
             <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 12 }}>{identity.greeting}</div>
-            <h1 className="serif" style={{ fontSize: "clamp(30px,4.4vw,48px)", fontWeight: 600, letterSpacing: -.5, color: "var(--ink)" }}>Good {part}, {identity.name.split(" ")[0]}.</h1>
+            <h1 className="serif" style={{ fontSize: "clamp(30px,4.4vw,48px)", fontWeight: 600, letterSpacing: -.5, color: "var(--ink)" }}>Good {part}, {identity.firstName}.</h1>
             <p style={{ color: "var(--muted)", fontSize: 16, marginTop: 10, maxWidth: 580, lineHeight: 1.6 }}>Your {ROLES.find(r => r.key === identity.role)?.name || "member"} workspace. The tools below come online as we build out the platform.</p>
           </div>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--navy)", color: "var(--gold)", padding: "8px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 700 }}><ShieldCheck size={14} /> {ROLE_TITLE[identity.role] || "Member"}</span>
@@ -1084,21 +1090,37 @@ function OwnerDash({ st, identity }) {
   const leased = st.properties.filter(p => p.status === "Leased").length;
   const occ = Math.round(leased / st.properties.length * 100);
   const income = [{ m: "Feb", v: 58 }, { m: "Mar", v: 64 }, { m: "Apr", v: 61 }, { m: "May", v: 72 }, { m: "Jun", v: 78 }, { m: "Jul", v: 83 }];
-  const byArea = PM_AREAS.slice(0, 6).map(a => ({ m: a.slice(0, 4), v: Math.round(st.properties.filter(p => p.area === a).reduce((s, p) => s + p.rent, 0) / 1e6) }));
+  const byArea = PM_AREAS.slice(0, 7).map(a => ({ m: a.slice(0, 4), v: Math.round(st.properties.filter(p => p.area === a).reduce((s, p) => s + p.rent, 0) / 1e6) }));
   const occData = [{ name: "Leased", v: leased, c: "var(--navy)" }, { name: "Available", v: st.properties.length - leased, c: "var(--gold)" }];
+  const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  const activity = [
+    { icon: Users, t: "New application · 3-Bed Ikoyi", s: "12m ago" },
+    { icon: Wallet, t: "Rent received · INV-9001", s: "1h ago" },
+    { icon: Wrench, t: "Ticket resolved · Living room AC", s: "3h ago" },
+    { icon: Building2, t: "New instruction · Penthouse VI", s: "Yesterday" }
+  ];
   return <div>
-    <H2 title={"Good day, " + identity.name.split(" ")[0]} sub="Girard-managed Lagos portfolio at a glance" />
-    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 18 }}>
-      <PmStat icon={Building2} label="Properties" value={String(st.properties.length)} sub="Lagos portfolio" tone="var(--muted)" />
+    <H2 title={"Good day, " + identity.firstName} sub="Girard-managed portfolio at a glance" right={<span style={{ color: "var(--muted)", fontSize: 13 }}>{today}</span>} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
+      <div style={{ background: "linear-gradient(140deg, var(--navy-3), var(--navy))", color: "#fff", borderRadius: 12, padding: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 12.5, color: "rgba(255,255,255,.72)", fontWeight: 600 }}>Monthly income</span><Wallet size={18} color="var(--gold)" /></div>
+        <div className="serif" style={{ fontSize: 30, fontWeight: 600, marginTop: 8 }}>₦83.4M</div>
+        <div style={{ fontSize: 12, color: "var(--gold-soft)", marginTop: 3 }}>▲ 6.4% vs May</div>
+      </div>
+      <PmStat icon={Building2} label="Properties" value={String(st.properties.length)} sub="Under management" tone="var(--muted)" />
       <PmStat icon={Home} label="Occupancy" value={occ + "%"} sub={leased + " leased"} />
-      <PmStat icon={Wallet} label="Monthly income" value="₦83.4M" sub="+6.4% vs May" />
-      <PmStat icon={Wrench} label="Open tickets" value={String(st.tickets.filter(t => t.status !== "Resolved").length)} sub="1 emergency" tone="var(--danger)" />
+      <PmStat icon={Wrench} label="Open tickets" value={String(st.tickets.filter(t => t.status !== "Resolved").length)} sub="1 emergency" tone="#D0453B" />
     </div>
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Rental income trend (₦M)</div><MiniArea data={income} /></PmCard>
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Occupancy</div><div style={{ display: "flex", alignItems: "center", gap: 16 }}><MiniDonut data={occData} /><Legend items={occData} /></div></PmCard>
+    <PmCard style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>Rental income trend</div><span style={{ fontSize: 12, color: "var(--muted)" }}>₦ millions · last 6 months</span></div>
+      <MiniArea data={income} w={1060} h={240} />
+    </PmCard>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }} className="pm-grid3">
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Occupancy</div><div style={{ display: "flex", alignItems: "center", gap: 14 }}><MiniDonut data={occData} size={150} /><Legend items={occData} /></div></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Rent by area (₦M)</div><MiniBars data={byArea} h={190} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Recent activity</div><div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{activity.map((a, i) => <div key={i} style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--ivory)", color: "var(--gold-2)", display: "grid", placeItems: "center", flexShrink: 0 }}><a.icon size={15} /></div><div style={{ minWidth: 0 }}><div style={{ fontSize: 12.5, color: "var(--ink)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.t}</div><div style={{ fontSize: 11, color: "var(--muted)" }}>{a.s}</div></div></div>)}</div></PmCard>
     </div>
-    <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Portfolio rent by area (₦M p.a.)</div><MiniBars data={byArea} /></PmCard>
+    <style>{`@media(max-width:900px){.dash-kpi{grid-template-columns:1fr 1fr!important}.pm-grid3{grid-template-columns:1fr!important}}`}</style>
   </div>;
 }
 
@@ -1244,11 +1266,13 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
 /* ---------- APPLICATIONS (owner/admin) ---------- */
 function ApplicationsScreen({ st, setSt, toast }) {
   const [lease, setLease] = useState(null);
+  const [review, setReview] = useState(null);
   const act = (id, status) => { setSt({ ...st, applications: st.applications.map(a => a.id === id ? { ...a, status } : a) }); toast("Application " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
+  const onAct = (id, s) => { act(id, s); setReview(null); };
   return <div>
-    <H2 title="Applications" sub="Review tenant applications and screening results" />
+    <H2 title="Applications" sub="Review tenant applications, screening results and approve" />
     <PmCard pad={0} style={{ overflow: "hidden" }}>
-      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 680 }}>
+      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
         <thead><tr style={{ background: "var(--ivory)" }}>{["Applicant", "Property", "Income", "Score", "Status", "Actions"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
         <tbody>{st.applications.map(a => { const p = propOf(st, a.property); return <tr key={a.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
           <td style={{ padding: "13px 16px" }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>{a.tenant}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{a.note}</div></td>
@@ -1256,12 +1280,32 @@ function ApplicationsScreen({ st, setSt, toast }) {
           <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{money(a.income)}</td>
           <td style={{ padding: "13px 16px" }}><b style={{ color: a.score > 720 ? "#1F9D57" : a.score > 650 ? "#E0A106" : "#D0453B" }}>{a.score}</b></td>
           <td style={{ padding: "13px 16px" }}><PmPill label={a.status} /></td>
-          <td style={{ padding: "13px 16px" }}>{a.status === "Approved" ? <PmBtn size="sm" kind="gold" icon={FileText} onClick={() => setLease(a)}>Generate lease</PmBtn> : a.status === "Rejected" ? <span style={{ color: "var(--muted)", fontSize: 12.5 }}>Closed</span> : <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" onClick={() => act(a.id, "Approved")}>Approve</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => act(a.id, "Rejected")}>Reject</PmBtn></div>}</td>
+          <td style={{ padding: "13px 16px" }}>{a.status === "Approved" ? <PmBtn size="sm" kind="gold" icon={FileText} onClick={() => setLease(a)}>Generate lease</PmBtn> : a.status === "Rejected" ? <span style={{ color: "var(--muted)", fontSize: 12.5 }}>Closed</span> : <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={Search} onClick={() => setReview(a)}>Review</PmBtn><PmBtn size="sm" onClick={() => act(a.id, "Approved")}>Approve</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => act(a.id, "Rejected")}>Reject</PmBtn></div>}</td>
         </tr>; })}</tbody>
       </table></div>
     </PmCard>
     {lease && <LeaseModal st={st} setSt={setSt} app={lease} onClose={() => setLease(null)} toast={toast} />}
+    {review && <ReviewModal st={st} app={review} onClose={() => setReview(null)} onAct={onAct} />}
   </div>;
+}
+function ReviewModal({ st, app, onClose, onAct }) {
+  const p = propOf(st, app.property);
+  const rent = p ? p.rent : 0;
+  const checks = [
+    { k: "Affordability", ok: app.income >= rent * 0.4, d: money(app.income) + " income" },
+    { k: "Credit score", ok: app.score > 650, d: String(app.score) },
+    { k: "Employment", ok: true, d: "Verified" },
+    { k: "References", ok: app.score > 620, d: app.score > 620 ? "2 provided" : "Pending" }
+  ];
+  return <PmModal title={"Review application"} onClose={onClose}>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+      <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " · " + p.area : app.property}</div></div>
+      <div style={{ textAlign: "right" }}><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Screening score</div><div className="serif" style={{ fontSize: 26, fontWeight: 600, color: app.score > 720 ? "#1F9D57" : app.score > 650 ? "#E0A106" : "#D0453B" }}>{app.score}</div></div>
+    </div>
+    {app.note && <div style={{ background: "var(--ivory)", borderRadius: 8, padding: 12, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>{app.note}</div>}
+    <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 18 }}>{checks.map(c => <div key={c.k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5 }}><span style={{ width: 20, height: 20, borderRadius: 999, background: c.ok ? "rgba(31,157,87,.14)" : "rgba(208,69,59,.14)", color: c.ok ? "#1F9D57" : "#D0453B", display: "grid", placeItems: "center", flexShrink: 0 }}>{c.ok ? <Check size={13} /> : <X size={13} />}</span><b style={{ color: "var(--ink)" }}>{c.k}</b><span style={{ color: "var(--muted)", marginLeft: "auto" }}>{c.d}</span></div>)}</div>
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><PmBtn kind="gold" icon={Check} onClick={() => onAct(app.id, "Approved")}>Approve</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "More Info Required")}>Request info</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "Rejected")}>Reject</PmBtn></div>
+  </PmModal>;
 }
 function LeaseModal({ st, setSt, app, onClose, toast }) {
   const prop = propOf(st, app.property);
@@ -1381,7 +1425,7 @@ function ReportModal({ st, setSt, identity, onClose, toast }) {
 /* ---------- WORKSPACE PLACEHOLDER (agent / investor) ---------- */
 function WorkspaceSoon({ identity }) {
   const tiles = HOME_TILES[identity.role] || [];
-  return <div><H2 title={"Good day, " + identity.name.split(" ")[0]} sub={"Your " + (ROLES.find(r => r.key === identity.role)?.name || "member") + " workspace"} />
+  return <div><H2 title={"Good day, " + identity.firstName} sub={"Your " + (ROLES.find(r => r.key === identity.role)?.name || "member") + " workspace"} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 18 }}>{tiles.map(t => <PmCard key={t.label}><div style={{ width: 44, height: 44, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 14 }}><t.icon size={20} /></div><div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 5 }}>{t.label}</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.5, marginBottom: 12 }}>{t.note}</div><span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", background: "var(--gold-soft)", padding: "3px 9px", borderRadius: 4 }}>Coming next</span></PmCard>)}</div>
     <div style={{ marginTop: 26, color: "var(--muted)", fontSize: 14 }}>The {identity.role === "agent" ? "agent pipeline and CRM" : "investor intelligence and swap"} tools arrive in the next stages.</div>
   </div>;
@@ -1389,14 +1433,14 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["rent", "Rent & invoices", CreditCard], ["maint", "Maintenance", Wrench], ["swap", "Swap marketplace", Repeat], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Maintenance", Wrench], ["swap", "Swap marketplace", Repeat], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
   tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Maintenance", Wrench], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["maint", "Maintenance", Wrench], ["swpipe", "Swap pipeline", Handshake], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
-  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["reports", "Analytics", LineChart]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["reminders", "Rent reminders", BellRing], ["maint", "Maintenance", Wrench], ["swpipe", "Swap pipeline", Handshake], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
+  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["reports", "Analytics", LineChart]],
   investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["work", "Overview", LayoutGrid]]
 };
 function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
-  const canSwitch = identity0.allAccess || identity0.role === "admin";
+  const canSwitch = identity0.allAccess;
   const [activeRole, setActiveRole] = useState(identity0.role);
   const identity = { ...identity0, role: activeRole };
   const nav = NAV[activeRole] || NAV.agent;
@@ -1425,6 +1469,9 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "plans") return <PricingScreen identity={identity} toast={toast} />;
     if (view === "settings") return <SettingsScreen identity={identity} toast={toast} onSignOut={onSignOut} onSwitchRole={onSwitchRole} />;
     if (view === "users") return <AdminUsers toast={toast} />;
+    if (view === "financials") return <FinancialsScreen />;
+    if (view === "signups") return <SignupsScreen />;
+    if (view === "reminders") return <RentRemindersScreen toast={toast} />;
     if (view === "feed") return <LiveFeed identity={identity} />;
     if (view === "crm") return <PipelineCRM identity={identity} toast={toast} />;
     if (view === "reports") return <ReportsScreen identity={identity} toast={toast} />;
@@ -1453,7 +1500,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       <header style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : "Digital Property Management · Lagos"}</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2185,5 +2232,189 @@ function AdminUsers({ toast }) {
         </tr>)}</tbody>
       </table></div>
     </PmCard>
+  </div>;
+}
+
+/* ===================================================================
+   Founder / Admin: Financials and Sign-ups (aggregated), Qura-style
+   =================================================================== */
+
+function FinancialsScreen() {
+  const pm = pmLoad(); const sw = swLoad();
+  const rentCollected = pm.invoices.filter(i => i.status === "Paid").reduce((s, i) => s + i.amount, 0) + 486000000;
+  const swapFees = sw.deals.length * 4500000 + 31500000;
+  const subs = 9200000;
+  const services = 6400000;
+  const total = rentCollected + swapFees + subs + services;
+  const trend = [{ m: "Feb", v: 62 }, { m: "Mar", v: 71 }, { m: "Apr", v: 68 }, { m: "May", v: 84 }, { m: "Jun", v: 96 }, { m: "Jul", v: 108 }];
+  const bySource = [
+    { name: "Rent management", v: Math.round(rentCollected / 1e6), c: "var(--navy)" },
+    { name: "Swap fees", v: Math.round(swapFees / 1e6), c: "var(--gold)" },
+    { name: "Subscriptions", v: Math.round(subs / 1e6), c: "#2F6FB0" },
+    { name: "Support services", v: Math.round(services / 1e6), c: "#1F9D57" }
+  ];
+  const txns = [
+    ...pm.invoices.slice(0, 4).map(i => ({ id: i.id, src: "Rent", who: i.tenant, amt: i.amount, status: i.status })),
+    { id: "SUB-2201", src: "Subscription", who: "Agent · Professional", amt: 4000000, status: "Paid" },
+    { id: "SWP-4410", src: "Swap fee", who: "DL-01 completion", amt: 4500000, status: "Paid" }
+  ];
+  return <div>
+    <H2 title="Financials & revenue" sub="Aggregated across management, swaps, subscriptions and services" right={<PmBtn kind="ghost" icon={FileText}>Export</PmBtn>} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
+      <div style={{ background: "linear-gradient(140deg, var(--navy-3), var(--navy))", color: "#fff", borderRadius: 12, padding: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 12.5, color: "rgba(255,255,255,.72)", fontWeight: 600 }}>Total revenue</span><TrendingUp size={18} color="var(--gold)" /></div>
+        <div className="serif" style={{ fontSize: 28, fontWeight: 600, marginTop: 8 }}>{money(total)}</div>
+        <div style={{ fontSize: 12, color: "var(--gold-soft)", marginTop: 3 }}>▲ 12.6% YTD</div>
+      </div>
+      <PmStat icon={CreditCard} label="Subscriptions (MRR)" value={money(subs)} sub="Recurring / month" tone="var(--muted)" />
+      <PmStat icon={Wallet} label="Rent collected" value={money(rentCollected)} sub="Management" tone="var(--muted)" />
+      <PmStat icon={Handshake} label="Swap fees" value={money(swapFees)} sub="Completed deals" tone="var(--muted)" />
+    </div>
+    <PmCard style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>Revenue trend</div><span style={{ fontSize: 12, color: "var(--muted)" }}>₦ millions · last 6 months</span></div>
+      <MiniArea data={trend} w={1060} h={240} />
+    </PmCard>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 16 }} className="pm-grid2">
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Revenue by source (₦M)</div><div style={{ display: "flex", alignItems: "center", gap: 16 }}><MiniDonut data={bySource} size={160} /><Legend items={bySource} /></div></PmCard>
+      <PmCard pad={0} style={{ overflow: "hidden" }}>
+        <div style={{ fontWeight: 700, color: "var(--ink)", padding: "16px 18px 10px" }}>Recent transactions</div>
+        <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
+          <thead><tr style={{ background: "var(--ivory)" }}>{["Ref", "Source", "Detail", "Amount", ""].map(h => <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
+          <tbody>{txns.map((t, i) => <tr key={i} style={{ borderTop: "1px solid var(--cream-line)" }}>
+            <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--ink)" }}>{t.id}</td>
+            <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--muted)" }}>{t.src}</td>
+            <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--muted)" }}>{t.who}</td>
+            <td style={{ padding: "11px 16px", fontWeight: 700, color: "var(--ink)" }}>{money(t.amt)}</td>
+            <td style={{ padding: "11px 16px" }}><PmPill label={t.status} /></td>
+          </tr>)}</tbody>
+        </table></div>
+      </PmCard>
+    </div>
+    <style>{`@media(max-width:900px){.dash-kpi{grid-template-columns:1fr 1fr!important}.pm-grid2{grid-template-columns:1fr!important}}`}</style>
+  </div>;
+}
+
+function SignupsScreen() {
+  const usr = usrLoad();
+  const base = 1240;
+  const total = usr.users.length + base;
+  const trend = [{ m: "Feb", v: 120 }, { m: "Mar", v: 165 }, { m: "Apr", v: 190 }, { m: "May", v: 240 }, { m: "Jun", v: 300 }, { m: "Jul", v: 355 }];
+  const byRole = [
+    { name: "Tenants", v: 620, c: "#2F6FB0" },
+    { name: "Owners", v: 410, c: "var(--navy)" },
+    { name: "Agents", v: 180, c: "var(--gold)" },
+    { name: "Investors", v: 118, c: "#1F9D57" }
+  ];
+  const funnel = [{ label: "Visitors", v: 8200 }, { label: "Sign-ups", v: 1330 }, { label: "Verified", v: 1120 }, { label: "Active", v: 940 }];
+  const roleName = { tenant: "Tenant", owner: "Owner", agent: "Agent", investor: "Investor", admin: "Admin" };
+  return <div>
+    <H2 title="Sign-ups & growth" sub="New accounts and activation across all roles" right={<PmBtn kind="ghost" icon={FileText}>Export</PmBtn>} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
+      <div style={{ background: "linear-gradient(140deg, var(--navy-3), var(--navy))", color: "#fff", borderRadius: 12, padding: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 12.5, color: "rgba(255,255,255,.72)", fontWeight: 600 }}>Total users</span><UserPlus size={18} color="var(--gold)" /></div>
+        <div className="serif" style={{ fontSize: 30, fontWeight: 600, marginTop: 8 }}>{total.toLocaleString()}</div>
+        <div style={{ fontSize: 12, color: "var(--gold-soft)", marginTop: 3 }}>▲ 355 this month</div>
+      </div>
+      <PmStat icon={TrendingUp} label="New this month" value="355" sub="+18% vs June" />
+      <PmStat icon={CheckCircle2} label="Activation rate" value="71%" sub="Active / verified" tone="var(--muted)" />
+      <PmStat icon={ShieldCheck} label="Verified" value="1,120" sub="KYC complete" tone="var(--muted)" />
+    </div>
+    <PmCard style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>New sign-ups per month</div><span style={{ fontSize: 12, color: "var(--muted)" }}>last 6 months</span></div>
+      <MiniArea data={trend} w={1060} h={240} />
+    </PmCard>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>By role</div><div style={{ display: "flex", alignItems: "center", gap: 16 }}><MiniDonut data={byRole} size={160} /><Legend items={byRole} /></div></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Activation funnel</div><MiniFunnel data={funnel} /></PmCard>
+    </div>
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      <div style={{ fontWeight: 700, color: "var(--ink)", padding: "16px 18px 10px" }}>Recent sign-ups</div>
+      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
+        <thead><tr style={{ background: "var(--ivory)" }}>{["User", "Role", "Status"].map(h => <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
+        <tbody>{usr.users.map((u, i) => <tr key={u.email} style={{ borderTop: "1px solid var(--cream-line)" }}>
+          <td style={{ padding: "11px 16px" }}><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>{u.name}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{u.email}</div></td>
+          <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--muted)" }}>{roleName[u.role] || u.role}</td>
+          <td style={{ padding: "11px 16px" }}><PmPill label={u.status === "Active" ? "Approved" : "Rejected"} /></td>
+        </tr>)}</tbody>
+      </table></div>
+    </PmCard>
+  </div>;
+}
+
+/* ===================================================================
+   Rent reminders: automatic notice to tenants 3 months before rent is due.
+   Sends by email + SMS when RESEND / TWILIO keys are configured in Vercel
+   (via /api/rent-reminders); otherwise reminders are scheduled and logged.
+   =================================================================== */
+
+function fmtDate(d) { return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
+function tenancySeed() {
+  const base = new Date();
+  const mk = (id, name, email, phone, prop, area, rent, mAhead) => { const due = new Date(base); due.setMonth(due.getMonth() + mAhead); const rem = new Date(due); rem.setMonth(rem.getMonth() - 3); return { id, tenant: name, email, phone, property: prop, area, rent, due: due.toISOString(), remind: rem.toISOString() }; };
+  return [
+    mk("TEN-01", "Ada Eze", "ada@example.com", "+2348030000001", "3-Bed Flat, Lekki", "Lekki", 7200000, 2),
+    mk("TEN-02", "Tunde Adeyemi", "tunde@example.com", "+2348030000002", "2-Bed Apartment, Yaba", "Yaba", 3600000, 1),
+    mk("TEN-03", "Chidera Okonkwo", "chidera@example.com", "+2348030000003", "4-Bed Duplex, Ikoyi", "Ikoyi", 15000000, 5),
+    mk("TEN-04", "Ngozi Balogun", "ngozi@example.com", "+2348030000004", "Studio, Surulere", "Surulere", 1800000, 3),
+    mk("TEN-05", "Emeka Nwosu", "emeka@example.com", "+2348030000005", "3-Bed, Magodo", "Magodo", 5400000, 7),
+    mk("TEN-06", "Fatima Bello", "fatima@example.com", "+2348030000006", "2-Bed, Ikeja", "Ikeja", 4200000, 4),
+    mk("TEN-07", "Kunle Ojo", "kunle@example.com", "+2348030000007", "5-Bed, Victoria Island", "Victoria Island", 22000000, 9),
+    mk("TEN-08", "Zainab Musa", "zainab@example.com", "+2348030000008", "1-Bed, Lekki", "Lekki", 2600000, 10)
+  ];
+}
+const REM_KEY = "girard_reminders_v1";
+function remLoad() { try { const r = localStorage.getItem(REM_KEY); if (r) return JSON.parse(r); } catch (e) {} return { sent: [] }; }
+function remSave(s) { try { localStorage.setItem(REM_KEY, JSON.stringify(s)); } catch (e) {} }
+function reminderMsg(t) { const first = t.tenant.split(" ")[0]; return "Dear " + first + ", this is a reminder from Girard Property Estate Limited that the rent for " + t.property + " (" + money(t.rent) + ") is due on " + fmtDate(t.due) + ". As this falls due in three months, we kindly ask that you begin making arrangements. For any questions, contact us on +234 906 000 1234. — Girard Property Estate Limited"; }
+
+function RentRemindersScreen({ toast }) {
+  const tens = tenancySeed();
+  const [store, setStoreRaw] = useState(remLoad);
+  const [preview, setPreview] = useState(null);
+  const setStore = (n) => { setStoreRaw(n); remSave(n); };
+  const now = Date.now();
+  const statusOf = (t) => store.sent.includes(t.id) ? "Sent" : (now >= new Date(t.remind).getTime() ? "Ready to send" : "Scheduled");
+  const send = async (t) => {
+    try {
+      const r = await fetch("/api/rent-reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: t.email, phone: t.phone, message: reminderMsg(t) }) });
+      const d = await r.json();
+      if (d && d.configured && d.results && (d.results.email || d.results.sms)) toast("Reminder sent to " + t.tenant, "success");
+      else toast("Email/SMS not set up yet. Reminder logged and will send once configured.", "danger");
+    } catch (e) { toast("Email/SMS not set up yet. Reminder logged.", "danger"); }
+    setStore({ sent: [...new Set([...store.sent, t.id])] });
+  };
+  const dueSoon = tens.filter(t => statusOf(t) === "Ready to send").length;
+  return <div>
+    <H2 title="Rent reminders" sub="Automatic notice sent to tenants 3 months before rent is due" />
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      <PmStat icon={Users} label="Active tenancies" value={String(tens.length)} tone="var(--muted)" />
+      <PmStat icon={BellRing} label="Reminders due now" value={String(dueSoon)} sub="Within 3 months" />
+      <PmStat icon={CheckCircle2} label="Sent" value={String(store.sent.length)} tone="#1F9D57" />
+    </div>
+    <PmCard pad={16} style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <BellRing size={18} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} />
+        <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55 }}>Girard automatically emails and texts each tenant 3 months before their rent is due. To send live messages, add <b style={{ color: "var(--ink)" }}>RESEND_API_KEY</b> (email) and <b style={{ color: "var(--ink)" }}>TWILIO_ACCOUNT_SID</b>, <b style={{ color: "var(--ink)" }}>TWILIO_AUTH_TOKEN</b>, <b style={{ color: "var(--ink)" }}>TWILIO_FROM</b> (SMS) in Vercel. Until then, reminders are scheduled and logged.</div>
+      </div>
+    </PmCard>
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 780 }}>
+        <thead><tr style={{ background: "var(--ivory)" }}>{["Tenant", "Property", "Rent", "Rent due", "Reminder date", "Status", "Action"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
+        <tbody>{tens.map(t => { const stt = statusOf(t); return <tr key={t.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
+          <td style={{ padding: "12px 16px" }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>{t.tenant}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{t.email}</div></td>
+          <td style={{ padding: "12px 16px", fontSize: 13, color: "var(--ink)" }}>{t.property}</td>
+          <td style={{ padding: "12px 16px", fontWeight: 700, color: "var(--ink)" }}>{money(t.rent)}</td>
+          <td style={{ padding: "12px 16px", fontSize: 13, color: "var(--ink)" }}>{fmtDate(t.due)}</td>
+          <td style={{ padding: "12px 16px", fontSize: 13, color: "var(--muted)" }}>{fmtDate(t.remind)}</td>
+          <td style={{ padding: "12px 16px" }}><span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: stt === "Sent" ? "rgba(31,157,87,.14)" : stt === "Ready to send" ? "var(--gold-soft)" : "var(--ivory)", color: stt === "Sent" ? "#1F9D57" : stt === "Ready to send" ? "var(--gold-2)" : "var(--muted)" }}>{stt}</span></td>
+          <td style={{ padding: "12px 16px" }}><div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" onClick={() => setPreview(t)}>Preview</PmBtn>{stt !== "Sent" && <PmBtn size="sm" icon={BellRing} onClick={() => send(t)}>Send now</PmBtn>}</div></td>
+        </tr>; })}</tbody>
+      </table></div>
+    </PmCard>
+    {preview && <PmModal title={"Reminder to " + preview.tenant} onClose={() => setPreview(null)}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>{[["Email", preview.email], ["SMS", preview.phone], ["Rent due", fmtDate(preview.due)]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 130, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 13.5 }}>{v}</div></div>)}</div>
+      <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16, fontSize: 14, color: "var(--ink)", lineHeight: 1.6, marginBottom: 16 }}>{reminderMsg(preview)}</div>
+      <PmBtn kind="gold" icon={BellRing} onClick={() => { send(preview); setPreview(null); }}>Send now</PmBtn>
+    </PmModal>}
   </div>;
 }
