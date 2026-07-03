@@ -6,7 +6,7 @@ import {
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
   CreditCard, PenLine, Filter, LayoutDashboard, Bell, Send, Loader2, MoreHorizontal,
   Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
-  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing
+  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -174,18 +174,68 @@ const IMG = {
 
 /* Girard emblem, recreated from the brand: a gold ring on an arc base with three towers. */
 function GirardMark({ size = 34 }) {
-  const g = "var(--gold)";
-  return (
-    <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true">
-      <circle cx="60" cy="55" r="41" fill="none" stroke={g} strokeWidth="3.4" />
-      <path d="M28 83 Q60 103 92 83" fill="none" stroke={g} strokeWidth="3.6" strokeLinecap="round" />
-      <g fill={g}>
-        <path d="M53 84 L53 33 L61 27 L61 84 Z" />
-        <path d="M63 84 L63 47 L75 41 L75 84 Z" />
-        <path d="M41 84 L41 53 L51 49 L51 84 Z" />
-      </g>
-    </svg>
-  );
+  return <img src="/img/girard-emblem.png" alt="Girard Property Estate Limited" width={size} height={size} style={{ display: "block", objectFit: "contain" }} />;
+}
+
+/* Live counter of properties under management. Reads the store if it exists
+   (updates as the owner adds or removes), otherwise shows a sensible default. */
+function readPropCount() {
+  try { const r = localStorage.getItem("girard_pm_v3"); if (r) { const d = JSON.parse(r); if (d && d.properties) return d.properties.length; } } catch (e) {}
+  return 30;
+}
+function PropertyCounter({ style }) {
+  const [n, setN] = useState(readPropCount);
+  const [disp, setDisp] = useState(0);
+  useEffect(() => {
+    let raf; const t0 = performance.now(); const from = disp, to = n, dur = 900;
+    const step = t => { const p = Math.min(1, (t - t0) / dur); setDisp(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)))); if (p < 1) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step); return () => cancelAnimationFrame(raf);
+  }, [n]);
+  useEffect(() => {
+    const id = setInterval(() => { const v = readPropCount(); setN(x => x !== v ? v : x); }, 2500);
+    const onS = () => setN(readPropCount());
+    window.addEventListener("storage", onS);
+    return () => { clearInterval(id); window.removeEventListener("storage", onS); };
+  }, []);
+  return <span className="serif" style={style}>{disp}</span>;
+}
+
+function ContactSection() {
+  const [cf, setCf] = useState({ name: "", email: "", msg: "" });
+  const send = () => {
+    const subject = encodeURIComponent("Website enquiry from " + (cf.name || "a visitor"));
+    const body = encodeURIComponent((cf.msg || "") + "\n\nFrom: " + cf.name + " (" + cf.email + ")");
+    window.location.href = "mailto:info@girardproperty.com?subject=" + subject + "&body=" + body;
+  };
+  const inp = { width: "100%", background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 8, padding: "12px 14px", color: "#fff", fontSize: 14, marginBottom: 12, fontFamily: "inherit" };
+  const items = [
+    { icon: MapPin, label: "Visit us", value: "21a Fatai Idowu Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos, Nigeria" },
+    { icon: Phone, label: "Call us", value: "+234 906 000 1234", href: "tel:+2349060001234" },
+    { icon: Mail, label: "Email us", value: "info@girardproperty.com", href: "mailto:info@girardproperty.com" },
+    { icon: Globe2, label: "Online", value: "www.girardproperty.com", href: "https://www.girardproperty.com" }
+  ];
+  return <section id="contact" style={{ background: "var(--ivory)", padding: "88px 0" }}>
+    <div className="wrap">
+      <div style={{ maxWidth: 640, marginBottom: 40 }}>
+        <Rule light />
+        <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Get in touch</div>
+        <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Contact us.</h2>
+        <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 12, lineHeight: 1.6, maxWidth: 520 }}>Speak with the Girard team about managing your property, listing with us, or investing in 1 Bourdillon Residences.</p>
+      </div>
+      <div className="cap-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {items.map(it => { const inner = <><div style={{ width: 44, height: 44, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", flexShrink: 0 }}><it.icon size={20} /></div><div><div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .5 }}>{it.label}</div><div style={{ color: "var(--ink)", fontSize: 14.5, marginTop: 3, lineHeight: 1.5 }}>{it.value}</div></div></>; const st = { display: "flex", gap: 14, alignItems: "flex-start", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: 18 }; return it.href ? <a key={it.label} href={it.href} style={st}>{inner}</a> : <div key={it.label} style={st}>{inner}</div>; })}
+        </div>
+        <div style={{ background: "var(--navy)", borderRadius: 14, padding: 28 }}>
+          <div className="serif" style={{ color: "#fff", fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Send a message</div>
+          <input value={cf.name} onChange={e => setCf({ ...cf, name: e.target.value })} placeholder="Your name" style={inp} />
+          <input value={cf.email} onChange={e => setCf({ ...cf, email: e.target.value })} placeholder="Email address" style={inp} />
+          <textarea value={cf.msg} onChange={e => setCf({ ...cf, msg: e.target.value })} rows={4} placeholder="How can we help?" style={{ ...inp, resize: "vertical" }} />
+          <button onClick={send} className="btn-gold" style={{ width: "100%", justifyContent: "center", marginTop: 2 }}>Send message <ArrowUpRight size={16} /></button>
+        </div>
+      </div>
+    </div>
+  </section>;
 }
 
 const PHOTO_POOL = [
@@ -295,6 +345,7 @@ function Landing({ onStart, onSignIn }) {
             <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#who">Who we serve</a>
+            <a className="nav-link" href="#contact">Contact</a>
             <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 18px" }}>Sign in</a>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
           </nav>
@@ -305,6 +356,7 @@ function Landing({ onStart, onSignIn }) {
             <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#who">Who we serve</a>
+            <a className="nav-link" href="#contact">Contact</a>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
           </div>
         )}
@@ -336,8 +388,8 @@ function Landing({ onStart, onSignIn }) {
                 <Photo src={IMG.hero} hue={210} alt="Modern residential towers" style={{ height: 440 }} overlay="linear-gradient(180deg, rgba(10,31,60,.18), rgba(10,31,60,.55))" />
               </div>
               <div style={{ position: "absolute", bottom: -22, left: -22, background: "var(--white)", color: "var(--ink)", borderRadius: 8, padding: "16px 20px", boxShadow: "0 20px 50px rgba(0,0,0,.35)" }}>
-                <div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--navy)" }}>30</div>
-                <div style={{ fontSize: 12, color: "var(--muted)", maxWidth: 130 }}>Lagos properties under management at launch</div>
+                <PropertyCounter style={{ fontSize: 30, fontWeight: 600, color: "var(--navy)", display: "block" }} />
+                <div style={{ fontSize: 12, color: "var(--muted)", maxWidth: 140 }}>Properties under management</div>
               </div>
             </div>
           </div>
@@ -521,6 +573,8 @@ function Landing({ onStart, onSignIn }) {
           </div>
         </section>
       )}
+
+      <ContactSection />
 
       {/* CTA */}
       <section style={{ background: "var(--navy-2)", color: "#fff", padding: "92px 0", position: "relative", overflow: "hidden" }}>
