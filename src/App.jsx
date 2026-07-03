@@ -205,14 +205,14 @@ function ContactSection() {
   const send = () => {
     const subject = encodeURIComponent("Website enquiry from " + (cf.name || "a visitor"));
     const body = encodeURIComponent((cf.msg || "") + "\n\nFrom: " + cf.name + " (" + cf.email + ")");
-    window.location.href = "mailto:info@girardproperty.com?subject=" + subject + "&body=" + body;
+    window.location.href = "mailto:info@girardpropertylimited.com?subject=" + subject + "&body=" + body;
   };
   const inp = { width: "100%", background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 8, padding: "12px 14px", color: "#fff", fontSize: 14, marginBottom: 12, fontFamily: "inherit" };
   const items = [
-    { icon: MapPin, label: "Visit us", value: "21a Fatai Idowu Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos, Nigeria" },
-    { icon: Phone, label: "Call us", value: "+234 906 000 1234", href: "tel:+2349060001234" },
-    { icon: Mail, label: "Email us", value: "info@girardproperty.com", href: "mailto:info@girardproperty.com" },
-    { icon: Globe2, label: "Online", value: "www.girardproperty.com", href: "https://www.girardproperty.com" }
+    { icon: MapPin, label: "Visit us", value: "21 Fatai Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos" },
+    { icon: Phone, label: "Call us", value: "+234 805 873 3019", href: "tel:+2348058733019" },
+    { icon: Mail, label: "Email us", value: "info@girardpropertylimited.com", href: "mailto:info@girardpropertylimited.com" },
+    { icon: Clock, label: "Open hours", value: "Mon – Sat: 8am – 5pm · Sunday closed" }
   ];
   return <section id="contact" style={{ background: "var(--ivory)", padding: "88px 0" }}>
     <div className="wrap">
@@ -265,11 +265,21 @@ function Photo({ src, hue = 212, alt = "", style, radius = 0, overlay, className
 /* Real capabilities and positioning, drawn from girardpropertylimited.com */
 const MGMT_CAPS = ["Facility & infrastructure management", "Lease administration", "Service charge management", "Maintenance oversight", "Vendor coordination", "Security operations", "Utilities management", "Financial reporting"];
 const INV_CAPS = ["Development partnerships", "Income-producing assets", "Land banking strategies", "Institutional investment platforms"];
-const VALUES = [
-  { t: "Reliability", d: "Consistent service excellence, delivered on time and to a dependable standard." },
-  { t: "Transparency", d: "Clear reporting frameworks and open, accountable communication throughout." },
-  { t: "Compliance", d: "Strong governance and regulatory compliance embedded at every step." },
-  { t: "Discipline", d: "Operational discipline that protects asset value and stabilises cash flow." }
+const SERVICES = [
+  { icon: Building2, t: "Real Estate Development", d: "End-to-end development of premium residential and mixed-use projects, from concept and design through to delivery, to premium architectural and engineering standards." },
+  { icon: ShieldCheck, t: "Property & Estate Management", d: "Full end-to-end management of residential and commercial property, with technology-enabled monitoring, asset preservation and tenant satisfaction at its core." },
+  { icon: Wallet, t: "Buy-to-Let Investment Solutions", d: "Structured buy-to-let opportunities with managed lettings and clear reporting, designed to generate reliable rental income for investors." },
+  { icon: TrendingUp, t: "Real Estate Investment & Partnerships", d: "Secure, high-yield investment models with disciplined due diligence, strong governance and transparent reporting across partnerships and income-producing assets." },
+  { icon: ClipboardCheck, t: "Real Estate Advisory & Transaction Support", d: "Expert advisory and hands-on support through acquisitions, disposals and transactions, guided by a strong legal and governance framework." }
+];
+const ADVANTAGES = [
+  "Technology-powered operations",
+  "Strong legal and governance framework",
+  "Deep development and asset management expertise",
+  "High-performing, multidimensional leadership",
+  "Investor-centred transparency",
+  "Compliance with international best practices",
+  "Premium architectural and engineering standards"
 ];
 
 /* Leadership. Add your real team and the section appears automatically.
@@ -342,6 +352,7 @@ function Landing({ onStart, onSignIn }) {
             </div>
           </div>
           <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 30 }}>
+            <a className="nav-link" href="#about">About</a>
             <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#who">Who we serve</a>
@@ -353,6 +364,7 @@ function Landing({ onStart, onSignIn }) {
         </div>
         {menu && (
           <div className="wrap" style={{ paddingBottom: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+            <a className="nav-link" href="#about">About</a>
             <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#who">Who we serve</a>
@@ -373,7 +385,7 @@ function Landing({ onStart, onSignIn }) {
                 Moved without <span style={{ fontStyle: "italic", color: "var(--gold)" }}>borders.</span>
               </h1>
               <p style={{ fontSize: 17.5, color: "rgba(255,255,255,.76)", marginTop: 24, maxWidth: 520, lineHeight: 1.65 }}>
-                Girard Property Estate Limited delivers professional, end-to-end management of residential and commercial property, now on one governed platform with cross-border swaps, market intelligence and a concierge of trusted services.
+                Girard Property Estate Limited is a premier real estate development and asset management company, elevating the standards of luxury, urban living and sustainable property investment across Nigeria, now on one governed platform for management, cross-border swaps, intelligence and concierge services.
               </p>
               <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap" }}>
                 <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
@@ -409,37 +421,36 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>
 
+      {/* ABOUT */}
+      <section id="about" style={{ background: "var(--ivory-2)", padding: "84px 0" }}>
+        <div className="wrap">
+          <div style={{ maxWidth: 820 }}>
+            <Rule light />
+            <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>About Girard</div>
+            <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Redefining excellence in real estate development.</h2>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 18 }}>Girard Property Estate Limited is a premier real estate development and asset management company dedicated to elevating the standards of luxury, urban living and sustainable property investment across Nigeria's rapidly evolving landscape.</p>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 14 }}>Driven by a leadership team of seasoned professionals in real estate law, project development, finance, governance and estate management, the company upholds an unyielding commitment to quality, compliance and strategic growth.</p>
+          </div>
+        </div>
+      </section>
+
       {/* SERVICES DEEP-DIVE (real copy) */}
       <section id="services" style={{ background: "var(--ivory)", padding: "88px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 660, marginBottom: 46 }}>
             <Rule light />
-            <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>What Girard does</div>
-            <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Two disciplines, delivered to an institutional standard.</h2>
+            <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Our services</div>
+            <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>A comprehensive suite of real estate solutions.</h2>
+            <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 620 }}>Tailored to investors, homeowners, institutions and development partners seeking reliability and excellence, delivered to premium architectural and engineering standards.</p>
           </div>
-          <div className="cap-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28 }}>
-            <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, overflow: "hidden" }}>
-              <Photo src={IMG.tower} hue={210} alt="Managed residential building" style={{ height: 200 }} overlay="linear-gradient(180deg, rgba(10,31,60,.05), rgba(10,31,60,.35))" />
-              <div style={{ padding: 26 }}>
-                <div className="serif" style={{ fontSize: 24, fontWeight: 600, color: "var(--ink)", marginBottom: 10 }}>Property &amp; Estate Management</div>
-                <p style={{ color: "var(--muted)", fontSize: 14.5, lineHeight: 1.65, marginBottom: 16 }}>End-to-end management of residential and commercial property, ensuring operational efficiency, tenant satisfaction and long-term asset preservation, with technology-enabled real-time monitoring and data-driven performance tracking.</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 18px" }}>
-                  {MGMT_CAPS.map(c => <div key={c} className="cap-li"><span style={{ width: 6, height: 6, borderRadius: 999, background: "var(--gold)", flexShrink: 0 }} />{c}</div>)}
-                </div>
-              </div>
-            </div>
-            <div style={{ background: "var(--navy)", color: "#fff", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              <div style={{ padding: 26, flex: 1 }}>
-                <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Investment &amp; Partnerships</div>
-                <div className="serif" style={{ fontSize: 24, fontWeight: 600, marginBottom: 10 }}>Real Estate Investment &amp; Partnerships</div>
-                <p style={{ color: "rgba(255,255,255,.74)", fontSize: 14.5, lineHeight: 1.65, marginBottom: 18 }}>Secure, high-yield investment models supported by disciplined due diligence, strong governance structures and transparent reporting. Partnerships align investor objectives with sustainable asset performance and controlled risk.</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {INV_CAPS.map(c => <div key={c} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "rgba(255,255,255,.9)" }}><span style={{ width: 6, height: 6, borderRadius: 999, background: "var(--gold)" }} />{c}</div>)}
-                </div>
-              </div>
-              <div style={{ borderTop: "1px solid var(--navy-line)", padding: "16px 26px", fontSize: 13, color: "rgba(255,255,255,.6)" }}>Governed by clear legal frameworks, compliance protocols and performance accountability standards.</div>
-            </div>
+          <div className="svc-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+            {SERVICES.map(sv => <div key={sv.t} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: 26 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 16 }}><sv.icon size={22} /></div>
+              <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>{sv.t}</div>
+              <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{sv.d}</p>
+            </div>)}
           </div>
+          <style>{`@media(max-width:960px){.svc-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:620px){.svc-grid{grid-template-columns:1fr!important}}`}</style>
         </div>
       </section>
 
@@ -512,21 +523,20 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>
 
-      {/* VALUES */}
+      {/* WHY CHOOSE GIRARD */}
       <section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
         <div className="wrap">
-          <div style={{ maxWidth: 640, marginBottom: 46 }}>
+          <div style={{ maxWidth: 640, marginBottom: 40 }}>
             <Rule />
-            <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>The Girard standard</div>
-            <h2 className="serif sec-h">Built on reliability, transparency and compliance.</h2>
+            <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Why choose Girard</div>
+            <h2 className="serif sec-h">Strategic advantages that set us apart.</h2>
           </div>
-          <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
-            {VALUES.map((v, i) => <div key={v.t} style={{ border: "1px solid var(--navy-line)", borderRadius: 8, padding: 24 }}>
-              <div className="serif" style={{ fontSize: 34, fontWeight: 600, color: "var(--gold)" }}>{String(i + 1).padStart(2, "0")}</div>
-              <div className="serif" style={{ fontSize: 20, fontWeight: 600, margin: "8px 0 8px" }}>{v.t}</div>
-              <div style={{ color: "rgba(255,255,255,.72)", fontSize: 13.5, lineHeight: 1.6 }}>{v.d}</div>
+          <div className="adv-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "14px 40px" }}>
+            {ADVANTAGES.map(a => <div key={a} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--navy-line)" }}>
+              <BadgeCheck size={20} color="var(--gold)" style={{ flexShrink: 0 }} /><span style={{ fontSize: 15.5, color: "rgba(255,255,255,.9)" }}>{a}</span>
             </div>)}
           </div>
+          <style>{`@media(max-width:760px){.adv-grid{grid-template-columns:1fr!important}}`}</style>
         </div>
       </section>
 
@@ -598,7 +608,7 @@ function Landing({ onStart, onSignIn }) {
               <div className="serif" style={{ fontSize: 23, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Girard</div>
               <div style={{ fontSize: 13.5, lineHeight: 1.65, maxWidth: 260 }}>Girard Property Estate Limited. Property managed with discipline, moved without borders.</div>
             </div>
-            {[["Services", ["Property Management", "Investment & Partnerships", "Property Swap", "Market Intelligence"]], ["Markets", ["Nigeria", "United Kingdom", "Middle East", "International"]], ["Company", ["About", "Partners", "Contact", "Sign in"]]].map(([h, items]) => (
+            {[["Services", ["Real Estate Development", "Property Management", "Buy-to-Let Solutions", "Investment & Partnerships", "Advisory & Transactions"]], ["Markets", ["Nigeria", "United Kingdom", "Middle East", "International"]], ["Company", ["About", "Why Girard", "Contact", "Sign in"]]].map(([h, items]) => (
               <div key={h}>
                 <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 12, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>{h}</div>
                 {items.map(x => <div key={x} style={{ fontSize: 13.5, marginBottom: 9 }}>{x}</div>)}
