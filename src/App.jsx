@@ -849,11 +849,28 @@ function resolveIdentity(email, role) {
 }
 
 /* auth adapters */
+// Best-effort: ensure a profiles row (id, email, role) exists for the signed-in
+// user so server-side RLS can read their role. Silently no-ops if the profiles
+// table or policies are not in place yet, so the app never breaks before setup.
+async function ensureProfile(role, force) {
+  if (DEMO || !supabase) return role || null;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return role || null;
+    let existingRole = null;
+    try { const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(); existingRole = data && data.role ? data.role : null; } catch (e) {}
+    const finalRole = (force && role) ? role : (existingRole || role || (user.user_metadata && user.user_metadata.role) || "tenant");
+    try { await supabase.from("profiles").upsert({ id: user.id, email: user.email, role: finalRole }, { onConflict: "id" }); } catch (e) {}
+    return finalRole;
+  } catch (e) { return role || null; }
+}
 async function authRestore() {
   if (!DEMO) {
     const { data } = await supabase.auth.getSession();
     const u = data.session?.user;
-    return u ? { email: u.email, role: u.user_metadata?.role || null } : null;
+    if (!u) return null;
+    const eff = await ensureProfile(null);
+    return { email: u.email, role: eff || u.user_metadata?.role || null };
   }
   const email = localStorage.getItem("girard_session");
   if (!email) return null;
@@ -868,7 +885,8 @@ async function authSignUp(email, password, role) {
       const r = await supabase.auth.signInWithPassword({ email, password });
       if (r.error) throw new Error("Account created. Please check your email to confirm, then sign in.");
     }
-    return { email, role };
+    const eff = await ensureProfile(role);
+    return { email, role: eff || role };
   }
   const key = email.toLowerCase().trim();
   const accts = JSON.parse(localStorage.getItem("girard_accounts") || "{}");
@@ -882,7 +900,8 @@ async function authSignIn(email, password) {
   if (!DEMO) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw new Error(error.message);
-    return { email: data.user.email, role: data.user.user_metadata?.role || null };
+    const eff = await ensureProfile(null);
+    return { email: data.user.email, role: eff || data.user.user_metadata?.role || null };
   }
   const key = email.toLowerCase().trim();
   const accts = JSON.parse(localStorage.getItem("girard_accounts") || "{}");
@@ -892,7 +911,7 @@ async function authSignIn(email, password) {
   return { email: key, role: a.role || null };
 }
 async function authSetRole(role) {
-  if (!DEMO) { await supabase.auth.updateUser({ data: { role } }); return; }
+  if (!DEMO) { await supabase.auth.updateUser({ data: { role } }); await ensureProfile(role, true); return; }
   const email = localStorage.getItem("girard_session");
   const accts = JSON.parse(localStorage.getItem("girard_accounts") || "{}");
   if (accts[email]) { accts[email].role = role; localStorage.setItem("girard_accounts", JSON.stringify(accts)); }

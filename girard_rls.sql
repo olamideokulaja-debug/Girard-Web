@@ -49,9 +49,22 @@ $$;
 drop policy if exists profiles_read   on profiles;
 drop policy if exists profiles_insert on profiles;
 drop policy if exists profiles_update on profiles;
-create policy profiles_read   on profiles for select using (auth.uid() = id or public.is_admin());
-create policy profiles_insert on profiles for insert with check (auth.uid() = id);
-create policy profiles_update on profiles for update using (auth.uid() = id or public.is_admin());
+create policy profiles_read on profiles for select
+  using (auth.uid() = id or public.is_admin());
+-- Users may create/keep their own profile with any NON-admin role.
+-- The 'admin' role can only be self-set by approved @girardproperty.com
+-- emails, or granted by an existing admin. This blocks self-escalation.
+create policy profiles_insert on profiles for insert
+  with check (
+    ((auth.uid() = id) and (role <> 'admin' or auth.email() like '%@girardproperty.com'))
+    or public.is_admin()
+  );
+create policy profiles_update on profiles for update
+  using (auth.uid() = id or public.is_admin())
+  with check (
+    ((auth.uid() = id) and (role <> 'admin' or auth.email() like '%@girardproperty.com'))
+    or public.is_admin()
+  );
 
 -- 4) Operational tables ------------------------------------
 -- Pattern A (shared operational data): any signed-in user may
@@ -106,14 +119,19 @@ begin
 end $$;
 
 -- ============================================================
--- After running: create YOUR admin profile so is_admin() works.
--- Replace the email with the account you sign in with, then run:
+-- ADMINS: any @girardproperty.com account becomes an admin
+-- automatically the first time it signs in (the app writes its
+-- own profile row, and the policy above permits admin for that
+-- domain). No manual step needed for your team.
+--
+-- To grant admin to an email OUTSIDE that domain, run once in the
+-- SQL editor (this bypasses RLS), replacing the address:
 --
 --   insert into profiles (id, email, role)
 --   select id, email, 'admin' from auth.users
---   where email = 'olamideokulaja@girardproperty.com'
+--   where email = 'someone@example.com'
 --   on conflict (id) do update set role = 'admin';
 --
--- New users should get a profile row on first sign-in. The
--- Supabase Auth wiring Claude adds will create that row for you.
+-- Every other user gets a profile row with their chosen role on
+-- first sign-in automatically.
 -- ============================================================
