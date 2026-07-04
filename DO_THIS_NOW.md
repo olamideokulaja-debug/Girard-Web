@@ -79,6 +79,6 @@ If rows appear in Supabase, everything is connected. 🎉
 ## Quick safety checks
 - Root `index.html` starts with `<!doctype html>`.
 - `src/index.css` starts with `:root {`.
-- `src/App.jsx` is about 3812 lines.
+- `src/App.jsx` is about 3951 lines.
 
 If anything looks wrong, tell me which step and what you saw, and I'll help.

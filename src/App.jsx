@@ -735,18 +735,47 @@ async function payWithPaystack({ email, amountNaira, label, purpose, target, onS
         const handler = window.PaystackPop.setup({
           key: PAYSTACK_KEY, email: email || "customer@girardpropertylimited.com", amount, currency: "NGN", ref: reference,
           metadata: { purpose: purpose || "payment", target: target || email || "", custom_fields: [{ display_name: "Purpose", variable_name: "purpose", value: label || "Girard payment" }] },
-          callback: function (res) { onSuccess && onSuccess(res.reference); },
+          callback: function (res) { payRecord({ reference: res.reference, purpose, target, amount: amountNaira, status: "success" }); onSuccess && onSuccess(res.reference); },
           onClose: function () { onCancel && onCancel(); }
         });
         handler.openIframe(); return;
       } catch (e) {}
     }
   }
-  onSuccess && onSuccess("DEMO-" + Date.now());
+  payRecord({ reference, purpose, target, amount: amountNaira, status: "recorded" });
+  onSuccess && onSuccess(reference);
 }
 const NG_BANKS = [["Access Bank", "044"], ["Guaranty Trust Bank", "058"], ["Zenith Bank", "057"], ["United Bank for Africa", "033"], ["First Bank of Nigeria", "011"], ["Fidelity Bank", "070"], ["Union Bank", "032"], ["Sterling Bank", "232"], ["Stanbic IBTC", "221"], ["Wema Bank", "035"], ["Kuda", "50211"], ["Opay", "999992"], ["Palmpay", "999991"]];
 async function paystackTransfer({ amount, account_number, bank_code, name, reason }) {
   try { const r = await fetch("/api/paystack-transfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount, account_number, bank_code, name, reason }) }); return await r.json(); } catch (e) { return { configured: false }; }
+}
+const PAYMENTS_KEY = "girard_payments_v1";
+function payLoadLocal() { try { const r = localStorage.getItem(PAYMENTS_KEY); if (r) return JSON.parse(r); } catch (e) {} return { items: [] }; }
+function paySaveLocal(s) { try { localStorage.setItem(PAYMENTS_KEY, JSON.stringify(s)); } catch (e) {} }
+async function payRecord(rec) {
+  const row = { reference: rec.reference, purpose: rec.purpose || "payment", target: rec.target || null, amount: Math.round(rec.amount || 0), status: rec.status || "recorded", paid_at: new Date().toISOString() };
+  if (supabase) { try { await supabase.from("payments").upsert([row]); return; } catch (e) {} }
+  const st = payLoadLocal(); if (!st.items.find(x => x.reference === row.reference)) paySaveLocal({ items: [row, ...st.items] });
+}
+async function paymentsFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("payments").select("*").order("paid_at", { ascending: false }); if (!error && data) return data; } catch (e) {} }
+  return payLoadLocal().items;
+}
+const DOCS_KEY = "girard_documents_v1";
+function docsLoadLocal() { try { const r = localStorage.getItem(DOCS_KEY); if (r) return JSON.parse(r); } catch (e) {} return { items: [] }; }
+function docsSaveLocal(s) { try { localStorage.setItem(DOCS_KEY, JSON.stringify(s)); } catch (e) {} }
+async function docSave(rec) {
+  const row = { id: rec.id, doc_type: rec.doc_type, party_b: rec.party_b || null, subject: rec.subject || null, body: rec.body, created_by: rec.created_by || null };
+  if (supabase) { try { await supabase.from("documents").insert([row]); return; } catch (e) {} }
+  const st = docsLoadLocal(); docsSaveLocal({ items: [{ ...row, created_at: new Date().toISOString() }, ...st.items] });
+}
+async function docsFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("documents").select("*").order("created_at", { ascending: false }).limit(50); if (!error && data) return data; } catch (e) {} }
+  return docsLoadLocal().items;
+}
+async function paymentExists(target, purpose) {
+  if (supabase && target) { try { const { data, error } = await supabase.from("payments").select("reference").eq("target", target).eq("purpose", purpose).eq("status", "success").limit(1); if (!error && data && data.length) return true; } catch (e) {} }
+  return false;
 }
 async function agentStateLoad(email) {
   if (supabase && email) { try { const { data, error } = await supabase.from("agents").select("paid").eq("email", email).maybeSingle(); if (!error && data) return { paid: !!data.paid }; } catch (e) {} }
@@ -1309,6 +1338,7 @@ function OwnerDash({ st, identity }) {
   ];
   return <div>
     <H2 title={"Good day, " + identity.firstName} sub="Girard-managed portfolio at a glance" right={<span style={{ color: "var(--muted)", fontSize: 13 }}>{today}</span>} />
+    {identity.role === "admin" && <RevenueSummary />}
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
       <CStat icon={Wallet} label="Monthly income" value="₦83.4M" sub="▲ 6.4% vs May" c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={Building2} label="Properties" value={String(st.properties.length)} sub="Under management" c="#8B5CF6" bg="#F1ECFE" />
@@ -1575,7 +1605,7 @@ function DocViewer({ app, p, check, onClose }) {
     <div style={{ marginTop: 10, fontSize: 11.5, color: "var(--muted)" }}>Sample document shown for demonstration.</div>
   </PmModal>;
 }
-function ApplicationsScreen({ st, setSt, toast }) {
+function ApplicationsScreen({ st, setSt, toast, toAi }) {
   const [lease, setLease] = useState(null);
   const [review, setReview] = useState(null);
   const act = (id, status) => { setSt({ ...st, applications: st.applications.map(a => a.id === id ? { ...a, status } : a) }); toast("Application " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
@@ -1591,7 +1621,7 @@ function ApplicationsScreen({ st, setSt, toast }) {
           <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{money(a.income)}</td>
           <td style={{ padding: "13px 16px" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: got === chk.length ? "#1F9D57" : "var(--gold-2)" }}><FileText size={14} />{got}/{chk.length}</span></td>
           <td style={{ padding: "13px 16px" }}><PmPill label={a.status} /></td>
-          <td style={{ padding: "13px 16px" }}>{a.status === "Approved" ? <PmBtn size="sm" kind="gold" icon={FileText} onClick={() => setLease(a)}>Generate lease</PmBtn> : a.status === "Rejected" ? <span style={{ color: "var(--muted)", fontSize: 12.5 }}>Closed</span> : <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={Search} onClick={() => setReview(a)}>Review</PmBtn><PmBtn size="sm" onClick={() => act(a.id, "Approved")}>Approve</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => act(a.id, "Rejected")}>Reject</PmBtn></div>}</td>
+          <td style={{ padding: "13px 16px" }}>{a.status === "Approved" ? <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="gold" icon={FileText} onClick={() => setLease(a)}>Generate lease</PmBtn><PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => { const pr = propOf(st, a.property); toAi && toAi({ type: "Tenancy Agreement", partyB: a.tenant, subject: pr ? (pr.title + ", " + pr.address) : a.property, amount: pr ? money(pr.rent) + " per annum" : "", terms: "Annual tenancy for " + (pr ? (pr.beds + "-bed " + pr.type + " in " + pr.area) : a.property) + ". Rent " + (pr ? money(pr.rent) : "") + " payable yearly in advance. Tenant: " + a.tenant + ", stated income " + money(a.income) + "." }); }}>AI tenancy</PmBtn></div> : a.status === "Rejected" ? <span style={{ color: "var(--muted)", fontSize: 12.5 }}>Closed</span> : <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={Search} onClick={() => setReview(a)}>Review</PmBtn><PmBtn size="sm" onClick={() => act(a.id, "Approved")}>Approve</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => act(a.id, "Rejected")}>Reject</PmBtn></div>}</td>
         </tr>; })}</tbody>
       </table></div>
     </PmCard>
@@ -1760,7 +1790,7 @@ function WorkspaceSoon({ identity }) {
 const NAV = {
   owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
   tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Jobs & repairs", Wrench], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["ai", "AI documents", Sparkles], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["wallet", "Earnings", Wallet], ["ai", "AI documents", Sparkles], ["reports", "Analytics", LineChart]],
   investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["work", "Overview", LayoutGrid]]
 };
@@ -1770,6 +1800,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const identity = { ...identity0, role: activeRole };
   const nav = NAV[activeRole] || NAV.agent;
   const [view, setView] = useState(nav[0][0]);
+  const [aiSeed, setAiSeed] = useState(null);
   const [roleMenu, setRoleMenu] = useState(false);
   const switchWorkspace = (r) => { setActiveRole(r); setView((NAV[r] || NAV.agent)[0][0]); setRoleMenu(false); };
   const [st, setStRaw] = useState(pmLoad);
@@ -1779,7 +1810,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const setSt = (next) => { setStRaw(next); pmSave(next); };
   const toast = (msg, tone) => { const id = Math.random(); setToasts(x => [...x, { id, msg, tone }]); setTimeout(() => setToasts(x => x.filter(t => t.id !== id)), 3000); };
   const screen = () => {
-    const P = { st, setSt, identity, toast };
+    const P = { st, setSt, identity, toast, toAi: (data) => { setAiSeed(data); setView("ai"); } };
     if (view === "dash") return <OwnerDash st={st} identity={identity} />;
     if (view === "props") return <PropertiesScreen {...P} />;
     if (view === "add") return <AddPropertyScreen {...P} />;
@@ -1787,8 +1818,8 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "find") return <TenantFind {...P} />;
     if (view === "rent") return <RentScreen {...P} />;
     if (view === "maint") return <JobsScreen identity={identity} toast={toast} />;
-    if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" />;
-    if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" />;
+    if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" toAi={P.toAi} />;
+    if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" toAi={P.toAi} />;
     if (view === "intel") return <IntelScreen />;
     if (view === "support") return <SupportServices identity={identity} toast={toast} />;
     if (view === "plans") return <PricingScreen identity={identity} toast={toast} />;
@@ -1804,7 +1835,8 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "feed") return <LiveFeed identity={identity} />;
     if (view === "crm") return <PipelineCRM identity={identity} toast={toast} />;
     if (view === "reports") return <ReportsScreen identity={identity} toast={toast} />;
-    if (view === "ai") return <AIStudio identity={identity} toast={toast} />;
+    if (view === "payments") return <PaymentsScreen toast={toast} />;
+    if (view === "ai") return <AIStudio identity={identity} toast={toast} seed={aiSeed} />;
     if (view === "work") return <InvestorOverview identity={identity} go={setView} />;
     return <WorkspaceSoon identity={identity} />;
   };
@@ -1831,7 +1863,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       <header style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "1 Bourdillon · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : view === "ai" ? "AI document studio" : "Digital Property Management · Lagos"}</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "1 Bourdillon · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : view === "ai" ? "AI document studio" : view === "payments" ? "Confirmed payments" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2136,7 +2168,7 @@ function IntelSoon() {
 }
 
 const SWAP_TABS = [["browse", "Browse", Search], ["list", "List for swap", Plus], ["matches", "My matches", ArrowRightLeft], ["deals", "Deals", Handshake]];
-function SwapHub({ identity, toast, initial }) {
+function SwapHub({ identity, toast, initial, toAi }) {
   const isAdmin = identity.role === "admin";
   const [tab, setTab] = useState(isAdmin ? "oversight" : "journey");
   const [sw, setSwRaw] = useState(swLoad);
@@ -2148,7 +2180,7 @@ function SwapHub({ identity, toast, initial }) {
     <div style={{ display: "flex", gap: 6, marginBottom: 22, borderBottom: "1px solid var(--cream-line)", flexWrap: "wrap" }}>
       {tabs.map(([k, label, Icon]) => <button key={k} onClick={() => setTab(k)} style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", borderBottom: "2px solid " + (tab === k ? "var(--gold)" : "transparent"), color: tab === k ? "var(--ink)" : "var(--muted)", fontWeight: tab === k ? 700 : 500, fontSize: 14, padding: "10px 6px", cursor: "pointer", marginBottom: -1 }}><Icon size={15} />{label}</button>)}
     </div>
-    {tab === "journey" && <SwapJourney identity={identity} toast={toast} />}
+    {tab === "journey" && <SwapJourney identity={identity} toast={toast} toAi={toAi} />}
     {tab === "oversight" && <SwapOversight toast={toast} />}
     {tab === "browse" && <SwapBrowse sw={sw} setSw={setSw} toast={toast} />}
     {tab === "list" && <SwapList sw={sw} setSw={setSw} toast={toast} />}
@@ -3335,10 +3367,11 @@ function FraudBar({ flagged, stopped }) {
   </div>;
 }
 
-function SwapJourney({ identity, toast }) {
+function SwapJourney({ identity, toast, toAi }) {
   const owner = (identity && identity.email) || "guest";
+  const swapSeed = (kind) => ({ type: kind === "contract" ? "Deed of Sale / Sale Agreement" : "Property Swap Agreement", partyB: (j.match && j.match.by) || "Swap counterparty", subject: "Swap of " + (j.prop.area || j.prop.market || "property") + " for " + (j.match ? j.match.place : "counterparty property"), amount: j.balanceValue ? (j.prop.currency + j.balanceValue + " balancing payment via escrow") : "no balancing payment", terms: (kind === "contract" ? "Contract of sale to perfect a completed cross-border property swap: transfer of title, release of the escrow balance, and perfection of registration, with Girard acting as concierge. " : "Cross-border property swap. ") + "Party A property: " + (j.prop.area || j.prop.market) + " valued " + j.prop.currency + (j.prop.value || "") + ". Party B property: " + (j.match ? (j.match.title + ", " + j.match.place + ", " + j.match.value) : "counterparty property") + ". Balancing payment " + (j.balanceValue ? (j.prop.currency + j.balanceValue) : "nil") + " held in escrow, released on final sign-off. Title verified by Girard." });
   const [j, setJraw] = useState(sjLoad);
-  useEffect(() => { let on = true; swapLoadMine(owner).then(x => { if (on && x) setJraw(x); }); return () => { on = false; }; }, []);
+  useEffect(() => { let on = true; swapLoadMine(owner).then(x => { if (on && x) setJraw(x); }); paymentExists(owner, "swap").then(paid => { if (on && paid) setJraw(prev => prev.paid ? prev : { ...prev, paid: true, stage: Math.max(prev.stage, 1) }); }); return () => { on = false; }; }, []);
   const setJ = (patch) => { setJraw(prev => { const n = { ...prev, ...patch }; swapSaveMine(owner, n); return n; }); };
   const [msg, setMsg] = useState("");
   const [gen, setGen] = useState(false);
@@ -3408,7 +3441,7 @@ function SwapJourney({ identity, toast }) {
       <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 14 }} onClick={() => { setJ({ stage: 5 }); toast("Terms agreed. Generating agreement."); }}>Agree terms &amp; continue</PmBtn>
     </PmCard>;
     if (j.stage === 5) return <PmCard style={{ maxWidth: 720 }}>
-      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Swap agreement</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Swap agreement</div>{toAi && <PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => toAi(swapSeed("agreement"))}>Open in AI studio</PmBtn>}</div>
       {!j.agreementText ? <PmBtn kind="navy" icon={Sparkles} onClick={genAgreement}>{gen ? "Generating…" : "Generate agreement (AI)"}</PmBtn>
         : <><div style={{ position: "relative", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto" }}>{j.agreementText}<div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--muted)" }}><Lock size={12} /> Locked</div></div>
           <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
@@ -3446,7 +3479,7 @@ function SwapJourney({ identity, toast }) {
           : <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{[["Your documents", j.prop.docs], ["Counterparty documents", OWNERSHIP_DOCS.slice(0, 3)]].map(([t, ds]) => <div key={t} style={{ flex: 1, minWidth: 220, border: "1px solid var(--cream-line)", borderRadius: 9, padding: 13 }}><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5, marginBottom: 6 }}>{t}</div>{(ds && ds.length ? ds : ["Verified by Girard"]).map(d => <div key={d} style={{ fontSize: 12.5, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6, padding: "2px 0" }}><FileText size={13} color="var(--gold-2)" />{d}</div>)}<div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, fontStyle: "italic" }}>View only · download disabled</div></div>)}</div>}
       </PmCard>
       {!locked && <PmCard>
-        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Contract of sale & concierge</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 10 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Contract of sale & concierge</div>{toAi && <PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => toAi(swapSeed("contract"))}>Open in AI studio</PmBtn>}</div>
         {!j.contractText ? <PmBtn kind="navy" icon={Sparkles} onClick={genContract}>{gen ? "Drafting…" : "Draft contract of sale (AI)"}</PmBtn>
           : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 220, overflow: "auto" }}>{j.contractText}</div>}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 14, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
@@ -3689,7 +3722,7 @@ function InvestorOverview({ identity, go }) {
     { t: "Yaba · Student housing", tk: "₦260M", yld: "11.4%", loc: "Yaba, Lagos", type: "Purpose-built student accommodation", units: "48 studio beds", strategy: "Purpose-built student housing near tertiary campuses. Bulk lets per academic year give predictable, high-yield income with low void risk.", risk: "Medium", returns: "11.4% gross yield · stable, inflation-linked rents", note: "Strong demand-supply gap. Managed lettings via Girard reduce voids." },
     { t: "Abuja · Mixed-use plot", tk: "₦640M", yld: "land bank", loc: "Central Business District, Abuja", type: "Development land / land bank", units: "0.8 hectares", strategy: "Strategic land bank in a fast-appreciating corridor. Hold for capital growth or enter a development partnership for a mixed-use scheme.", risk: "Higher / longer horizon", returns: "Capital appreciation play · development upside via JV", note: "Clean title. Suits a patient investor or a development JV with Girard." }
   ];
-  const idx = [58, 61, 60, 64, 67, 66, 70, 73];
+  const idx = [58, 61, 60, 64, 67, 66, 70, 73].map(v => ({ m: "", v }));
   return <div>
     <H2 title={"Good day, " + identity.firstName} sub="Your investor & developer overview" />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 18 }}>
@@ -3754,12 +3787,12 @@ function SwapChecklist({ identity, onView }) {
 }
 
 /* ---------- AI document studio ---------- */
-const AI_DOC_TYPES = ["Memorandum of Understanding (MOU)", "Tenancy Agreement", "Deed of Sale / Sale Agreement", "Joint Venture / Partnership Agreement", "Service / Vendor Agreement", "Non-Disclosure Agreement (NDA)", "Offer / Allocation Letter", "Demand Notice", "Power of Attorney", "Board Resolution", "Property Management Agreement", "Other (describe in key terms)"];
+const AI_DOC_TYPES = ["Memorandum of Understanding (MOU)", "Tenancy Agreement", "Property Swap Agreement", "Deed of Sale / Sale Agreement", "Joint Venture / Partnership Agreement", "Service / Vendor Agreement", "Non-Disclosure Agreement (NDA)", "Offer / Allocation Letter", "Demand Notice", "Power of Attorney", "Board Resolution", "Property Management Agreement", "Other (describe in key terms)"];
 const AI_SYS = "You are a senior Nigerian real estate and commercial lawyer drafting on behalf of Girard Property Limited. You produce complete, precise, enforceable documents in formal legal English. Where relevant include: title; parties and recitals; definitions; the operative clauses; obligations of each party; consideration and payment terms; term, renewal and termination; representations and warranties; confidentiality; indemnity; force majeure; dispute resolution by arbitration under the Arbitration and Mediation Act 2023 seated in Lagos; governing law (the laws of Lagos State and the Federal Republic of Nigeria); notices; and execution blocks with witnesses. Draft tightly to remove ambiguity and protect the client. Output plain text only. No markdown symbols and no commentary before or after the document.";
 function aiDocFallback(type, f) {
   return type + "\n\nTHIS " + type.toUpperCase() + " is made on " + (f.date || "___________") + " BETWEEN " + (f.partyA || "Party A") + " (the First Party) AND " + (f.partyB || "Party B") + " (the Second Party).\n\nWHEREAS the parties wish to record their agreement in respect of " + (f.subject || "the subject matter") + ".\n\nNOW IT IS AGREED as follows:\n1. The parties shall cooperate in good faith in respect of " + (f.subject || "the subject matter") + ".\n2. Consideration: " + (f.amount || "as agreed between the parties") + ".\n3. Term: from the effective date until completed or terminated on reasonable notice.\n4. Governing law: the laws of " + (f.jurisdiction || "Lagos, Nigeria") + ". Disputes shall be resolved by arbitration seated in Lagos.\n\nIN WITNESS WHEREOF the parties have executed this document on the date first above written.\n\n____________________          ____________________\n" + (f.partyA || "First Party") + "                    " + (f.partyB || "Second Party") + "\n\n[AI drafting is not connected. Add ANTHROPIC_API_KEY in Vercel for a full, tailored document. This is a basic skeleton built from your inputs.]";
 }
-function AIStudio({ identity, toast }) {
+function AIStudio({ identity, toast, seed }) {
   const [mode, setMode] = useState("doc");
   const [type, setType] = useState(AI_DOC_TYPES[0]);
   const [f, setF] = useState({ partyA: "Girard Property Limited", partyB: "", subject: "", terms: "", amount: "", date: "", jurisdiction: "Lagos, Nigeria" });
@@ -3768,6 +3801,9 @@ function AIStudio({ identity, toast }) {
   const [loading, setLoading] = useState(false);
   const [offline, setOffline] = useState(false);
   const [refine, setRefine] = useState("");
+  const [saved, setSaved] = useState([]);
+  useEffect(() => { let on = true; docsFetch().then(x => { if (on) setSaved(x); }); return () => { on = false; }; }, []);
+  useEffect(() => { if (seed) { setMode("doc"); if (seed.type) setType(seed.type); setF(x => ({ ...x, partyB: seed.partyB || x.partyB, subject: seed.subject || x.subject, amount: seed.amount || x.amount, terms: seed.terms || x.terms, date: seed.date || x.date })); } }, [seed]);
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
   const buildPrompt = () => mode === "free" ? prompt : ("Draft a complete, iron-clad " + type + " ready for execution.\nParty A: " + (f.partyA || "-") + "\nParty B: " + (f.partyB || "-") + "\nSubject / property: " + (f.subject || "-") + "\nKey commercial terms: " + (f.terms || "standard market terms") + "\nAmount / consideration: " + (f.amount || "as agreed") + "\nEffective date: " + (f.date || "the date of execution") + "\nJurisdiction: " + (f.jurisdiction || "Lagos, Nigeria") + "\n\nReturn the full document only.");
   const run = async (instruction) => {
@@ -3780,6 +3816,7 @@ function AIStudio({ identity, toast }) {
     else { setOffline(true); if (!instruction) setOut(mode === "free" ? "" : aiDocFallback(type, f)); toast("AI is not connected. Add ANTHROPIC_API_KEY in Vercel.", "danger"); }
   };
   const copy = () => { try { navigator.clipboard.writeText(out); toast("Copied to clipboard", "success"); } catch (e) {} };
+  const saveDoc = () => { if (!out) return; const rec = { id: "DOC-" + Date.now(), doc_type: mode === "free" ? "Free-form" : type, party_b: f.partyB || null, subject: f.subject || (mode === "free" ? prompt.slice(0, 60) : ""), body: out, created_by: (identity && identity.email) || null }; docSave(rec); setSaved(s => [{ ...rec, created_at: new Date().toISOString() }, ...s]); toast("Saved to records", "success"); };
   const download = () => { try { const blob = new Blob([out], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = (mode === "free" ? "girard-document" : type.split(" ")[0].toLowerCase() + "-girard") + ".txt"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } catch (e) {} };
   const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 14, fontFamily: "inherit" };
   return <div>
@@ -3799,14 +3836,116 @@ function AIStudio({ identity, toast }) {
         <PmBtn kind="gold" icon={Sparkles} style={{ marginTop: 14 }} onClick={() => run()}>{loading ? "Drafting…" : "Generate with AI"}</PmBtn>
       </PmCard>
       <PmCard>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Draft</div>{out && <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={ClipboardCheck} onClick={copy}>Copy</PmBtn><PmBtn size="sm" kind="ghost" icon={FileText} onClick={download}>Download</PmBtn></div>}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Draft</div>{out && <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={ClipboardCheck} onClick={copy}>Copy</PmBtn><PmBtn size="sm" kind="ghost" icon={FileText} onClick={download}>Download</PmBtn><PmBtn size="sm" kind="gold" icon={Check} onClick={saveDoc}>Save</PmBtn></div>}</div>
         {offline && <div style={{ background: "rgba(224,161,6,.1)", border: "1px solid rgba(224,161,6,.3)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", marginBottom: 10 }}>AI is not connected yet. Add <b>ANTHROPIC_API_KEY</b> in Vercel and redeploy for full, tailored drafting. Showing a basic skeleton for now.</div>}
         {loading ? <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Drafting your document…</div>
           : out ? <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16 }}>{out}</div>
           : <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Your AI-drafted document will appear here.</div>}
         {out && <div style={{ display: "flex", gap: 8, marginTop: 12 }}><input value={refine} onChange={e => setRefine(e.target.value)} placeholder="Refine, e.g. add a penalty clause" style={{ ...inp, flex: 1 }} onKeyDown={e => e.key === "Enter" && refine.trim() && run(refine)} /><PmBtn kind="navy" onClick={() => refine.trim() && run(refine)}>Refine</PmBtn></div>}
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 12 }}>AI drafts are a starting point. Have important documents reviewed by a qualified lawyer before signing.</div>
+        {saved.length > 0 && <div style={{ marginTop: 16, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
+          <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5, marginBottom: 8 }}>Saved documents</div>
+          <div style={{ display: "grid", gap: 6, maxHeight: 200, overflow: "auto" }}>{saved.slice(0, 20).map(d => <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, padding: "7px 10px", background: "var(--ivory-2)", borderRadius: 8 }}>
+            <FileText size={13} color="var(--gold-2)" style={{ flexShrink: 0 }} />
+            <div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.doc_type}{d.subject ? " · " + d.subject : ""}</div><div style={{ fontSize: 11, color: "var(--muted)" }}>{d.created_at ? new Date(d.created_at).toLocaleDateString() : ""}</div></div>
+            <button onClick={() => setOut(d.body)} style={{ background: "transparent", border: "1px solid var(--cream-line)", borderRadius: 6, padding: "4px 9px", fontSize: 11.5, fontWeight: 600, color: "var(--ink)", cursor: "pointer", flexShrink: 0 }}>View</button>
+          </div>)}</div>
+        </div>}
       </PmCard>
     </div>
   </div>;
+}
+
+/* ---------- Admin payments (confirmed by Paystack webhook) ---------- */
+function PaymentsScreen({ toast }) {
+  const [rows, setRows] = useState([]);
+  const [jobsData, setJobsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { let on = true; paymentsFetch().then(x => { if (on) { setRows(x); setLoading(false); } }); jobsFetch().then(x => { if (on) setJobsData(x); }); return () => { on = false; }; }, []);
+  const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const byP = k => rows.filter(r => r.purpose === k).length;
+  const _now = new Date(); const _months = [];
+  for (let i = 5; i >= 0; i--) { const d = new Date(_now.getFullYear(), _now.getMonth() - i, 1); _months.push({ key: d.getFullYear() + "-" + d.getMonth(), m: d.toLocaleDateString(undefined, { month: "short" }) }); }
+  const _sameM = (d, key) => { const dt = new Date(d); return !isNaN(dt) && (dt.getFullYear() + "-" + dt.getMonth() === key); };
+  const monthData = _months.map(mm => ({ m: mm.m,
+    agent: rows.filter(r => r.purpose === "agent" && _sameM(r.paid_at, mm.key)).reduce((s, r) => s + Number(r.amount || 0), 0),
+    swap: rows.filter(r => r.purpose === "swap" && _sameM(r.paid_at, mm.key)).reduce((s, r) => s + Number(r.amount || 0), 0),
+    job: jobsData.filter(j => j.finalCost != null && _sameM(j.createdAt, mm.key)).reduce((s, j) => s + Math.round(j.finalCost * 0.25), 0)
+  }));
+  const hasFees = monthData.some(d => d.agent + d.swap + d.job > 0);
+  return <div>
+    <H2 title="Payments" sub="Every fee taken through Girard. Live once Paystack is connected." />
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      <PmStat icon={Banknote} label="Total recorded" value={money(total)} tone="#1F9D57" />
+      <PmStat icon={Users} label="Agent fees" value={String(byP("agent"))} tone="#3B82F6" />
+      <PmStat icon={Repeat} label="Swap fees" value={String(byP("swap"))} tone="#8B5CF6" />
+    </div>
+    <PmCard style={{ marginBottom: 16 }}>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Fees collected · last 6 months</div>
+      {hasFees ? <div><FeeTrend data={monthData} /><div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>{[["Agent fees", "#3B82F6"], ["Swap fees", "#8B5CF6"], ["Job commission", "#10B981"]].map(([l, c]) => <div key={l} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--muted)" }}><span style={{ width: 10, height: 10, borderRadius: 3, background: c }} />{l}</div>)}</div></div> : <div style={{ color: "var(--muted)", fontSize: 13.5, padding: "22px 0", textAlign: "center" }}>No fees recorded yet. This chart fills in as fees come through.</div>}
+    </PmCard>
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      {loading ? <div style={{ padding: 24, color: "var(--muted)" }}>Loading…</div>
+        : rows.length === 0 ? <div style={{ padding: 24, color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>No payments yet. Every agent and swap fee is logged here. In demo mode they read "Recorded (demo)"; once Paystack is live they read "Confirmed" and appear the moment Paystack notifies Girard, even if the payer closes their tab.</div>
+        : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+          <thead><tr style={{ background: "var(--ivory)" }}>{["Reference", "Purpose", "Paid by", "Amount", "Status", "When"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
+          <tbody>{rows.map(r => <tr key={r.reference} style={{ borderTop: "1px solid var(--cream-line)" }}>
+            <td style={{ padding: "12px 16px", fontSize: 12.5, color: "var(--muted)" }}>{r.reference}</td>
+            <td style={{ padding: "12px 16px" }}><PmPill label={r.purpose || "payment"} /></td>
+            <td style={{ padding: "12px 16px", fontSize: 13, color: "var(--ink)" }}>{r.target || "—"}</td>
+            <td style={{ padding: "12px 16px", fontWeight: 700, color: "var(--ink)" }}>{money(r.amount)}</td>
+            <td style={{ padding: "12px 16px" }}><span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: r.status === "success" ? "rgba(31,157,87,.14)" : "var(--gold-soft)", color: r.status === "success" ? "#1F9D57" : "var(--gold-2)" }}>{r.status === "success" ? "Confirmed" : "Recorded (demo)"}</span></td>
+            <td style={{ padding: "12px 16px", fontSize: 12.5, color: "var(--muted)" }}>{r.paid_at ? new Date(r.paid_at).toLocaleString() : "—"}</td>
+          </tr>)}</tbody>
+        </table></div>}
+    </PmCard>
+  </div>;
+}
+
+/* ---------- Admin revenue summary (fees this month, by type) ---------- */
+function RevenueSummary() {
+  const [pays, setPays] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  useEffect(() => { let on = true; paymentsFetch().then(x => { if (on) setPays(x); }); jobsFetch().then(x => { if (on) setJobs(x); }); return () => { on = false; }; }, []);
+  const now = new Date(); const mKey = now.getFullYear() + "-" + now.getMonth();
+  const inMonth = d => { if (!d) return false; const dt = new Date(d); return !isNaN(dt) && (dt.getFullYear() + "-" + dt.getMonth() === mKey); };
+  const agentFees = pays.filter(x => x.purpose === "agent" && inMonth(x.paid_at)).reduce((s, x) => s + Number(x.amount || 0), 0);
+  const swapFees = pays.filter(x => x.purpose === "swap" && inMonth(x.paid_at)).reduce((s, x) => s + Number(x.amount || 0), 0);
+  const jobFees = jobs.filter(j => j.finalCost != null && inMonth(j.createdAt)).reduce((s, j) => s + Math.round(j.finalCost * 0.25), 0);
+  const total = agentFees + swapFees + jobFees;
+  const monthName = now.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const parts = [["Agent fees", agentFees, "#3B82F6"], ["Swap fees", swapFees, "#8B5CF6"], ["Job commission (25%)", jobFees, "#10B981"]];
+  return <PmCard style={{ marginBottom: 16 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+      <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Revenue this month · {monthName}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Fees collected through Girard</div></div>
+      <div className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--ink)" }}>{money(total)}</div>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12 }}>
+      {parts.map(([label, val, c]) => <div key={label} style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: c, flexShrink: 0 }} /><span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>{label}</span></div>
+        <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>{money(val)}</div>
+      </div>)}
+    </div>
+    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 10 }}>Includes demo-recorded fees. Job commission is 25% of completed-job value this month.</div>
+  </PmCard>;
+}
+
+/* ---------- Stacked fee trend (agent / swap / job) ---------- */
+function FeeTrend({ data }) {
+  const W = 560, H = 150, pad = 22;
+  const max = Math.max(1, ...data.map(d => d.agent + d.swap + d.job));
+  const slot = (W - pad * 2) / data.length;
+  const bw = Math.min(46, slot * 0.55);
+  const colors = { agent: "#3B82F6", swap: "#8B5CF6", job: "#10B981" };
+  return <svg viewBox={"0 0 " + W + " " + H} width="100%" height={H}>
+    {data.map((d, i) => {
+      const cx = pad + (i + 0.5) * slot;
+      let y = H - 22;
+      const segs = [["job", d.job], ["swap", d.swap], ["agent", d.agent]];
+      return <g key={i}>
+        {segs.map(([k, v]) => { if (!(v > 0)) return null; const hh = (v / max) * (H - 44); y -= hh; return <rect key={k} x={cx - bw / 2} y={y} width={bw} height={hh} fill={colors[k]} rx="2" />; })}
+        <text x={cx} y={H - 6} fontSize="11" fill="var(--muted)" textAnchor="middle">{d.m}</text>
+      </g>;
+    })}
+  </svg>;
 }

@@ -146,12 +146,22 @@ create table if not exists public.payments (
 alter table public.payments enable row level security;
 drop policy if exists "pay all" on public.payments;
 create policy "pay all" on public.payments for all to anon, authenticated using (true) with check (true);
+
+-- 11) Saved AI documents
+create table if not exists public.documents (
+  id text primary key,
+  doc_type text, party_b text, subject text, body text, created_by text,
+  created_at timestamptz default now()
+);
+alter table public.documents enable row level security;
+drop policy if exists "doc all" on public.documents;
+create policy "doc all" on public.documents for all to anon, authenticated using (true) with check (true);
 ```
 
 ## Step 4 — Check the boxes are there
 
 1. On the left, click **Table Editor**.
-2. You should now see: **enquiries**, **partners**, **withdrawals**, **jobs**, **swaps**, **agents**, **units**, **reminders**, **payments**.
+2. You should now see: **enquiries**, **partners**, **withdrawals**, **jobs**, **swaps**, **agents**, **units**, **reminders**, **payments**, **documents**.
 3. They will look empty. That is correct. They fill up as people use the app.
 
 ## Step 5 — Make sure the app is connected (only if needed)

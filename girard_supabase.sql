@@ -114,3 +114,13 @@ create table if not exists public.payments (
 alter table public.payments enable row level security;
 drop policy if exists "pay all" on public.payments;
 create policy "pay all" on public.payments for all to anon, authenticated using (true) with check (true);
+
+-- 11) Saved AI documents
+create table if not exists public.documents (
+  id text primary key,
+  doc_type text, party_b text, subject text, body text, created_by text,
+  created_at timestamptz default now()
+);
+alter table public.documents enable row level security;
+drop policy if exists "doc all" on public.documents;
+create policy "doc all" on public.documents for all to anon, authenticated using (true) with check (true);
