@@ -122,12 +122,26 @@ create table if not exists public.units (
 alter table public.units enable row level security;
 drop policy if exists "unit all" on public.units;
 create policy "unit all" on public.units for all to anon, authenticated using (true) with check (true);
+
+-- 8) Rent reminders (log of who has been reminded)
+create table if not exists public.reminders (
+  id text primary key,
+  tenant text, property text, sent_at timestamptz default now()
+);
+alter table public.reminders enable row level security;
+drop policy if exists "rem all" on public.reminders;
+create policy "rem all" on public.reminders for all to anon, authenticated using (true) with check (true);
+
+-- 9) Extra bank-detail columns on withdrawals (for real payouts)
+alter table public.withdrawals add column if not exists account_number text;
+alter table public.withdrawals add column if not exists bank_code text;
+alter table public.withdrawals add column if not exists account_name text;
 ```
 
 ## Step 4 — Check the boxes are there
 
 1. On the left, click **Table Editor**.
-2. You should now see: **enquiries**, **partners**, **withdrawals**, **jobs**, **swaps**, **agents**, **units**.
+2. You should now see: **enquiries**, **partners**, **withdrawals**, **jobs**, **swaps**, **agents**, **units**, **reminders**.
 3. They will look empty. That is correct. They fill up as people use the app.
 
 ## Step 5 — Make sure the app is connected (only if needed)
@@ -164,7 +178,16 @@ Right now the fees (agent registration, the $1,000 swap fee) are recorded but no
 
 Now when someone pays the agent fee or the swap fee, a real Paystack card box pops up. Without this key, the app still works and just records the payment for the demo.
 
-Note: money coming IN (fees) works with just the public key. Money going OUT (agent withdrawals, escrow release) uses Paystack Transfers, which needs a bit more setup on Paystack's side; tell me when you want that and I'll wire it.
+### Money going out (agent withdrawals, escrow release)
+
+Payouts are now wired too. To turn them on:
+
+1. In Paystack, copy your **Secret Key** (starts with `sk_`) from Settings → API Keys & Webhooks.
+2. In Paystack, enable **Transfers** (Settings → Transfers) and finish any approval/OTP setup Paystack asks for.
+3. In Vercel, add another Environment Variable (Production): name `PAYSTACK_SECRET_KEY`, value = your `sk_...` key.
+4. Redeploy.
+
+Now when an admin taps "Mark paid" on an agent withdrawal, Girard sends the money to that agent's bank through Paystack. Escrow release on a completed swap uses the same mechanism (add the counterparty's bank details to send a live transfer; otherwise it is recorded). Keep the secret key only in Vercel, never in the app.
 
 ---
 

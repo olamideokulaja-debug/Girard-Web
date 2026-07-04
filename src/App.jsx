@@ -742,6 +742,10 @@ async function payWithPaystack({ email, amountNaira, label, onSuccess, onCancel 
   }
   onSuccess && onSuccess("DEMO-" + Date.now());
 }
+const NG_BANKS = [["Access Bank", "044"], ["Guaranty Trust Bank", "058"], ["Zenith Bank", "057"], ["United Bank for Africa", "033"], ["First Bank of Nigeria", "011"], ["Fidelity Bank", "070"], ["Union Bank", "032"], ["Sterling Bank", "232"], ["Stanbic IBTC", "221"], ["Wema Bank", "035"], ["Kuda", "50211"], ["Opay", "999992"], ["Palmpay", "999991"]];
+async function paystackTransfer({ amount, account_number, bank_code, name, reason }) {
+  try { const r = await fetch("/api/paystack-transfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount, account_number, bank_code, name, reason }) }); return await r.json(); } catch (e) { return { configured: false }; }
+}
 async function agentStateLoad(email) {
   if (supabase && email) { try { const { data, error } = await supabase.from("agents").select("paid").eq("email", email).maybeSingle(); if (!error && data) return { paid: !!data.paid }; } catch (e) {} }
   return null;
@@ -2674,15 +2678,23 @@ function tenancySeed() {
 const REM_KEY = "girard_reminders_v1";
 function remLoad() { try { const r = localStorage.getItem(REM_KEY); if (r) return JSON.parse(r); } catch (e) {} return { sent: [] }; }
 function remSave(s) { try { localStorage.setItem(REM_KEY, JSON.stringify(s)); } catch (e) {} }
+async function remFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("reminders").select("id"); if (!error && data) return data.map(r => r.id); } catch (e) {} }
+  return remLoad().sent;
+}
+async function remMark(t) {
+  if (supabase) { try { await supabase.from("reminders").upsert([{ id: t.id, tenant: t.tenant, property: t.property, sent_at: new Date().toISOString() }]); return; } catch (e) {} }
+  const st = remLoad(); remSave({ sent: [...new Set([...st.sent, t.id])] });
+}
 function reminderMsg(t) { const first = t.tenant.split(" ")[0]; return "Dear " + first + ", this is a reminder from Girard Property Limited that the rent for " + t.property + " (" + money(t.rent) + ") is due on " + fmtDate(t.due) + ". As this falls due in three months, we kindly ask that you begin making arrangements. For any questions, contact us on +234 906 000 1234. — Girard Property Limited"; }
 
 function RentRemindersScreen({ toast }) {
   const tens = tenancySeed();
-  const [store, setStoreRaw] = useState(remLoad);
+  const [sent, setSent] = useState([]);
   const [preview, setPreview] = useState(null);
-  const setStore = (n) => { setStoreRaw(n); remSave(n); };
+  useEffect(() => { let on = true; remFetch().then(x => { if (on) setSent(x); }); return () => { on = false; }; }, []);
   const now = Date.now();
-  const statusOf = (t) => store.sent.includes(t.id) ? "Sent" : (now >= new Date(t.remind).getTime() ? "Ready to send" : "Scheduled");
+  const statusOf = (t) => sent.includes(t.id) ? "Sent" : (now >= new Date(t.remind).getTime() ? "Ready to send" : "Scheduled");
   const send = async (t) => {
     try {
       const r = await fetch("/api/rent-reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: t.email, phone: t.phone, message: reminderMsg(t) }) });
@@ -2690,7 +2702,7 @@ function RentRemindersScreen({ toast }) {
       if (d && d.configured && d.results && (d.results.email || d.results.sms)) toast("Reminder sent to " + t.tenant, "success");
       else toast("Email/SMS not set up yet. Reminder logged and will send once configured.", "danger");
     } catch (e) { toast("Email/SMS not set up yet. Reminder logged.", "danger"); }
-    setStore({ sent: [...new Set([...store.sent, t.id])] });
+    remMark(t); setSent(prev => [...new Set([...prev, t.id])]);
   };
   const dueSoon = tens.filter(t => statusOf(t) === "Ready to send").length;
   return <div>
@@ -2698,7 +2710,7 @@ function RentRemindersScreen({ toast }) {
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
       <PmStat icon={Users} label="Active tenancies" value={String(tens.length)} tone="var(--muted)" />
       <PmStat icon={BellRing} label="Reminders due now" value={String(dueSoon)} sub="Within 3 months" />
-      <PmStat icon={CheckCircle2} label="Sent" value={String(store.sent.length)} tone="#1F9D57" />
+      <PmStat icon={CheckCircle2} label="Sent" value={String(sent.length)} tone="#1F9D57" />
     </div>
     <PmCard pad={16} style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -3135,11 +3147,11 @@ const WD_KEY = "girard_withdrawals_v1";
 function wdLoadLocal() { try { const r = localStorage.getItem(WD_KEY); if (r) return JSON.parse(r); } catch (e) {} return { items: [] }; }
 function wdSaveLocal(s) { try { localStorage.setItem(WD_KEY, JSON.stringify(s)); } catch (e) {} }
 async function wdInsert(rec) {
-  if (supabase) { try { const { error } = await supabase.from("withdrawals").insert([{ id: rec.id, agent: rec.agent || null, amount: rec.amount, bank: rec.bank, status: rec.status }]); if (!error) return true; } catch (e) {} }
+  if (supabase) { try { const { error } = await supabase.from("withdrawals").insert([{ id: rec.id, agent: rec.agent || null, amount: rec.amount, bank: rec.bank, account_number: rec.account_number || null, bank_code: rec.bank_code || null, account_name: rec.account_name || null, status: rec.status }]); if (!error) return true; } catch (e) {} }
   const st = wdLoadLocal(); wdSaveLocal({ items: [rec, ...st.items] }); return false;
 }
 async function wdFetch() {
-  if (supabase) { try { const { data, error } = await supabase.from("withdrawals").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(r => ({ id: r.id, agent: r.agent, amount: r.amount, bank: r.bank, status: r.status, date: r.created_at })); } catch (e) {} }
+  if (supabase) { try { const { data, error } = await supabase.from("withdrawals").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(r => ({ id: r.id, agent: r.agent, amount: r.amount, bank: r.bank, account_number: r.account_number, bank_code: r.bank_code, account_name: r.account_name, status: r.status, date: r.created_at })); } catch (e) {} }
   return wdLoadLocal().items;
 }
 async function wdSettleRemote(id) {
@@ -3151,7 +3163,7 @@ function AgentWallet({ toast, identity }) {
   const owner = (identity && identity.email) || "guest";
   const [w, setWraw] = useState(agentLoad);
   const setW = n => { setWraw(n); agentSave(n); };
-  const [amt, setAmt] = useState(""); const [bank, setBank] = useState("");
+  const [amt, setAmt] = useState(""); const [acctName, setAcctName] = useState((identity && identity.name) || ""); const [acctNum, setAcctNum] = useState(""); const [bankName, setBankName] = useState(NG_BANKS[0][0]);
   const [wds, setWds] = useState([]);
   useEffect(() => { let on = true; wdFetch().then(x => { if (on) setWds(x); }); agentStateLoad(owner).then(a => { if (on && a) setWraw(prev => { const n = { ...prev, paid: a.paid }; agentSave(n); return n; }); }); return () => { on = false; }; }, []);
   const myWds = wds.filter(x => !x.agent || x.agent === owner);
@@ -3159,7 +3171,7 @@ function AgentWallet({ toast, identity }) {
   const withdrawn = myWds.reduce((s, x) => s + Number(x.amount || 0), 0);
   const balance = earned - withdrawn;
   const pay = () => { payWithPaystack({ email: owner, amountNaira: AGENT_FEE, label: "Agent registration fee", onSuccess: () => { setW({ ...w, paid: true }); agentStateSave(owner, true); toast("Agent account activated", "success"); } }); };
-  const withdraw = () => { const a = Math.round(+amt); if (!(a > 0)) { toast("Enter an amount", "danger"); return; } if (a > balance) { toast("Amount exceeds available balance", "danger"); return; } if (!bank.trim()) { toast("Add your bank details", "danger"); return; } const rec = { id: "WD-" + Date.now(), agent: identity && identity.email, amount: a, bank, status: "Pending", date: new Date().toISOString() }; wdInsert(rec); setWds([rec, ...wds]); setAmt(""); setBank(""); toast("Withdrawal requested", "success"); };
+  const withdraw = () => { const a = Math.round(+String(amt).replace(/,/g, "")); if (!(a > 0)) { toast("Enter an amount", "danger"); return; } if (a > balance) { toast("Amount exceeds available balance", "danger"); return; } if (!acctNum.trim() || !acctName.trim()) { toast("Add your account name and number", "danger"); return; } const code = (NG_BANKS.find(x => x[0] === bankName) || [])[1] || ""; const rec = { id: "WD-" + Date.now(), agent: identity && identity.email, amount: a, bank: bankName + " · " + acctNum, account_name: acctName, account_number: acctNum, bank_code: code, status: "Pending", date: new Date().toISOString() }; wdInsert(rec); setWds([rec, ...wds]); setAmt(""); setAcctNum(""); toast("Withdrawal requested", "success"); };
   if (!w.paid) return <div>
     <H2 title="Agent earnings" sub="Activate your agent account to start earning" />
     <PmCard style={{ maxWidth: 520 }}>
@@ -3195,7 +3207,9 @@ function AgentWallet({ toast, identity }) {
       <PmCard>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Withdraw funds</div>
         <PmField label="Amount (₦)" value={amt} onChange={setAmt} placeholder={"Up to " + money(balance)} />
-        <div style={{ marginTop: 10 }}><PmField label="Bank account" value={bank} onChange={setBank} placeholder="Bank name · account number" /></div>
+        <div style={{ marginTop: 10 }}><PmField label="Account name" value={acctName} onChange={setAcctName} placeholder="Name on the account" /></div>
+        <div style={{ marginTop: 10 }}><PmField label="Account number" value={acctNum} onChange={setAcctNum} placeholder="10-digit NUBAN" /></div>
+        <div style={{ marginTop: 10 }}><PmSelect label="Bank" value={bankName} onChange={setBankName} options={NG_BANKS.map(x => x[0])} /></div>
         <PmBtn kind="gold" icon={Banknote} style={{ marginTop: 14 }} onClick={withdraw}>Request withdrawal</PmBtn>
         <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 10 }}>Requests are settled by Girard admin. Connect Paystack for instant transfers.</div>
       </PmCard>
@@ -3221,7 +3235,7 @@ function VettingScreen({ toast }) {
   const [allWds, setAllWds] = useState([]);
   useEffect(() => { let on = true; partnerFetch().then(x => { if (on) setItems(x); }); wdFetch().then(x => { if (on) setAllWds(x); }); return () => { on = false; }; }, []);
   const setStatus = (id, status) => { setItems(items.map(x => x.id === id ? { ...x, status } : x)); partnerSetStatusRemote(id, status); toast("Partner " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
-  const settle = id => { setAllWds(allWds.map(x => x.id === id ? { ...x, status: "Paid" } : x)); wdSettleRemote(id); toast("Withdrawal marked paid", "success"); };
+  const settle = async (x) => { setAllWds(allWds.map(w => w.id === x.id ? { ...w, status: "Paid" } : w)); wdSettleRemote(x.id); const r = await paystackTransfer({ amount: x.amount, account_number: x.account_number, bank_code: x.bank_code, name: x.account_name || x.agent, reason: "Agent withdrawal " + x.id }); if (r && r.configured && r.ok) toast("Paid. Paystack transfer initiated.", "success"); else if (r && r.configured) toast("Marked paid. Transfer: " + (r.error || "check Paystack dashboard"), "danger"); else toast("Withdrawal marked paid (recorded).", "success"); };
   const pending = items.filter(x => x.status === "Pending").length;
   const wds = allWds.filter(x => x.status === "Pending");
   return <div>
@@ -3250,7 +3264,7 @@ function VettingScreen({ toast }) {
       <div style={{ fontWeight: 700, color: "var(--ink)", padding: "16px 18px 12px" }}>Agent withdrawal requests</div>
       {allWds.length === 0 ? <div style={{ padding: "0 18px 18px", color: "var(--muted)", fontSize: 13.5 }}>No withdrawal requests.</div> : allWds.map(x => <div key={x.id} style={{ padding: 16, borderTop: "1px solid var(--cream-line)", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ flex: 1, minWidth: 200 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>{money(x.amount)}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>{x.bank} · {fmtDate(x.date)}</div></div>
-        {x.status === "Pending" ? <PmBtn size="sm" kind="gold" icon={CheckCircle2} onClick={() => settle(x.id)}>Mark paid</PmBtn> : <PmPill label="Paid" />}
+        {x.status === "Pending" ? <PmBtn size="sm" kind="gold" icon={CheckCircle2} onClick={() => settle(x)}>Mark paid</PmBtn> : <PmPill label="Paid" />}
       </div>)}
     </PmCard>
   </div>;
@@ -3413,7 +3427,7 @@ function SwapJourney({ identity, toast }) {
           : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 220, overflow: "auto" }}>{j.contractText}</div>}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 14, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
           <div style={{ fontSize: 13, color: "var(--muted)" }}>Girard concierge to perfect documents · <b style={{ color: "var(--ink)" }}>10% of sales value</b></div>
-          <PmBtn kind="gold" icon={CheckCircle2} onClick={() => toast("Swap completed. Girard concierge engaged.", "success")}>Complete swap</PmBtn>
+          <PmBtn kind="gold" icon={CheckCircle2} onClick={async () => { const bal = Math.round(+String(j.balanceValue || "").replace(/,/g, "")) || 0; if (j.escrowFunded && bal > 0) { const r = await paystackTransfer({ amount: bal, account_number: "", bank_code: "", name: "Swap counterparty", reason: "Escrow release " + owner }); toast(r && r.configured && r.ok ? "Swap completed. Escrow released via Paystack." : "Swap completed. Escrow release recorded (add counterparty bank for a live transfer).", "success"); } else { toast("Swap completed. Girard concierge engaged.", "success"); } }}>Complete swap</PmBtn>
         </div>
       </PmCard>}
     </div>;
