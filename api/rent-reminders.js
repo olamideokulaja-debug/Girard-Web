@@ -1,12 +1,13 @@
-// Rent reminders — sends automatically by email (Resend) and SMS (Twilio).
+// Rent reminders — sends automatically by email (Resend) and WhatsApp (Twilio), with optional SMS.
 //
 // GET  (the daily Vercel cron): scans tenancies and sends a reminder to every
 //       tenant whose rent falls due in exactly 3 months, with no manual action.
 // POST (the "Send now" button in the app): sends a single reminder immediately.
 //
 // Live sending requires keys in Vercel: RESEND_API_KEY (email) and
-// TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM (SMS). Without them the
-// endpoint reports who would be reminded but sends nothing.
+// TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_FROM (WhatsApp).
+// TWILIO_FROM (SMS) is optional. Without any keys the endpoint reports who
+// would be reminded but sends nothing.
 //
 // In production the tenancy list below is replaced by a read from your database.
 
@@ -38,7 +39,7 @@ async function sendEmail(RESEND, to, text) {
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "Authorization": "Bearer " + RESEND, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: "Girard Property <reminders@girardproperty.com>", to: [to], subject: "Rent reminder — Girard Property Estate Limited", text })
+    body: JSON.stringify({ from: process.env.MAIL_FROM || "Girard Property <reminders@girardproperty.com>", to: [to], subject: "Rent reminder — Girard Property", text })
   });
   return r.ok;
 }
@@ -52,23 +53,37 @@ async function sendSms(sid, token, from, to, text) {
   });
   return r.ok;
 }
+async function sendWhatsApp(sid, token, from, to, text) {
+  const auth = Buffer.from(sid + ":" + token).toString("base64");
+  const toWa = String(to).startsWith("whatsapp:") ? to : "whatsapp:" + to;
+  const body = new URLSearchParams({ To: toWa, From: from, Body: text });
+  const r = await fetch("https://api.twilio.com/2010-04-01/Accounts/" + sid + "/Messages.json", {
+    method: "POST",
+    headers: { "Authorization": "Basic " + auth, "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString()
+  });
+  return r.ok;
+}
 
 export default async function handler(req, res) {
   const RESEND = process.env.RESEND_API_KEY;
   const TW_SID = process.env.TWILIO_ACCOUNT_SID;
   const TW_TOKEN = process.env.TWILIO_AUTH_TOKEN;
   const TW_FROM = process.env.TWILIO_FROM;
+  const TW_WA = process.env.TWILIO_WHATSAPP_FROM;
   const emailReady = !!RESEND;
+  const waReady = !!(TW_SID && TW_TOKEN && TW_WA);
   const smsReady = !!(TW_SID && TW_TOKEN && TW_FROM);
-  const configured = emailReady || smsReady;
+  const configured = emailReady || waReady || smsReady;
 
   try {
     // Manual single send from the app
     if (req.method === "POST") {
       const { to, phone, message: msg } = req.body || {};
       const text = msg || "Your rent is due in three months. — Girard Property Estate Limited";
-      const results = { email: false, sms: false };
+      const results = { email: false, whatsapp: false, sms: false };
       if (to && emailReady) results.email = await sendEmail(RESEND, to, text);
+      if (phone && waReady) results.whatsapp = await sendWhatsApp(TW_SID, TW_TOKEN, TW_WA, phone, text);
       if (phone && smsReady) results.sms = await sendSms(TW_SID, TW_TOKEN, TW_FROM, phone, text);
       res.status(200).json({ ok: true, configured, results });
       return;
@@ -82,18 +97,19 @@ export default async function handler(req, res) {
     const sent = [];
     for (const { t, due } of dueSoon) {
       const text = message(t, due);
-      const r = { name: t.name, email: false, sms: false };
+      const r = { name: t.name, email: false, whatsapp: false, sms: false };
       if (emailReady) r.email = await sendEmail(RESEND, t.email, text);
+      if (waReady) r.whatsapp = await sendWhatsApp(TW_SID, TW_TOKEN, TW_WA, t.phone, text);
       if (smsReady) r.sms = await sendSms(TW_SID, TW_TOKEN, TW_FROM, t.phone, text);
       sent.push(r);
     }
     res.status(200).json({
       ok: true,
       configured,
-      channels: { email: emailReady, sms: smsReady },
+      channels: { email: emailReady, whatsapp: waReady, sms: smsReady },
       dueInThreeMonths: dueSoon.map(x => x.t.name),
       sent,
-      note: configured ? "Reminders sent automatically to tenants due in 3 months." : "No email/SMS keys set; add RESEND_API_KEY and TWILIO_* in Vercel to send automatically."
+      note: configured ? "Reminders sent automatically to tenants due in 3 months." : "No message keys set; add RESEND_API_KEY (email) and/or TWILIO_WHATSAPP_FROM (WhatsApp) in Vercel to send automatically."
     });
   } catch (e) {
     res.status(500).json({ ok: false, error: "reminder run failed" });
