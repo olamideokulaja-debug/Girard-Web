@@ -4,7 +4,7 @@ import {
   Globe2, MapPin, Menu, X, Home, KeyRound, Users, Briefcase, ArrowRight,
   LogOut, Mail, Lock, ArrowLeft, ChevronRight, Wallet, Wrench, FileText,
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
-  CreditCard, PenLine, Filter, LayoutDashboard, Bell, Send, Loader2, MoreHorizontal,
+  CreditCard, PenLine, Filter, LayoutDashboard, Bell, ScrollText, CalendarDays, Moon, Sun, Download, Trash2, Send, Loader2, MoreHorizontal,
   Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
   Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Image as ImageIcon
 } from "lucide-react";
@@ -765,13 +765,46 @@ const DOCS_KEY = "girard_documents_v1";
 function docsLoadLocal() { try { const r = localStorage.getItem(DOCS_KEY); if (r) return JSON.parse(r); } catch (e) {} return { items: [] }; }
 function docsSaveLocal(s) { try { localStorage.setItem(DOCS_KEY, JSON.stringify(s)); } catch (e) {} }
 async function docSave(rec) {
-  const row = { id: rec.id, doc_type: rec.doc_type, party_b: rec.party_b || null, subject: rec.subject || null, body: rec.body, created_by: rec.created_by || null };
+  const row = { id: rec.id, doc_type: rec.doc_type, party_b: rec.party_b || null, subject: rec.subject || null, body: rec.body, created_by: rec.created_by || null, deal_key: rec.deal_key || null, deal_label: rec.deal_label || null };
   if (supabase) { try { await supabase.from("documents").insert([row]); return; } catch (e) {} }
   const st = docsLoadLocal(); docsSaveLocal({ items: [{ ...row, created_at: new Date().toISOString() }, ...st.items] });
+}
+async function docDelete(id) {
+  if (supabase) { try { await supabase.from("documents").delete().eq("id", id); return; } catch (e) {} }
+  const st = docsLoadLocal(); docsSaveLocal({ items: st.items.filter(x => x.id !== id) });
 }
 async function docsFetch() {
   if (supabase) { try { const { data, error } = await supabase.from("documents").select("*").order("created_at", { ascending: false }).limit(50); if (!error && data) return data; } catch (e) {} }
   return docsLoadLocal().items;
+}
+/* notifications + audit + comms */
+const NOTIF_KEY = "girard_notifs_v1", NOTIF_READ_KEY = "girard_notifs_read_v1", AUDIT_KEY = "girard_audit_v1";
+function notifLoadLocal() { try { const r = localStorage.getItem(NOTIF_KEY); if (r) return JSON.parse(r); } catch (e) {} return { items: [] }; }
+function notifSaveLocal(s) { try { localStorage.setItem(NOTIF_KEY, JSON.stringify(s)); } catch (e) {} }
+function notifReadSet() { try { return new Set(JSON.parse(localStorage.getItem(NOTIF_READ_KEY) || "[]")); } catch (e) { return new Set(); } }
+function notifMarkRead(ids) { const set = notifReadSet(); ids.forEach(i => set.add(i)); try { localStorage.setItem(NOTIF_READ_KEY, JSON.stringify([...set])); } catch (e) {} }
+async function notify(rec) {
+  const row = { id: "NT-" + Date.now() + "-" + Math.floor(Math.random() * 1000), title: rec.title, body: rec.body || null, kind: rec.kind || "info", audience: rec.audience || "admin", created_at: new Date().toISOString() };
+  if (supabase) { try { await supabase.from("notifications").insert([{ id: row.id, title: row.title, body: row.body, kind: row.kind, audience: row.audience }]); return; } catch (e) {} }
+  const st = notifLoadLocal(); notifSaveLocal({ items: [row, ...st.items].slice(0, 200) });
+}
+async function notifsFetch(role, email) {
+  let items = [];
+  if (supabase) { try { const { data, error } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(60); if (!error && data) items = data; } catch (e) {} }
+  if (!items.length) items = notifLoadLocal().items;
+  return items.filter(n => n.audience === "all" || n.audience === role || n.audience === email);
+}
+async function auditLog(action, detail, actor) {
+  const row = { id: "AU-" + Date.now() + "-" + Math.floor(Math.random() * 1000), action, detail: detail || null, actor: actor || null, created_at: new Date().toISOString() };
+  if (supabase) { try { await supabase.from("audit").insert([{ id: row.id, action: row.action, detail: row.detail, actor: row.actor }]); return; } catch (e) {} }
+  try { const st = JSON.parse(localStorage.getItem(AUDIT_KEY) || '{"items":[]}'); localStorage.setItem(AUDIT_KEY, JSON.stringify({ items: [row, ...st.items].slice(0, 300) })); } catch (e) {}
+}
+async function auditFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("audit").select("*").order("created_at", { ascending: false }).limit(120); if (!error && data) return data; } catch (e) {} }
+  try { return JSON.parse(localStorage.getItem(AUDIT_KEY) || '{"items":[]}').items; } catch (e) { return []; }
+}
+async function sendComms({ channels, to, subject, message }) {
+  try { const r = await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channels, to, subject, message }) }); return await r.json(); } catch (e) { return { configured: false }; }
 }
 async function paymentExists(target, purpose) {
   if (supabase && target) { try { const { data, error } = await supabase.from("payments").select("reference").eq("target", target).eq("purpose", purpose).eq("status", "success").limit(1); if (!error && data && data.length) return true; } catch (e) {} }
@@ -951,8 +984,12 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "signup";
+  const [agree, setAgree] = useState(false);
+  const [twoFA, setTwoFA] = useState(null); const [code, setCode] = useState("");
+  const verify2FA = async () => { setErr(""); const ok = await totpCheck(twoFA.secret, code.trim()); if (!ok) { setErr("Incorrect code. Check your authenticator app and try again."); return; } onAuthed(resolveIdentity(twoFA.email, twoFA.role)); };
   const submit = async () => {
     setErr("");
+    if (isSignup && !agree) { setErr("Please accept the Privacy Policy to continue."); return; }
     if (!email || !password) { setErr("Please enter your email and password."); return; }
     if (isSignup && password.length < 6) { setErr("Password must be at least 6 characters."); return; }
     if (isSignup && role === "admin" && !isApprovedAdmin(email)) { setErr("Admin access is limited to approved @girardproperty.com accounts."); return; }
@@ -960,12 +997,24 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
     try {
       const res = isSignup ? await authSignUp(email, password, role) : await authSignIn(email, password);
       if (!isSignup && !res.role) { onNeedRole(res.email); return; }
+      const sec = !isSignup ? twoFAGet(res.email) : "";
+      if (sec) { setTwoFA({ email: res.email, role: res.role || role, secret: sec }); setBusy(false); return; }
       onAuthed(resolveIdentity(res.email, res.role || role));
     } catch (e) { setErr(e.message || "Something went wrong. Please try again."); }
     finally { setBusy(false); }
   };
   return (
     <div className="auth-grid" style={{ minHeight: "100vh", background: "var(--navy)", color: "#fff", display: "grid", gridTemplateColumns: "1.1fr 1fr" }}>
+      {twoFA && <div style={{ position: "fixed", inset: 0, background: "rgba(4,10,24,.78)", display: "grid", placeItems: "center", zIndex: 100, padding: 16 }}>
+        <div style={{ background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 14, padding: "26px 24px", width: 340, maxWidth: "90vw" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 6 }}><Lock size={18} color="var(--gold)" /><div className="serif" style={{ fontSize: 20, fontWeight: 600 }}>Two-factor code</div></div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,.65)", marginBottom: 16, lineHeight: 1.5 }}>Enter the 6-digit code from your authenticator app to finish signing in.</div>
+          <input className="field" inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ""))} onKeyDown={e => e.key === "Enter" && verify2FA()} style={{ textAlign: "center", letterSpacing: 6, fontSize: 20, paddingLeft: 14 }} />
+          {err && <div style={{ color: "#ff9a90", fontSize: 13, marginTop: 10 }}>{err}</div>}
+          <button className="btn-gold" onClick={verify2FA} style={{ width: "100%", marginTop: 14 }}>Verify <ArrowUpRight size={16} /></button>
+          <button onClick={() => { setTwoFA(null); setCode(""); setErr(""); }} className="btn-line on-navy" style={{ width: "100%", marginTop: 10, padding: "9px" }}>Cancel</button>
+        </div>
+      </div>}
       <div className="auth-brand" style={{ background: "var(--navy-2)", padding: "48px 56px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", borderRight: "1px solid var(--navy-line)" }}>
         <BrandMark />
         <div style={{ position: "relative", zIndex: 2 }}>
@@ -984,6 +1033,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
           <div style={{ position: "relative", marginBottom: 12 }}><Mail size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} /></div>
           {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{err}</div>}
+          {isSignup && <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "2px 0 14px", cursor: "pointer" }}><input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} style={{ marginTop: 3, accentColor: "var(--gold)" }} /><span style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", lineHeight: 1.5 }}>I agree to Girard's processing of my personal data in line with the <b style={{ color: "var(--gold)" }}>Privacy Policy</b>, under the Nigeria Data Protection Act.</span></label>}
           <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", opacity: busy ? .7 : 1, marginTop: 4 }}>{busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"} <ArrowUpRight size={16} /></button>
           <div style={{ textAlign: "center", marginTop: 18, fontSize: 13.5, color: "rgba(255,255,255,.65)" }}>
             {isSignup ? "Already have an account? " : "New to Girard? "}
@@ -1120,6 +1170,7 @@ export default function App() {
       {view === "home" && identity && <AppShell identity={identity}
         onSignOut={async () => { await authSignOut(); setIdentity(null); setRole(null); setPendingEmail(null); setView("landing"); }}
         onSwitchRole={() => { setPendingEmail(identity.email); setView("role"); }} />}
+      <ConsentBanner />
     </>
   );
 }
@@ -1193,7 +1244,9 @@ const PM_KEY = "girard_pm_v3";
 function pmLoad() { try { const r = localStorage.getItem(PM_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = pmSeed(); try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 function pmSave(s) { try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} }
 
-const money = (a, c) => (c || "₦") + Number(a || 0).toLocaleString("en-NG");
+let CUR = "₦"; try { CUR = localStorage.getItem("girard_cur") || "₦"; } catch (e) {}
+const CUR_RATE = { "₦": 1, "$": 1 / 1650, "£": 1 / 2080, "€": 1 / 1780 };
+const money = (a, c) => { const cur = c || CUR; const rate = c ? 1 : (CUR_RATE[CUR] || 1); const val = Math.round(Number(a || 0) * rate); return cur + val.toLocaleString(cur === "₦" ? "en-NG" : "en-US"); };
 const propOf = (st, id) => st.properties.find(p => p.id === id);
 
 async function aiProxy(prompt, system, max_tokens) {
@@ -1403,15 +1456,17 @@ function AddPropertyScreen({ st, setSt, toast }) {
   const [price, setPrice] = useState("");
   const [done, setDone] = useState(false);
   const [photos, setPhotos] = useState([]);
+  const [desc, setDesc] = useState(""); const [descBusy, setDescBusy] = useState(false);
+  const genDesc = async () => { setDescBusy(true); const kind = f.beds === "0" ? "studio" : f.beds + "-bedroom " + f.type.toLowerCase(); const r = await aiProxy("Write an appealing 60 to 90 word rental listing description for a " + kind + " in " + f.area + ", Lagos. Amenities: " + (f.amenities.join(", ") || "standard finishes") + ". Warm, professional estate-agent tone. No markdown, no price, no headings.", "You are a Nigerian estate agent copywriter.", 400); setDescBusy(false); setDesc((r && r.ok && r.text) ? r.text.trim() : ("A well-appointed " + kind + " in " + f.area + ", offering " + (f.amenities.slice(0, 3).join(", ") || "comfortable, modern living") + ". Bright, well-finished and move-in ready, it sits close to amenities and transport, ideal for professionals and families seeking quality and convenience in a prime Lagos location.")); };
   const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1200; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); setPhotos(prev => prev.length >= 5 ? prev : [...prev, cv.toDataURL("image/jpeg", 0.78)]); }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
   const toggle = a => setF(x => ({ ...x, amenities: x.amenities.includes(a) ? x.amenities.filter(z => z !== a) : [...x.amenities, a] }));
   const rec = async () => { setAi({ loading: true }); const r = await aiRent(f); setAi({ loading: false, ...r }); setPrice(String(r.annual)); };
   const submit = () => {
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.letType === "Short let" ? null : f.term, img: photos[0], photos, amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30 };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.letType === "Short let" ? null : f.term, img: photos[0], photos, amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
-  if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); }}>Add another</PmBtn></div></PmCard></div>;
+  if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
   return <div>
     <H2 title="Add property" sub="List a rental and get an AI rent recommendation" />
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
@@ -1432,6 +1487,10 @@ function AddPropertyScreen({ st, setSt, toast }) {
             <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>Submit listing</PmBtn></>}
       </PmCard>
     </div>
+    <PmCard style={{ marginTop: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Listing description</div><PmBtn size="sm" kind="navy" icon={Sparkles} onClick={genDesc}>{descBusy ? "Writing…" : "Generate with AI"}</PmBtn></div>
+      <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={4} placeholder="Describe the property, or let AI draft it for you." style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)", resize: "vertical" }} />
+    </PmCard>
     <PmCard style={{ marginTop: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Photos <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 12.5 }}>({photos.length}/5)</span></div>
       <AiPanel>
@@ -1605,10 +1664,10 @@ function DocViewer({ app, p, check, onClose }) {
     <div style={{ marginTop: 10, fontSize: 11.5, color: "var(--muted)" }}>Sample document shown for demonstration.</div>
   </PmModal>;
 }
-function ApplicationsScreen({ st, setSt, toast, toAi }) {
+function ApplicationsScreen({ st, setSt, toast, toAi, identity }) {
   const [lease, setLease] = useState(null);
   const [review, setReview] = useState(null);
-  const act = (id, status) => { setSt({ ...st, applications: st.applications.map(a => a.id === id ? { ...a, status } : a) }); toast("Application " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
+  const act = (id, status) => { setSt({ ...st, applications: st.applications.map(a => a.id === id ? { ...a, status } : a) }); const ap = st.applications.find(a => a.id === id); auditLog("Application " + status, ap ? ap.tenant : id, identity && identity.email); if (status === "Approved" && ap) { const pr = propOf(st, ap.property); docSave({ id: "DOC-" + Date.now(), doc_type: "Tenancy Agreement", party_b: ap.tenant, subject: pr ? pr.title : ap.property, body: tenancyDoc(ap, pr), created_by: identity && identity.email, deal_key: "app:" + ap.id, deal_label: "Application · " + ap.tenant }); notify({ title: "Tenancy agreement ready", body: ap.tenant + " · available in the tenant portal", audience: "tenant" }); notify({ title: "Application approved", body: ap.tenant, audience: "admin" }); } toast("Application " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
   const onAct = (id, s) => { act(id, s); setReview(null); };
   return <div>
     <H2 title="Applications" sub="Review tenant documents and approve" />
@@ -1621,7 +1680,7 @@ function ApplicationsScreen({ st, setSt, toast, toAi }) {
           <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{money(a.income)}</td>
           <td style={{ padding: "13px 16px" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: got === chk.length ? "#1F9D57" : "var(--gold-2)" }}><FileText size={14} />{got}/{chk.length}</span></td>
           <td style={{ padding: "13px 16px" }}><PmPill label={a.status} /></td>
-          <td style={{ padding: "13px 16px" }}>{a.status === "Approved" ? <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="gold" icon={FileText} onClick={() => setLease(a)}>Generate lease</PmBtn><PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => { const pr = propOf(st, a.property); toAi && toAi({ type: "Tenancy Agreement", partyB: a.tenant, subject: pr ? (pr.title + ", " + pr.address) : a.property, amount: pr ? money(pr.rent) + " per annum" : "", terms: "Annual tenancy for " + (pr ? (pr.beds + "-bed " + pr.type + " in " + pr.area) : a.property) + ". Rent " + (pr ? money(pr.rent) : "") + " payable yearly in advance. Tenant: " + a.tenant + ", stated income " + money(a.income) + "." }); }}>AI tenancy</PmBtn></div> : a.status === "Rejected" ? <span style={{ color: "var(--muted)", fontSize: 12.5 }}>Closed</span> : <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={Search} onClick={() => setReview(a)}>Review</PmBtn><PmBtn size="sm" onClick={() => act(a.id, "Approved")}>Approve</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => act(a.id, "Rejected")}>Reject</PmBtn></div>}</td>
+          <td style={{ padding: "13px 16px" }}>{a.status === "Approved" ? <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="gold" icon={FileText} onClick={() => setLease(a)}>Generate lease</PmBtn><PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => { const pr = propOf(st, a.property); toAi && toAi({ type: "Tenancy Agreement", dealKey: "app:" + a.id, dealLabel: "Application · " + a.tenant, partyB: a.tenant, subject: pr ? (pr.title + ", " + pr.address) : a.property, amount: pr ? money(pr.rent) + " per annum" : "", terms: "Annual tenancy for " + (pr ? (pr.beds + "-bed " + pr.type + " in " + pr.area) : a.property) + ". Rent " + (pr ? money(pr.rent) : "") + " payable yearly in advance. Tenant: " + a.tenant + ", stated income " + money(a.income) + "." }); }}>AI tenancy</PmBtn></div> : a.status === "Rejected" ? <span style={{ color: "var(--muted)", fontSize: 12.5 }}>Closed</span> : <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={Search} onClick={() => setReview(a)}>Review</PmBtn><PmBtn size="sm" onClick={() => act(a.id, "Approved")}>Approve</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => act(a.id, "Rejected")}>Reject</PmBtn></div>}</td>
         </tr>; })}</tbody>
       </table></div>
     </PmCard>
@@ -1634,6 +1693,9 @@ function ReviewModal({ st, app, onClose, onAct }) {
   const rent = p ? p.rent : 0;
   const checks = appChecks(app, rent);
   const [doc, setDoc] = useState(null);
+  const [linked, setLinked] = useState([]);
+  const [savedView, setSavedView] = useState(null);
+  useEffect(() => { let on = true; docsFetch().then(all => { if (on) setLinked(all.filter(d => d.deal_key === "app:" + app.id)); }); return () => { on = false; }; }, []);
   const got = checks.filter(c => c.ok).length;
   return <PmModal title={doc ? "Document" : "Review application"} onClose={onClose} wide>
     {doc ? <div>
@@ -1648,6 +1710,7 @@ function ReviewModal({ st, app, onClose, onAct }) {
         <PmBtn size="sm" kind="ghost" icon={ArrowLeft} onClick={() => setDoc(null)}>Back to documents</PmBtn>
       </div>
     </div> : <div>
+      {savedView && <div style={{ marginBottom: 14, border: "1px solid var(--cream-line)", borderRadius: 10, overflow: "hidden" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "var(--ivory)" }}><b style={{ fontSize: 13, color: "var(--ink)" }}>{savedView.doc_type}</b><button onClick={() => setSavedView(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><X size={16} /></button></div><div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto", padding: 14 }}>{savedView.body}</div></div>}
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " · " + p.area : app.property} · Income {money(app.income)}</div></div>
         <div style={{ textAlign: "right" }}><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Documents</div><div className="serif" style={{ fontSize: 22, fontWeight: 600, color: got === checks.length ? "#1F9D57" : "var(--gold-2)" }}>{got}/{checks.length}</div></div>
@@ -1658,6 +1721,7 @@ function ReviewModal({ st, app, onClose, onAct }) {
         <div style={{ minWidth: 0 }}><b style={{ color: "var(--ink)" }}>{c.k}</b><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{c.doc}</div></div>
         <button onClick={() => setDoc(c)} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid var(--cream-line)", borderRadius: 7, padding: "5px 10px", cursor: "pointer", color: "var(--ink)", fontSize: 12.5, fontWeight: 600, flexShrink: 0 }}><FileText size={13} /> View</button>
       </div>)}</div>
+      {linked.length > 0 && <div style={{ marginBottom: 16 }}><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5, marginBottom: 8 }}>Linked documents ({linked.length})</div>{linked.map(d => <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, padding: "7px 10px", background: "var(--ivory-2)", borderRadius: 8, marginBottom: 6 }}><FileText size={13} color="var(--gold-2)" style={{ flexShrink: 0 }} /><div style={{ flex: 1, minWidth: 0 }}><b style={{ color: "var(--ink)" }}>{d.doc_type}</b><span style={{ color: "var(--muted)" }}>{d.subject ? " · " + d.subject : ""}</span></div><button onClick={() => setSavedView(d)} style={{ background: "transparent", border: "1px solid var(--cream-line)", borderRadius: 6, padding: "4px 9px", fontSize: 11.5, fontWeight: 600, color: "var(--ink)", cursor: "pointer", flexShrink: 0 }}>View</button></div>)}</div>}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><PmBtn kind="gold" icon={Check} onClick={() => onAct(app.id, "Approved")}>Approve</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "More Info Required")}>Request info</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "Rejected")}>Reject</PmBtn></div>
     </div>}
   </PmModal>;
@@ -1788,11 +1852,11 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
-  tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Jobs & repairs", Wrench], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
-  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["wallet", "Earnings", Wallet], ["ai", "AI documents", Sparkles], ["reports", "Analytics", LineChart]],
-  investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["work", "Overview", LayoutGrid]]
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask AI", Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["calc", "Mortgage calc", Banknote], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask AI", Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["wallet", "Earnings", Wallet], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["calc", "Mortgage calc", Banknote], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck], ["work", "Overview", LayoutGrid]]
 };
 function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const canSwitch = identity0.allAccess;
@@ -1801,6 +1865,10 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const nav = NAV[activeRole] || NAV.agent;
   const [view, setView] = useState(nav[0][0]);
   const [aiSeed, setAiSeed] = useState(null);
+  const [theme, setTheme] = useState(() => { try { return localStorage.getItem("girard_theme") || "light"; } catch (e) { return "light"; } });
+  useEffect(() => { try { document.documentElement.setAttribute("data-theme", theme === "dark" ? "dark" : "light"); localStorage.setItem("girard_theme", theme); } catch (e) {} }, [theme]);
+  const [cur, setCurState] = useState(CUR);
+  const setCur = v => { CUR = v; try { localStorage.setItem("girard_cur", v); } catch (e) {} setCurState(v); };
   const [roleMenu, setRoleMenu] = useState(false);
   const switchWorkspace = (r) => { setActiveRole(r); setView((NAV[r] || NAV.agent)[0][0]); setRoleMenu(false); };
   const [st, setStRaw] = useState(pmLoad);
@@ -1837,6 +1905,16 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "reports") return <ReportsScreen identity={identity} toast={toast} />;
     if (view === "payments") return <PaymentsScreen toast={toast} />;
     if (view === "ai") return <AIStudio identity={identity} toast={toast} seed={aiSeed} />;
+    if (view === "docs") return <DocumentsScreen identity={identity} toast={toast} />;
+    if (view === "audit") return <AuditScreen />;
+    if (view === "inbox") return <MessagesInbox identity={identity} toast={toast} />;
+    if (view === "askai") return <AskAI {...P} />;
+    if (view === "privacy") return <PrivacyScreen identity={identity} toast={toast} />;
+    if (view === "security") return <SecurityScreen identity={identity} toast={toast} />;
+    if (view === "map") return <MapScreen {...P} />;
+    if (view === "calc") return <CalculatorScreen />;
+    if (view === "alerts") return <SavedSearches {...P} />;
+    if (view === "thome" || view === "trent" || view === "trepairs" || view === "tdocs" || view === "tmsg") return <TenantPortal identity={identity} toast={toast} section={view} go={setView} />;
     if (view === "work") return <InvestorOverview identity={identity} go={setView} />;
     return <WorkspaceSoon identity={identity} />;
   };
@@ -1866,6 +1944,9 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
           <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "1 Bourdillon · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : view === "ai" ? "AI document studio" : view === "payments" ? "Confirmed payments" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <select value={cur} onChange={e => setCur(e.target.value)} title="Display currency" style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "6px 8px", color: "var(--ink)", fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>{["\u20a6", "$", "\u00a3", "\u20ac"].map(x => <option key={x} value={x}>{x}</option>)}</select>
+          <button onClick={() => setTheme(t => t === "dark" ? "light" : "dark")} title="Toggle theme" style={{ background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, cursor: "pointer", color: "var(--ink)", width: 34, height: 34, display: "grid", placeItems: "center" }}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
+          <NotifBell identity={identity} />
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div className="serif" style={{ width: 34, height: 34, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 13 }}>{identity.initials}</div>
             <div style={{ lineHeight: 1.2 }}><div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{identity.firstName}</div><div style={{ fontSize: 11, color: "var(--gold-2)" }}>{identity.title}</div></div>
@@ -2302,29 +2383,47 @@ function MiniFunnel({ data }) {
 }
 function ReportsScreen({ identity, toast }) {
   const pm = pmLoad(); const sw = swLoad(); const crm = crmLoad();
+  const [pays, setPays] = useState([]); const [jobs, setJobs] = useState([]);
+  useEffect(() => { let on = true; paymentsFetch().then(x => { if (on) setPays(x); }); jobsFetch().then(x => { if (on) setJobs(x); }); return () => { on = false; }; }, []);
   const leased = pm.properties.filter(p => p.status === "Leased").length;
-  const byMarket = [{ m: "NG", v: sw.listings.filter(l => l.country === "Nigeria").length + pm.properties.length }, { m: "UK", v: sw.listings.filter(l => l.country === "UK").length }, { m: "US", v: sw.listings.filter(l => l.country === "US").length }];
+  const rentRoll = pm.properties.reduce((s, p) => s + (p.rent || 0), 0);
   const income = [{ m: "Feb", v: 58 }, { m: "Mar", v: 64 }, { m: "Apr", v: 61 }, { m: "May", v: 72 }, { m: "Jun", v: 78 }, { m: "Jul", v: 83 }];
   const funnel = CRM_COLS.map((c, i) => ({ label: c, v: crm.cards.filter(x => x.stage >= i).length }));
   const appStatus = ["Applied", "More Info Required", "Approved", "Rejected"].map((s, i) => ({ name: s, v: pm.applications.filter(a => a.status === s).length, c: ["#2F6FB0", "#E0A106", "#1F9D57", "#D0453B"][i] }));
   const appData = appStatus.filter(a => a.v > 0);
   const swapStage = [{ m: "Neg", v: sw.deals.filter(d => d.stage < 6).length }, { m: "Escrow", v: sw.deals.filter(d => d.stage >= 6 && d.stage < 11).length }, { m: "Done", v: 4 }];
+  const byArea = Object.entries(pm.properties.reduce((o, p) => { o[p.area] = (o[p.area] || 0) + 1; return o; }, {})).map(([m, v]) => ({ m: m.slice(0, 4), v })).slice(0, 7);
+  const _now = new Date(); const _months = []; for (let i = 5; i >= 0; i--) { const d = new Date(_now.getFullYear(), _now.getMonth() - i, 1); _months.push({ key: d.getFullYear() + "-" + d.getMonth(), m: d.toLocaleDateString(undefined, { month: "short" }) }); }
+  const _sm = (dd, key) => { const dt = new Date(dd); return !isNaN(dt) && (dt.getFullYear() + "-" + dt.getMonth() === key); };
+  const feeSeries = _months.map(mm => ({ m: mm.m, agent: pays.filter(x => x.purpose === "agent" && _sm(x.paid_at, mm.key)).reduce((s, x) => s + Number(x.amount || 0), 0), swap: pays.filter(x => x.purpose === "swap" && _sm(x.paid_at, mm.key)).reduce((s, x) => s + Number(x.amount || 0), 0), job: jobs.filter(j => j.finalCost != null && _sm(j.createdAt, mm.key)).reduce((s, j) => s + Math.round(j.finalCost * 0.25), 0) }));
+  const fm = feeSeries[feeSeries.length - 1] || { agent: 0, swap: 0, job: 0 };
+  const feeTotal = fm.agent + fm.swap + fm.job;
+  const hasFees = feeSeries.some(d => d.agent + d.swap + d.job > 0);
   return <div>
-    <H2 title="Analytics & reporting" sub="Portfolio, pipeline and marketplace performance" right={<PmBtn kind="ghost" icon={FileText} onClick={() => toast("Report exported")}>Export report</PmBtn>} />
-    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 18 }}>
-      <PmStat icon={Building2} label="Listings" value={String(pm.properties.length + sw.listings.length)} sub="Management + swap" tone="var(--muted)" />
-      <PmStat icon={Home} label="Occupancy" value={Math.round(leased / pm.properties.length * 100) + "%"} />
-      <PmStat icon={LayoutGrid} label="Pipeline items" value={String(crm.cards.length)} tone="var(--muted)" />
-      <PmStat icon={Handshake} label="Active swaps" value={String(sw.deals.length)} tone="#E0A106" />
+    <H2 title="Analytics & reporting" sub="Portfolio, revenue and marketplace performance" right={<PmBtn kind="ghost" icon={FileText} onClick={() => toast("Report exported")}>Export</PmBtn>} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 14, marginBottom: 16 }} className="dash-kpi">
+      <CStat icon={Building2} label="Listings" value={String(pm.properties.length + sw.listings.length)} sub="Management + swap" c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={Home} label="Occupancy" value={Math.round(leased / pm.properties.length * 100) + "%"} sub={leased + " leased"} c="#10B981" bg="#E7F7F0" />
+      <CStat icon={Wallet} label="Rent roll" value={moneyShort(rentRoll)} sub="Annual, managed" c="#0EA5A5" bg="#E3F6F5" />
+      <CStat icon={Users} label="Applications" value={String(pm.applications.length)} sub="All time" c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={Handshake} label="Active swaps" value={String(sw.deals.length)} sub="Cross-border" c="#F59E0B" bg="#FEF3E2" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Rental income trend (₦M)</div><MiniArea data={income} /></PmCard>
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pipeline funnel</div><MiniFunnel data={funnel} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Rental income trend (\u20a6M)</div><MiniArea data={income} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Applications</div>{appData.length ? <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}><MiniDonut data={appData} size={130} /><Legend items={appData} /></div> : <div style={{ color: "var(--muted)", fontSize: 13, padding: "20px 0" }}>No applications yet.</div>}</PmCard>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Fees collected (last 6 months)</div>{hasFees ? <div><FeeTrend data={feeSeries} /><div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>{[["Agent", "#3B82F6"], ["Swap", "#8B5CF6"], ["Job", "#10B981"]].map(([l, c]) => <div key={l} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--muted)" }}><span style={{ width: 10, height: 10, borderRadius: 3, background: c }} />{l} fees</div>)}</div></div> : <div style={{ color: "var(--muted)", fontSize: 13, padding: "26px 0", textAlign: "center" }}>Fees will chart here as they come in.</div>}</PmCard>
+      <PmCard style={{ background: "linear-gradient(135deg,var(--navy),var(--navy-2))", color: "#fff", border: "none" }}>
+        <div style={{ color: "rgba(255,255,255,.7)", fontSize: 12.5 }}>Fees this month</div>
+        <div className="serif" style={{ fontSize: 30, fontWeight: 600, margin: "4px 0 14px" }}>{money(feeTotal)}</div>
+        {[["Agent registration", fm.agent, "#7FB2FF"], ["Swap registration", fm.swap, "#C3A8FF"], ["Job commission", fm.job, "#7EE0A9"]].map(([l, v, c]) => <div key={l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderTop: "1px solid rgba(255,255,255,.12)" }}><span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,.85)" }}><span style={{ width: 9, height: 9, borderRadius: 3, background: c }} />{l}</span><b style={{ fontSize: 13.5 }}>{money(v)}</b></div>)}
+      </PmCard>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }} className="pm-grid3">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Listings by market</div><MiniBars data={byMarket} h={170} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Listings by area</div><MiniBars data={byArea.length ? byArea : [{ m: "-", v: 0 }]} h={170} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pipeline funnel</div><MiniFunnel data={funnel} /></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Swap deals by stage</div><MiniBars data={swapStage} h={170} /></PmCard>
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Applications</div>{appData.length ? <div style={{ display: "flex", alignItems: "center", gap: 12 }}><MiniDonut data={appData} size={140} /><Legend items={appData} /></div> : <div style={{ color: "var(--muted)", fontSize: 13, padding: "20px 0" }}>No applications yet.</div>}</PmCard>
     </div>
     <style>{`@media(max-width:900px){.pm-grid3{grid-template-columns:1fr!important}}`}</style>
   </div>;
@@ -2837,6 +2936,9 @@ function LeadModal({ mode, property, onClose }) {
     if (!valid) return;
     const rec = { id: "ENQ-" + Date.now(), type: mode === "viewing" ? "Viewing" : "Enquiry", propId: property.id, propTitle: property.title, area: property.area, name: f.name, phone: f.phone, email: f.email, message: (f.message ? f.message + " · " : "") + "Intended stay: " + stayStr, stay: stayStr, date: f.date, time: f.time, status: "New", createdAt: Date.now() };
     enqInsert(rec);
+    notify({ title: "New " + (mode === "viewing" ? "viewing request" : "enquiry"), body: property.title + " · " + property.area, audience: "admin" });
+    notify({ title: "New " + (mode === "viewing" ? "viewing request" : "enquiry"), body: property.title, audience: "owner" });
+    sendComms({ channels: ["email", "sms", "whatsapp"], to: { email: f.email, phone: f.phone }, subject: "Girard: we received your " + (mode === "viewing" ? "viewing request" : "enquiry"), message: "Thank you " + f.name + ". Girard has received your request about " + property.title + " and will be in touch shortly." });
     sendWhatsApp(OFFICE_WA, "New " + rec.type + " from " + f.name + " (" + f.phone + ") for " + property.title + (mode === "viewing" ? " on " + f.date + " at " + f.time : ""));
     const msg = mode === "viewing"
       ? "Hello Girard, I'd like to book a viewing of " + property.title + " (" + property.area + ") on " + f.date + " at " + f.time + ". Intended stay: " + stayStr + ". My name is " + f.name + " (" + f.phone + ")."
@@ -2980,7 +3082,7 @@ async function unitUpsertRemote(u) {
   const all = unitLoad(); unitSave(all.map(x => x.id === u.id ? u : x));
 }
 const U_COLORS = { Available: "#10B981", Reserved: "#F59E0B", Sold: "#D0453B" };
-function moneyShort(n) { return "\u20a6" + (n >= 1e9 ? (n / 1e9).toFixed(1) + "b" : (n / 1e6).toFixed(0) + "m"); }
+function moneyShort(n) { const r = CUR_RATE[CUR] || 1; const v = n * r; return CUR + (v >= 1e9 ? (v / 1e9).toFixed(1) + "b" : (v / 1e6).toFixed(0) + "m"); }
 
 function SalesBoard({ toast }) {
   const [units, setUnits] = useState([]);
@@ -3127,7 +3229,7 @@ function PartnerModal({ onClose }) {
   const setKind = k => setF({ ...f, kind: k, category: (k === "Vendor" ? VENDOR_CATS : SUPPORT_CATS)[0] });
   const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", color: "var(--ink)", fontSize: 14, marginBottom: 10, fontFamily: "inherit" };
   const valid = f.business.trim() && f.name.trim() && f.phone.trim();
-  const submit = () => { if (!valid) return; partnerInsert({ id: "PT-" + Date.now(), kind: f.kind, business: f.business, category: f.category, name: f.name, phone: f.phone, email: f.email, about: f.about, years: f.years, status: "Pending" }); setDone(true); };
+  const submit = () => { if (!valid) return; partnerInsert({ id: "PT-" + Date.now(), kind: f.kind, business: f.business, category: f.category, name: f.name, phone: f.phone, email: f.email, about: f.about, years: f.years, status: "Pending" }); notify({ title: "New partner application", body: f.business + " · " + f.category, audience: "admin" }); setDone(true); };
   return <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(6,17,42,.62)", zIndex: 200, display: "grid", placeItems: "center", padding: 18 }}>
     <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 16, padding: 26, width: "min(460px, 100%)", maxHeight: "90vh", overflow: "auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
@@ -3281,8 +3383,8 @@ function VettingScreen({ toast }) {
   const [items, setItems] = useState([]);
   const [allWds, setAllWds] = useState([]);
   useEffect(() => { let on = true; partnerFetch().then(x => { if (on) setItems(x); }); wdFetch().then(x => { if (on) setAllWds(x); }); return () => { on = false; }; }, []);
-  const setStatus = (id, status) => { setItems(items.map(x => x.id === id ? { ...x, status } : x)); partnerSetStatusRemote(id, status); toast("Partner " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
-  const settle = async (x) => { setAllWds(allWds.map(w => w.id === x.id ? { ...w, status: "Paid" } : w)); wdSettleRemote(x.id); const r = await paystackTransfer({ amount: x.amount, account_number: x.account_number, bank_code: x.bank_code, name: x.account_name || x.agent, reason: "Agent withdrawal " + x.id }); if (r && r.configured && r.ok) toast("Paid. Paystack transfer initiated.", "success"); else if (r && r.configured) toast("Marked paid. Transfer: " + (r.error || "check Paystack dashboard"), "danger"); else toast("Withdrawal marked paid (recorded).", "success"); };
+  const setStatus = (id, status) => { setItems(items.map(x => x.id === id ? { ...x, status } : x)); partnerSetStatusRemote(id, status); const it = items.find(x => x.id === id); auditLog("Partner " + status, it ? it.business : id); toast("Partner " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
+  const settle = async (x) => { setAllWds(allWds.map(w => w.id === x.id ? { ...w, status: "Paid" } : w)); wdSettleRemote(x.id); auditLog("Withdrawal paid", money(x.amount) + " to " + (x.account_name || x.agent || "agent")); const r = await paystackTransfer({ amount: x.amount, account_number: x.account_number, bank_code: x.bank_code, name: x.account_name || x.agent, reason: "Agent withdrawal " + x.id }); if (r && r.configured && r.ok) toast("Paid. Paystack transfer initiated.", "success"); else if (r && r.configured) toast("Marked paid. Transfer: " + (r.error || "check Paystack dashboard"), "danger"); else toast("Withdrawal marked paid (recorded).", "success"); };
   const pending = items.filter(x => x.status === "Pending").length;
   const wds = allWds.filter(x => x.status === "Pending");
   return <div>
@@ -3369,7 +3471,7 @@ function FraudBar({ flagged, stopped }) {
 
 function SwapJourney({ identity, toast, toAi }) {
   const owner = (identity && identity.email) || "guest";
-  const swapSeed = (kind) => ({ type: kind === "contract" ? "Deed of Sale / Sale Agreement" : "Property Swap Agreement", partyB: (j.match && j.match.by) || "Swap counterparty", subject: "Swap of " + (j.prop.area || j.prop.market || "property") + " for " + (j.match ? j.match.place : "counterparty property"), amount: j.balanceValue ? (j.prop.currency + j.balanceValue + " balancing payment via escrow") : "no balancing payment", terms: (kind === "contract" ? "Contract of sale to perfect a completed cross-border property swap: transfer of title, release of the escrow balance, and perfection of registration, with Girard acting as concierge. " : "Cross-border property swap. ") + "Party A property: " + (j.prop.area || j.prop.market) + " valued " + j.prop.currency + (j.prop.value || "") + ". Party B property: " + (j.match ? (j.match.title + ", " + j.match.place + ", " + j.match.value) : "counterparty property") + ". Balancing payment " + (j.balanceValue ? (j.prop.currency + j.balanceValue) : "nil") + " held in escrow, released on final sign-off. Title verified by Girard." });
+  const swapSeed = (kind) => ({ type: kind === "contract" ? "Deed of Sale / Sale Agreement" : "Property Swap Agreement", dealKey: "swap:" + owner, dealLabel: "Swap · " + (j.prop.area || j.prop.market || "property") + (j.match ? " → " + j.match.place : ""), partyB: (j.match && j.match.by) || "Swap counterparty", subject: "Swap of " + (j.prop.area || j.prop.market || "property") + " for " + (j.match ? j.match.place : "counterparty property"), amount: j.balanceValue ? (j.prop.currency + j.balanceValue + " balancing payment via escrow") : "no balancing payment", terms: (kind === "contract" ? "Contract of sale to perfect a completed cross-border property swap: transfer of title, release of the escrow balance, and perfection of registration, with Girard acting as concierge. " : "Cross-border property swap. ") + "Party A property: " + (j.prop.area || j.prop.market) + " valued " + j.prop.currency + (j.prop.value || "") + ". Party B property: " + (j.match ? (j.match.title + ", " + j.match.place + ", " + j.match.value) : "counterparty property") + ". Balancing payment " + (j.balanceValue ? (j.prop.currency + j.balanceValue) : "nil") + " held in escrow, released on final sign-off. Title verified by Girard." });
   const [j, setJraw] = useState(sjLoad);
   useEffect(() => { let on = true; swapLoadMine(owner).then(x => { if (on && x) setJraw(x); }); paymentExists(owner, "swap").then(paid => { if (on && paid) setJraw(prev => prev.paid ? prev : { ...prev, paid: true, stage: Math.max(prev.stage, 1) }); }); return () => { on = false; }; }, []);
   const setJ = (patch) => { setJraw(prev => { const n = { ...prev, ...patch }; swapSaveMine(owner, n); return n; }); };
@@ -3502,7 +3604,7 @@ function SwapOversight({ toast }) {
   const [rows, setRows] = useState([]);
   useEffect(() => { let on = true; swapFetchAll().then(x => { if (on) setRows(x); }); return () => { on = false; }; }, []);
   const STEPS = ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
-  const update = (owner, data, note, tone) => { setRows(rs => rs.map(r => r.owner === owner ? { ...r, data } : r)); swapSaveMine(owner, data); if (note) toast(note, tone || "success"); };
+  const update = (owner, data, note, tone) => { setRows(rs => rs.map(r => r.owner === owner ? { ...r, data } : r)); swapSaveMine(owner, data); if (note) { toast(note, tone || "success"); auditLog(note, (data.prop && (data.prop.area || data.prop.market)) || owner); } };
   const flagged = rows.filter(r => r.data.flagged).length;
   const escrow = rows.filter(r => r.data.escrowFunded).length;
   return <div>
@@ -3802,8 +3904,10 @@ function AIStudio({ identity, toast, seed }) {
   const [offline, setOffline] = useState(false);
   const [refine, setRefine] = useState("");
   const [saved, setSaved] = useState([]);
+  const [dealKey, setDealKey] = useState(null);
+  const [dealLabel, setDealLabel] = useState(null);
   useEffect(() => { let on = true; docsFetch().then(x => { if (on) setSaved(x); }); return () => { on = false; }; }, []);
-  useEffect(() => { if (seed) { setMode("doc"); if (seed.type) setType(seed.type); setF(x => ({ ...x, partyB: seed.partyB || x.partyB, subject: seed.subject || x.subject, amount: seed.amount || x.amount, terms: seed.terms || x.terms, date: seed.date || x.date })); } }, [seed]);
+  useEffect(() => { if (seed) { setMode("doc"); if (seed.type) setType(seed.type); setDealKey(seed.dealKey || null); setDealLabel(seed.dealLabel || null); setF(x => ({ ...x, partyB: seed.partyB || x.partyB, subject: seed.subject || x.subject, amount: seed.amount || x.amount, terms: seed.terms || x.terms, date: seed.date || x.date })); } }, [seed]);
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
   const buildPrompt = () => mode === "free" ? prompt : ("Draft a complete, iron-clad " + type + " ready for execution.\nParty A: " + (f.partyA || "-") + "\nParty B: " + (f.partyB || "-") + "\nSubject / property: " + (f.subject || "-") + "\nKey commercial terms: " + (f.terms || "standard market terms") + "\nAmount / consideration: " + (f.amount || "as agreed") + "\nEffective date: " + (f.date || "the date of execution") + "\nJurisdiction: " + (f.jurisdiction || "Lagos, Nigeria") + "\n\nReturn the full document only.");
   const run = async (instruction) => {
@@ -3816,7 +3920,7 @@ function AIStudio({ identity, toast, seed }) {
     else { setOffline(true); if (!instruction) setOut(mode === "free" ? "" : aiDocFallback(type, f)); toast("AI is not connected. Add ANTHROPIC_API_KEY in Vercel.", "danger"); }
   };
   const copy = () => { try { navigator.clipboard.writeText(out); toast("Copied to clipboard", "success"); } catch (e) {} };
-  const saveDoc = () => { if (!out) return; const rec = { id: "DOC-" + Date.now(), doc_type: mode === "free" ? "Free-form" : type, party_b: f.partyB || null, subject: f.subject || (mode === "free" ? prompt.slice(0, 60) : ""), body: out, created_by: (identity && identity.email) || null }; docSave(rec); setSaved(s => [{ ...rec, created_at: new Date().toISOString() }, ...s]); toast("Saved to records", "success"); };
+  const saveDoc = () => { if (!out) return; const rec = { id: "DOC-" + Date.now(), doc_type: mode === "free" ? "Free-form" : type, party_b: f.partyB || null, subject: f.subject || (mode === "free" ? prompt.slice(0, 60) : ""), body: out, created_by: (identity && identity.email) || null, deal_key: dealKey, deal_label: dealLabel }; docSave(rec); setSaved(s => [{ ...rec, created_at: new Date().toISOString() }, ...s]); toast("Saved to records", "success"); };
   const download = () => { try { const blob = new Blob([out], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = (mode === "free" ? "girard-document" : type.split(" ")[0].toLowerCase() + "-girard") + ".txt"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } catch (e) {} };
   const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 14, fontFamily: "inherit" };
   return <div>
@@ -3864,6 +3968,28 @@ function PaymentsScreen({ toast }) {
   useEffect(() => { let on = true; paymentsFetch().then(x => { if (on) { setRows(x); setLoading(false); } }); jobsFetch().then(x => { if (on) setJobsData(x); }); return () => { on = false; }; }, []);
   const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
   const byP = k => rows.filter(r => r.purpose === k).length;
+  const exportCsv = () => { try { const head = ["Reference", "Purpose", "Payer", "Amount", "Status", "Date"]; const lines = [head.join(",")].concat(rows.map(r => [r.reference, r.purpose, r.target || "", r.amount, r.status || "", r.paid_at || ""].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(","))); const blob = new Blob([lines.join("\n")], { type: "text/csv" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "girard-payments.csv"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } catch (e) {} };
+  const exportPdf = async () => {
+    const ok = await loadJsPDF(); if (!ok || !window.jspdf) { toast("Could not load the PDF library", "danger"); return; }
+    const { jsPDF } = window.jspdf; const d = new jsPDF({ unit: "pt", format: "a4" }); const W = d.internal.pageSize.getWidth();
+    d.setFillColor(10, 26, 56); d.rect(0, 0, W, 70, "F");
+    d.setTextColor(255, 255, 255); d.setFont("helvetica", "bold"); d.setFontSize(18); d.text("Girard Property Limited", 40, 34);
+    d.setFont("helvetica", "normal"); d.setFontSize(11); d.setTextColor(198, 161, 91); d.text("Finance statement", 40, 52);
+    d.setTextColor(210, 210, 210); d.setFontSize(9); d.text("Generated " + new Date().toLocaleString(), W - 40, 34, { align: "right" });
+    let y = 100; d.setTextColor(20, 20, 20); d.setFont("helvetica", "bold"); d.setFontSize(12); d.text("Summary", 40, y); y += 18;
+    d.setFont("helvetica", "normal"); d.setFontSize(10);
+    const agent = rows.filter(r => r.purpose === "agent").reduce((s, r) => s + Number(r.amount || 0), 0);
+    const swap = rows.filter(r => r.purpose === "swap").reduce((s, r) => s + Number(r.amount || 0), 0);
+    const jobFee = jobsData.filter(j => j.finalCost != null).reduce((s, j) => s + Math.round(j.finalCost * 0.25), 0);
+    [["Total confirmed payments", "NGN " + total.toLocaleString()], ["Agent registration fees", "NGN " + agent.toLocaleString()], ["Swap registration fees", "NGN " + swap.toLocaleString()], ["Job commission (25%)", "NGN " + jobFee.toLocaleString()], ["Number of transactions", String(rows.length)]].forEach(([k, v]) => { d.text(k, 40, y); d.text(v, W - 40, y, { align: "right" }); y += 16; });
+    y += 14; d.setFont("helvetica", "bold"); d.setFontSize(12); d.text("Transactions", 40, y); y += 12;
+    d.setFont("helvetica", "bold"); d.setFontSize(9); d.setTextColor(90, 90, 90);
+    d.text("REFERENCE", 40, y); d.text("PURPOSE", 200, y); d.text("STATUS", 320, y); d.text("AMOUNT (NGN)", W - 40, y, { align: "right" }); y += 6;
+    d.setDrawColor(220, 220, 220); d.line(40, y, W - 40, y); y += 15; d.setFont("helvetica", "normal"); d.setTextColor(20, 20, 20);
+    if (!rows.length) { d.setTextColor(120, 120, 120); d.text("No confirmed payments yet.", 40, y); }
+    rows.forEach(r => { if (y > 790) { d.addPage(); y = 60; } d.text(String(r.reference || "").slice(0, 24), 40, y); d.text(String(r.purpose || ""), 200, y); d.text(String(r.status || "-"), 320, y); d.text(Number(r.amount || 0).toLocaleString(), W - 40, y, { align: "right" }); y += 15; });
+    d.save("girard-finance-statement.pdf"); toast("Finance PDF exported", "success");
+  };
   const _now = new Date(); const _months = [];
   for (let i = 5; i >= 0; i--) { const d = new Date(_now.getFullYear(), _now.getMonth() - i, 1); _months.push({ key: d.getFullYear() + "-" + d.getMonth(), m: d.toLocaleDateString(undefined, { month: "short" }) }); }
   const _sameM = (d, key) => { const dt = new Date(d); return !isNaN(dt) && (dt.getFullYear() + "-" + dt.getMonth() === key); };
@@ -3874,7 +4000,7 @@ function PaymentsScreen({ toast }) {
   }));
   const hasFees = monthData.some(d => d.agent + d.swap + d.job > 0);
   return <div>
-    <H2 title="Payments" sub="Every fee taken through Girard. Live once Paystack is connected." />
+    <H2 title="Payments" sub="Every fee taken through Girard. Live once Paystack is connected." right={<div style={{ display: "flex", gap: 8 }}><PmBtn size="sm" kind="ghost" icon={FileText} onClick={exportCsv}>CSV</PmBtn><PmBtn size="sm" kind="navy" icon={Download} onClick={exportPdf}>PDF</PmBtn></div>} />
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
       <PmStat icon={Banknote} label="Total recorded" value={money(total)} tone="#1F9D57" />
       <PmStat icon={Users} label="Agent fees" value={String(byP("agent"))} tone="#3B82F6" />
@@ -3948,4 +4074,483 @@ function FeeTrend({ data }) {
       </g>;
     })}
   </svg>;
+}
+
+/* ---------- Documents library ---------- */
+function DocumentsScreen({ identity, toast }) {
+  const [docs, setDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [view, setView] = useState(null);
+  const [sign, setSign] = useState(null);
+  useEffect(() => { let on = true; docsFetch().then(x => { if (on) { setDocs(x); setLoading(false); } }); return () => { on = false; }; }, []);
+  const del = async (id) => { setDocs(ds => ds.filter(d => d.id !== id)); await docDelete(id); toast("Document deleted", "success"); };
+  const download = (d) => { try { const blob = new Blob([d.body || ""], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = (d.doc_type || "document").split(" ")[0].toLowerCase() + "-girard.txt"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } catch (e) {} };
+  const ql = q.toLowerCase();
+  const filtered = docs.filter(d => !ql || (d.doc_type || "").toLowerCase().includes(ql) || (d.subject || "").toLowerCase().includes(ql) || (d.party_b || "").toLowerCase().includes(ql) || (d.deal_label || "").toLowerCase().includes(ql));
+  return <div>
+    <H2 title="Documents" sub="Every agreement, MOU and letter saved from the AI studio" />
+    <div style={{ marginBottom: 16, maxWidth: 400 }}><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search type, subject, party or deal…" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit" }} /></div>
+    {loading ? <PmCard><div style={{ color: "var(--muted)" }}>Loading…</div></PmCard>
+      : filtered.length === 0 ? <PmCard><div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{docs.length === 0 ? "No saved documents yet. Generate an agreement or MOU in AI documents and tap Save, and it will appear here." : "No documents match your search."}</div></PmCard>
+      : <div style={{ display: "grid", gap: 10 }}>{filtered.map(d => <PmCard key={d.id} className="lift" style={{ marginBottom: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><FileText size={15} color="var(--gold-2)" style={{ flexShrink: 0 }} /><span style={{ fontWeight: 700, color: "var(--ink)" }}>{d.doc_type}</span>{d.deal_label && <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--gold-2)", background: "var(--gold-soft)", padding: "2px 8px", borderRadius: 999 }}>{d.deal_label}</span>}</div>
+              <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>{d.subject || "—"}{d.party_b ? " · " + d.party_b : ""}</div>
+              <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{d.created_at ? new Date(d.created_at).toLocaleString() : ""}</div>
+            </div>
+            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}><PmBtn size="sm" onClick={() => setView(d)}>View</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => download(d)}>Download</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => del(d.id)}>Delete</PmBtn></div>
+          </div>
+        </PmCard>)}</div>}
+    {view && <PmModal title={view.doc_type} onClose={() => setView(null)} wide>
+      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 10 }}>{view.subject || ""}{view.deal_label ? " · " + view.deal_label : ""}</div>
+      <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16 }}>{view.body}</div>
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}><PmBtn kind="gold" onClick={() => { setSign(view); setView(null); }}>Sign</PmBtn><PmBtn kind="ghost" icon={FileText} onClick={() => download(view)}>Download</PmBtn></div>
+    </PmModal>}
+    {sign && <EsignModal doc={sign} onClose={() => setSign(null)} toast={toast} />}
+  </div>;
+}
+
+/* ---------- Notification bell + Activity log ---------- */
+function NotifBell({ identity }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
+  const [read, setRead] = useState(() => notifReadSet());
+  const load = () => notifsFetch(identity.role, identity.email).then(setItems).catch(() => {});
+  useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, []);
+  useEffect(() => { if (open && items.length) { notifMarkRead(items.map(n => n.id)); setTimeout(() => setRead(notifReadSet()), 300); } }, [open]);
+  const unread = items.filter(n => !read.has(n.id)).length;
+  return <div style={{ position: "relative" }}>
+    <button onClick={() => setOpen(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)", position: "relative", display: "grid", placeItems: "center", width: 36, height: 36 }}>
+      <Bell size={20} />
+      {unread > 0 && <span style={{ position: "absolute", top: 2, right: 2, minWidth: 16, height: 16, padding: "0 4px", borderRadius: 999, background: "#D0453B", color: "#fff", fontSize: 10, fontWeight: 800, display: "grid", placeItems: "center" }}>{unread > 9 ? "9+" : unread}</span>}
+    </button>
+    {open && <>
+      <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60 }} />
+      <div style={{ position: "absolute", right: 0, top: 42, width: 340, maxWidth: "92vw", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, boxShadow: "0 12px 40px rgba(6,17,42,.18)", zIndex: 61, overflow: "hidden" }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--cream-line)", fontWeight: 700, color: "var(--ink)" }}>Notifications</div>
+        <div style={{ maxHeight: 380, overflow: "auto" }}>
+          {items.length === 0 ? <div style={{ padding: 20, color: "var(--muted)", fontSize: 13.5 }}>You're all caught up.</div>
+            : items.map(n => <div key={n.id} style={{ padding: "11px 16px", borderBottom: "1px solid var(--cream-line)", background: read.has(n.id) ? "transparent" : "var(--gold-soft)" }}>
+              <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 13.5 }}>{n.title}</div>
+              {n.body && <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{n.body}</div>}
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{n.created_at ? new Date(n.created_at).toLocaleString() : ""}</div>
+            </div>)}
+        </div>
+      </div>
+    </>}
+  </div>;
+}
+function AuditScreen() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { let on = true; auditFetch().then(x => { if (on) { setItems(x); setLoading(false); } }); return () => { on = false; }; }, []);
+  return <div>
+    <H2 title="Activity log" sub="A record of key actions across the platform" />
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      {loading ? <div style={{ padding: 22, color: "var(--muted)" }}>Loading…</div>
+        : items.length === 0 ? <div style={{ padding: 22, color: "var(--muted)" }}>No activity recorded yet. Approvals, payouts and interventions will appear here.</div>
+        : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
+          <thead><tr style={{ background: "var(--ivory)" }}>{["Action", "Detail", "By", "When"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
+          <tbody>{items.map(a => <tr key={a.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
+            <td style={{ padding: "11px 16px", fontWeight: 600, color: "var(--ink)", fontSize: 13 }}>{a.action}</td>
+            <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--muted)" }}>{a.detail || "—"}</td>
+            <td style={{ padding: "11px 16px", fontSize: 12.5, color: "var(--muted)" }}>{a.actor || "—"}</td>
+            <td style={{ padding: "11px 16px", fontSize: 12.5, color: "var(--muted)" }}>{a.created_at ? new Date(a.created_at).toLocaleString() : ""}</td>
+          </tr>)}</tbody>
+        </table></div>}
+    </PmCard>
+  </div>;
+}
+
+/* ========================= TENANT PORTAL ========================= */
+function rentKey(e) { return "girard_rent_" + (e || "guest"); }
+function rentLoad(e) { try { const r = localStorage.getItem(rentKey(e)); if (r) return JSON.parse(r); } catch (x) {} const seed = { items: [{ id: "RENT-1", period: "Year 1 · 2025/26", amount: 4500000, status: "Paid", due: "2025-08-01" }, { id: "RENT-2", period: "Year 2 renewal · 2026/27", amount: 4500000, status: "Due", due: "2026-08-01" }] }; try { localStorage.setItem(rentKey(e), JSON.stringify(seed)); } catch (x) {} return seed; }
+function rentSave(e, s) { try { localStorage.setItem(rentKey(e), JSON.stringify(s)); } catch (x) {} }
+function msgKey(e) { return "girard_msgs_" + (e || "guest"); }
+function msgLoadLocal(e) { try { const r = localStorage.getItem(msgKey(e)); if (r) return JSON.parse(r); } catch (x) {} return { items: [] }; }
+function msgSaveLocal(e, s) { try { localStorage.setItem(msgKey(e), JSON.stringify(s)); } catch (x) {} }
+async function msgSend(email, rec) {
+  const row = { id: "MSG-" + Date.now(), tenant: email, sender: rec.sender, body: rec.body, created_at: new Date().toISOString() };
+  if (supabase) { try { await supabase.from("messages").insert([{ id: row.id, tenant: row.tenant, sender: row.sender, body: row.body }]); return row; } catch (x) {} }
+  const st = msgLoadLocal(email); msgSaveLocal(email, { items: [...st.items, row] }); return row;
+}
+async function msgFetch(email) {
+  if (supabase) { try { const { data, error } = await supabase.from("messages").select("*").eq("tenant", email).order("created_at", { ascending: true }); if (!error && data) return data; } catch (x) {} }
+  return msgLoadLocal(email).items;
+}
+
+function TenantPortal({ identity, toast, section, go }) {
+  const email = identity.email || "guest";
+  const tenancy = { property: "2-Bed Apartment, Lekki Phase 1", area: "Lekki Phase 1", rent: 4500000, start: "1 Aug 2025", end: "31 Jul 2026" };
+  const [rent, setRentRaw] = useState(() => rentLoad(email));
+  const setRent = n => { setRentRaw(n); rentSave(email, n); };
+  const [repairs, setRepairs] = useState([]);
+  const [cat, setCat] = useState(VENDOR_CATS[0]);
+  const [desc, setDesc] = useState("");
+  const [docs, setDocs] = useState([]);
+  const [docView, setDocView] = useState(null);
+  const [msgs, setMsgs] = useState([]);
+  const [text, setText] = useState("");
+  useEffect(() => { let on = true; jobsFetch().then(j => { if (on) setRepairs(j.filter(x => x.propTitle === tenancy.property)); }); docsFetch().then(d => { if (on) setDocs(d.filter(x => (x.party_b || "").includes(identity.firstName) || (x.deal_label || "").includes(identity.firstName))); }); msgFetch(email).then(m => { if (on) setMsgs(m); }); return () => { on = false; }; }, [section]);
+  useEffect(() => { if (section !== "tmsg") return; const t = setInterval(() => msgFetch(email).then(setMsgs), 12000); return () => clearInterval(t); }, [section]);
+  const markRent = (id, status) => setRent({ items: rent.items.map(i => i.id === id ? { ...i, status } : i) });
+  const payOnline = (inv) => payWithPaystack({ email, amountNaira: inv.amount, label: "Rent · " + inv.period, purpose: "rent", target: email, onSuccess: () => { markRent(inv.id, "Paid"); notify({ title: "Rent payment", body: tenancy.property + " · " + money(inv.amount), audience: "admin" }); toast("Rent payment received", "success"); } });
+  const payTransfer = (inv) => { markRent(inv.id, "Awaiting confirmation"); notify({ title: "Rent paid by transfer (to confirm)", body: tenancy.property + " · " + money(inv.amount), audience: "admin" }); toast("Marked as paid by transfer. Girard will confirm.", "success"); };
+  const submitRepair = () => { if (!desc.trim()) { toast("Describe the issue", "danger"); return; } const j = { id: "JB-" + Date.now(), propTitle: tenancy.property, girardOwned: true, category: cat, desc, vendorName: null, status: "Open", estimate: JOB_EST[cat] || 50000, finalCost: null, paidBy: "Girard", rating: 0, ratedOk: null, review: "", createdAt: new Date().toISOString().slice(0, 10) }; jobInsert(j); setRepairs(r => [j, ...r]); notify({ title: "New repair request", body: cat + " · " + tenancy.property, audience: "admin" }); setDesc(""); toast("Repair reported. Girard will arrange a vendor.", "success"); };
+  const send = async () => { if (!text.trim()) return; const row = await msgSend(email, { sender: "tenant", body: text }); setMsgs(m => [...m, row]); setText(""); notify({ title: "New message from " + identity.firstName, body: row.body.slice(0, 60), audience: "admin" }); };
+  const nextDue = rent.items.find(i => i.status === "Due");
+  const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)" };
+
+  if (section === "thome") return <div>
+    <H2 title={"Welcome, " + identity.firstName} sub={tenancy.property + " · Girard-managed"} />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 14, marginBottom: 18 }}>
+      <CStat icon={Home} label="Your home" value={tenancy.area} sub={tenancy.property} c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={CreditCard} label="Annual rent" value={money(tenancy.rent)} sub={nextDue ? "Next due " + nextDue.due : "Up to date"} c="#F59E0B" bg="#FEF3E2" />
+      <CStat icon={Wrench} label="Open repairs" value={String(repairs.filter(r => r.status !== "Rated" && r.status !== "Completed").length)} sub="In progress" c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={CalendarDays} label="Lease ends" value={tenancy.end} sub="Renewal available" c="#10B981" bg="#E7F7F0" />
+    </div>
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{[["Pay rent", "trent"], ["Report a repair", "trepairs"], ["Lease & documents", "tdocs"], ["Message Girard", "tmsg"]].map(([l, v]) => <PmBtn key={v} kind={v === "trent" ? "gold" : "ghost"} onClick={() => go(v)}>{l}</PmBtn>)}</div>
+  </div>;
+
+  if (section === "trent") return <div>
+    <H2 title="Pay rent" sub="Pay online instantly, or by bank transfer" />
+    <div style={{ display: "grid", gap: 12 }}>{rent.items.map(inv => <PmCard key={inv.id}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{inv.period}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Due {inv.due} · {money(inv.amount)}</div></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: inv.status === "Paid" ? "rgba(31,157,87,.14)" : inv.status === "Due" ? "var(--gold-soft)" : "rgba(59,130,246,.14)", color: inv.status === "Paid" ? "#1F9D57" : inv.status === "Due" ? "var(--gold-2)" : "#2F6FB0" }}>{inv.status}</span>
+          {inv.status === "Due" && <><PmBtn size="sm" kind="gold" icon={CreditCard} onClick={() => payOnline(inv)}>Pay online</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => payTransfer(inv)}>I paid by transfer</PmBtn></>}
+        </div>
+      </div>
+    </PmCard>)}</div>
+    <PmCard style={{ marginTop: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Bank transfer details</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.7 }}>Account name: Girard Property Limited<br />Bank: Zenith Bank · Account: 1010101010<br />Use your name as the reference, then tap "I paid by transfer" above. Girard confirms within 24 hours.</div></PmCard>
+    <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Online payments are recorded now and go live once Paystack is connected.</div>
+  </div>;
+
+  if (section === "trepairs") return <div>
+    <H2 title="Repairs" sub="Report a problem and track it to completion" />
+    <PmCard style={{ marginBottom: 16 }}><div style={{ display: "grid", gap: 12 }}>
+      <PmSelect label="What needs fixing?" value={cat} onChange={setCat} options={VENDOR_CATS} />
+      <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Describe the issue</label><textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="e.g. Kitchen tap is leaking under the sink" style={{ ...inp, resize: "vertical" }} /></div>
+      <PmBtn kind="gold" icon={Wrench} onClick={submitRepair}>Report repair</PmBtn>
+    </div></PmCard>
+    <div style={{ display: "grid", gap: 10 }}>{repairs.length === 0 ? <PmCard><div style={{ color: "var(--muted)" }}>No repairs reported yet.</div></PmCard> : repairs.map(r => <PmCard key={r.id} style={{ marginBottom: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{r.category}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>{r.desc}</div></div>
+        <div style={{ textAlign: "right" }}>{jobStatusPill(r.status === "Open" ? "No vendor" : r.status)}<div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 4 }}>{r.vendorName || "Girard sourcing vendor"}</div></div>
+      </div>
+      {r.status === "Completed" && <div style={{ marginTop: 10 }}><PmBtn size="sm" kind="ghost">Rate the work</PmBtn></div>}
+    </PmCard>)}</div>
+  </div>;
+
+  if (section === "tdocs") return <div>
+    <H2 title="Lease & documents" sub="Your tenancy agreement and shared documents" />
+    <PmCard style={{ marginBottom: 16 }}>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Tenancy summary</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12 }}>{[["Property", tenancy.property], ["Location", tenancy.area], ["Annual rent", money(tenancy.rent)], ["Start", tenancy.start], ["End", tenancy.end], ["Managed by", "Girard Property Limited"]].map(([k, v]) => <div key={k} style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase" }}>{k}</div><div style={{ fontSize: 13.5, color: "var(--ink)", marginTop: 3 }}>{v}</div></div>)}</div>
+    </PmCard>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Documents</div>
+    {docs.length === 0 ? <PmCard><div style={{ color: "var(--muted)", fontSize: 13.5 }}>No documents shared with you yet. Your tenancy agreement will appear here once Girard issues it.</div></PmCard>
+      : <div style={{ display: "grid", gap: 10 }}>{docs.map(d => <PmCard key={d.id} style={{ marginBottom: 0 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}><div style={{ display: "flex", alignItems: "center", gap: 8 }}><FileText size={15} color="var(--gold-2)" /><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{d.doc_type}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{d.subject || ""}</div></div></div><PmBtn size="sm" onClick={() => setDocView(d)}>View</PmBtn></div></PmCard>)}</div>}
+    {docView && <PmModal title={docView.doc_type} onClose={() => setDocView(null)} wide><div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16 }}>{docView.body}</div></PmModal>}
+  </div>;
+
+  if (section === "tmsg") return <div>
+    <H2 title="Message Girard" sub="Your direct line to the Girard team" />
+    <PmCard>
+      <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, height: 340, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+        {msgs.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13.5, margin: "auto" }}>No messages yet. Say hello, ask a question, or raise a concern.</div>
+          : msgs.map(m => <div key={m.id} style={{ alignSelf: m.sender === "tenant" ? "flex-end" : "flex-start", maxWidth: "78%", background: m.sender === "tenant" ? "var(--navy)" : "var(--white)", color: m.sender === "tenant" ? "#fff" : "var(--ink)", border: m.sender === "tenant" ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "9px 13px", fontSize: 13.5 }}>{m.body}</div>)}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder="Type a message" style={{ ...inp, flex: 1 }} /><PmBtn kind="gold" onClick={send}>Send</PmBtn></div>
+    </PmCard>
+  </div>;
+
+  return null;
+}
+
+/* ---------- Admin message inbox + tenant invite + tenancy template ---------- */
+async function msgFetchAll() {
+  if (supabase) { try { const { data, error } = await supabase.from("messages").select("*").order("created_at", { ascending: true }); if (!error && data) return data; } catch (e) {} }
+  const items = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf("girard_msgs_") === 0) { const st = JSON.parse(localStorage.getItem(k) || '{"items":[]}'); items.push(...st.items); } } } catch (e) {}
+  return items.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+}
+function tenancyDoc(app, prop) {
+  const rent = prop ? prop.rent : 0;
+  return "TENANCY AGREEMENT\n\nTHIS TENANCY AGREEMENT is made on " + new Date().toLocaleDateString() + " BETWEEN Girard Property Limited (Landlord and Managing Agent) AND " + app.tenant + " (the Tenant).\n\n1. PROPERTY: " + (prop ? (prop.title + ", " + prop.address) : app.property) + ".\n2. TERM: 12 months, renewable by mutual agreement.\n3. RENT: " + money(rent) + " per annum, payable yearly in advance.\n4. DEPOSIT: a refundable deposit equivalent to one month's rent, subject to the condition of the property on exit.\n5. USE: residential purposes only. The Tenant shall keep the property in good and tenantable condition.\n6. REPAIRS: the Tenant shall report defects promptly through the Girard tenant portal.\n7. TERMINATION: in accordance with these terms and the Lagos State Tenancy Law 2011.\n8. GOVERNING LAW: the laws of Lagos State and the Federal Republic of Nigeria. Disputes shall be settled amicably or by arbitration seated in Lagos.\n\nSIGNED:\n\n____________________          ____________________\nGirard Property Limited        " + app.tenant;
+}
+function InviteTenantModal({ onClose, toast }) {
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [sent, setSent] = useState(false);
+  const url = (typeof window !== "undefined" && window.location) ? window.location.origin : "https://girardpropertylimited.com";
+  const send = async () => { if (!email.trim()) { toast("Add an email", "danger"); return; } await sendComms({ channels: ["email"], to: { email }, subject: "You're invited to the Girard tenant portal", message: "Hello " + (name || "there") + ",\n\nGirard Property Limited has invited you to your tenant portal, where you can pay rent, report repairs, view your lease and message us directly.\n\nJoin here: " + url + "\nChoose the Tenant option when you sign up.\n\nGirard Property Limited" }); notify({ title: "Tenant invited", body: (name ? name + " · " : "") + email, audience: "admin" }); auditLog("Tenant invited", email); setSent(true); toast("Invitation sent", "success"); };
+  return <PmModal title="Invite a tenant" onClose={onClose}>
+    {sent ? <div style={{ textAlign: "center", padding: "20px 0" }}><div style={{ width: 52, height: 52, borderRadius: 999, background: "var(--gold-soft)", color: "var(--gold-2)", display: "grid", placeItems: "center", margin: "0 auto 12px" }}><Check size={26} /></div><div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>Invitation sent</div><div style={{ color: "var(--muted)", marginTop: 6 }}>{email} has been invited to the tenant portal.</div><PmBtn style={{ marginTop: 16 }} onClick={onClose}>Done</PmBtn></div>
+      : <div style={{ display: "grid", gap: 12 }}>
+        <PmField label="Tenant name" value={name} onChange={setName} placeholder="Full name" />
+        <PmField label="Email" value={email} onChange={setEmail} placeholder="tenant@email.com" />
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>They receive an email with a link to join and pick the Tenant role. Live email sends once Resend is connected; otherwise it is recorded.</div>
+        <PmBtn kind="gold" icon={Mail} onClick={send}>Send invitation</PmBtn>
+      </div>}
+  </PmModal>;
+}
+function MessagesInbox({ identity, toast }) {
+  const [all, setAll] = useState([]); const [active, setActive] = useState(null); const [text, setText] = useState(""); const [invite, setInvite] = useState(false);
+  const load = () => msgFetchAll().then(setAll).catch(() => {});
+  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
+  const threads = [...new Set(all.map(m => m.tenant))].map(email => { const ms = all.filter(m => m.tenant === email); return { email, last: ms[ms.length - 1], count: ms.length }; });
+  const thread = active ? all.filter(m => m.tenant === active) : [];
+  const reply = async () => { if (!text.trim() || !active) return; const row = await msgSend(active, { sender: "girard", body: text }); setAll(a => [...a, row]); setText(""); notify({ title: "Reply from Girard", body: text.slice(0, 60), audience: active }); };
+  return <div>
+    <H2 title="Tenant messages" sub="Reply to tenants and invite new ones" right={<PmBtn size="sm" kind="gold" icon={UserPlus} onClick={() => setInvite(true)}>Invite tenant</PmBtn>} />
+    <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16 }} className="pm-grid2">
+      <PmCard pad={0} style={{ overflow: "hidden" }}>
+        {threads.length === 0 ? <div style={{ padding: 18, color: "var(--muted)", fontSize: 13.5 }}>No messages yet.</div>
+          : threads.map(t => <button key={t.email} onClick={() => setActive(t.email)} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 14px", border: "none", borderBottom: "1px solid var(--cream-line)", background: active === t.email ? "var(--gold-soft)" : "transparent", cursor: "pointer" }}>
+            <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.email}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.last ? (t.last.sender === "girard" ? "You: " : "") + t.last.body : ""}</div>
+          </button>)}
+      </PmCard>
+      <PmCard>
+        {!active ? <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Select a conversation to reply.</div> : <>
+          <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>{active}</div>
+          <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, height: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+            {thread.map(m => <div key={m.id} style={{ alignSelf: m.sender === "girard" ? "flex-end" : "flex-start", maxWidth: "78%", background: m.sender === "girard" ? "var(--navy)" : "var(--white)", color: m.sender === "girard" ? "#fff" : "var(--ink)", border: m.sender === "girard" ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "9px 13px", fontSize: 13.5 }}>{m.body}</div>)}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && reply()} placeholder="Type a reply" style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit" }} /><PmBtn kind="gold" onClick={reply}>Reply</PmBtn></div>
+        </>}
+      </PmCard>
+    </div>
+    {invite && <InviteTenantModal onClose={() => setInvite(false)} toast={toast} />}
+  </div>;
+}
+
+/* ---------- Ask AI (portfolio assistant) ---------- */
+function AskAI({ st, identity, toast }) {
+  const [q, setQ] = useState(""); const [msgs, setMsgs] = useState([]); const [loading, setLoading] = useState(false);
+  const summary = () => { const props = st.properties || []; const leased = props.filter(p => p.status === "Leased").length; const vacant = props.length - leased; const rentTotal = props.reduce((s, p) => s + (p.rent || 0), 0); const apps = (st.applications || []); const byArea = {}; props.forEach(p => { byArea[p.area] = (byArea[p.area] || 0) + 1; }); return "Portfolio data (all money in Naira):\n- Properties: " + props.length + " (" + leased + " leased, " + vacant + " available)\n- Annual rent roll: " + rentTotal + "\n- Applications: " + apps.length + "\n- By area: " + Object.entries(byArea).map(([a, n]) => a + ": " + n).join(", ") + "\n- List: " + props.slice(0, 40).map(p => p.title + " (" + p.area + ", " + p.status + ", rent " + p.rent + ")").join("; "); };
+  const ask = async () => { if (!q.trim()) return; const question = q; setMsgs(m => [...m, { me: true, text: question }]); setQ(""); setLoading(true); const r = await aiProxy("Answer using ONLY this data. Be concise, use numbers. If not answerable from the data, say so.\n\n" + summary() + "\n\nQuestion: " + question, "You are Girard's precise real estate portfolio analyst. Short, direct answers.", 800); setLoading(false); setMsgs(m => [...m, { me: false, text: (r && r.ok && r.text) ? r.text : ("AI is not connected yet (add ANTHROPIC_API_KEY in Vercel). Quick facts: " + (st.properties || []).length + " properties, " + (st.properties || []).filter(p => p.status === "Leased").length + " leased.") }]); };
+  const sugg = ["Which properties are vacant?", "What is my total rent roll?", "Which area has the most properties?", "How many applications do I have?"];
+  return <div>
+    <H2 title="Ask Girard AI" sub="Ask anything about your portfolio in plain English" />
+    <PmCard>
+      <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, minHeight: 260, maxHeight: 420, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+        {msgs.length === 0 ? <div style={{ margin: "auto", textAlign: "center" }}><div style={{ color: "var(--muted)", fontSize: 13.5, marginBottom: 12 }}>Ask about occupancy, rent, applications, areas and more.</div><div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>{sugg.map(x => <button key={x} onClick={() => setQ(x)} style={{ border: "1px solid var(--cream-line)", background: "var(--white)", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, color: "var(--ink)", cursor: "pointer" }}>{x}</button>)}</div></div>
+          : msgs.map((m, i) => <div key={i} style={{ alignSelf: m.me ? "flex-end" : "flex-start", maxWidth: "82%", background: m.me ? "var(--navy)" : "var(--white)", color: m.me ? "#fff" : "var(--ink)", border: m.me ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "10px 13px", fontSize: 13.5, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{m.text}</div>)}
+        {loading && <div style={{ alignSelf: "flex-start", color: "var(--muted)", fontSize: 13 }}>Thinking…</div>}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && ask()} placeholder="e.g. Which units are vacant?" style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)" }} /><PmBtn kind="gold" onClick={ask}>Ask</PmBtn></div>
+    </PmCard>
+  </div>;
+}
+
+/* ---------- Mortgage & affordability calculator ---------- */
+function CalculatorScreen() {
+  const [price, setPrice] = useState("120000000"); const [depositPct, setDepositPct] = useState("20"); const [rate, setRate] = useState("22"); const [years, setYears] = useState("15"); const [income, setIncome] = useState("30000000");
+  const Pv = Math.max(0, Number(String(price).replace(/,/g, "")) || 0); const dep = Pv * (Number(depositPct) || 0) / 100; const loan = Math.max(0, Pv - dep);
+  const r = (Number(rate) || 0) / 100 / 12; const n = (Number(years) || 0) * 12;
+  const monthly = r > 0 && n > 0 ? loan * r / (1 - Math.pow(1 + r, -n)) : (n > 0 ? loan / n : 0); const annualPay = monthly * 12;
+  const inc = Number(String(income).replace(/,/g, "")) || 0; const ratio = inc > 0 ? annualPay / inc * 100 : 0; const affordable = ratio > 0 && ratio <= 40;
+  const F = ({ label, value, on }) => <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>{label}</label><input value={value} onChange={e => on(e.target.value)} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)" }} /></div>;
+  return <div>
+    <H2 title="Mortgage & affordability" sub="Estimate monthly repayments and what you can afford" />
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
+      <PmCard><div style={{ display: "grid", gap: 12 }}>
+        <F label={"Property price (\u20a6)"} value={price} on={setPrice} />
+        <div style={{ display: "flex", gap: 10 }}><div style={{ flex: 1 }}><F label="Deposit (%)" value={depositPct} on={setDepositPct} /></div><div style={{ flex: 1 }}><F label="Rate (% p.a.)" value={rate} on={setRate} /></div></div>
+        <F label="Term (years)" value={years} on={setYears} />
+        <F label={"Annual income (\u20a6)"} value={income} on={setIncome} />
+      </div></PmCard>
+      <PmCard>
+        <div style={{ fontSize: 12.5, color: "var(--muted)" }}>Estimated monthly repayment</div>
+        <div className="serif" style={{ fontSize: 34, fontWeight: 600, color: "var(--ink)", margin: "4px 0 16px" }}>{money(Math.round(monthly))}</div>
+        <div style={{ display: "grid", gap: 8 }}>{[["Deposit", dep], ["Loan amount", loan], ["Total repayable", monthly * n], ["Annual repayment", annualPay]].map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "7px 0", borderTop: "1px solid var(--cream-line)" }}><span style={{ color: "var(--muted)" }}>{k}</span><b style={{ color: "var(--ink)" }}>{money(Math.round(v))}</b></div>)}</div>
+        <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: affordable ? "rgba(31,157,87,.1)" : "rgba(208,69,59,.1)", border: "1px solid " + (affordable ? "rgba(31,157,87,.3)" : "rgba(208,69,59,.3)") }}>
+          <div style={{ fontWeight: 700, color: affordable ? "#1F9D57" : "#D0453B", fontSize: 14 }}>{ratio === 0 ? "Enter your income" : affordable ? "Within comfortable range" : "Above the comfortable range"}</div>
+          {ratio > 0 && <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>Repayments are {ratio.toFixed(0)}% of income. Lenders usually prefer under 40%.</div>}
+        </div>
+      </PmCard>
+    </div>
+    <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Indicative only. Actual terms depend on the lender.</div>
+  </div>;
+}
+
+/* ---------- Saved searches + alerts ---------- */
+const SS_KEY = "girard_saved_searches";
+function ssLoad() { try { return JSON.parse(localStorage.getItem(SS_KEY) || '{"items":[]}'); } catch (e) { return { items: [] }; } }
+function ssSave(s) { try { localStorage.setItem(SS_KEY, JSON.stringify(s)); } catch (e) {} }
+function SavedSearches({ st, identity, toast }) {
+  const props = (st && st.properties) || [];
+  const [area, setArea] = useState("Any"); const [beds, setBeds] = useState("Any"); const [maxRent, setMaxRent] = useState("");
+  const [store, setStoreRaw] = useState(ssLoad); const setStore = n => { setStoreRaw(n); ssSave(n); };
+  const areas = ["Any", ...Array.from(new Set(props.map(p => p.area)))];
+  const matches = (s) => props.filter(p => p.status !== "Leased" && (s.area === "Any" || p.area === s.area) && (s.beds === "Any" || String(p.beds) === String(s.beds)) && (!s.maxRent || p.rent <= s.maxRent));
+  const save = () => { const srch = { id: "SS-" + Date.now(), area, beds, maxRent: Number(String(maxRent).replace(/,/g, "")) || 0 }; const m = matches(srch).length; setStore({ items: [srch, ...store.items] }); notify({ title: "New saved search", body: (area === "Any" ? "Any area" : area) + " · " + m + " current matches", audience: identity.email }); toast("Search saved. We'll alert you to matches.", "success"); };
+  return <div>
+    <H2 title="Saved searches & alerts" sub="Save what you want and get alerted when it appears" />
+    <PmCard style={{ marginBottom: 16 }}><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 12, alignItems: "end" }} className="pm-grid2">
+      <PmSelect label="Area" value={area} onChange={setArea} options={areas} />
+      <PmSelect label="Bedrooms" value={beds} onChange={setBeds} options={["Any", "1", "2", "3", "4", "5"]} />
+      <PmField label={"Max rent (\u20a6)"} value={maxRent} onChange={setMaxRent} placeholder="e.g. 5,000,000" />
+      <PmBtn kind="gold" icon={Search} onClick={save}>Save search</PmBtn>
+    </div></PmCard>
+    {store.items.length === 0 ? <PmCard><div style={{ color: "var(--muted)" }}>No saved searches yet. Save one above and we'll flag matching listings.</div></PmCard>
+      : <div style={{ display: "grid", gap: 10 }}>{store.items.map(srch => { const m = matches(srch); return <PmCard key={srch.id} style={{ marginBottom: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{srch.area === "Any" ? "Any area" : srch.area}{srch.beds !== "Any" ? " · " + srch.beds + " bed" : ""}{srch.maxRent ? " · up to " + money(srch.maxRent) : ""}</div><div style={{ fontSize: 12.5, color: m.length ? "#1F9D57" : "var(--muted)", fontWeight: 600, marginTop: 2 }}>{m.length} current match{m.length === 1 ? "" : "es"}</div></div>
+          <PmBtn size="sm" kind="ghost" onClick={() => setStore({ items: store.items.filter(x => x.id !== srch.id) })}>Remove</PmBtn>
+        </div>
+        {m.length > 0 && <div style={{ marginTop: 10, display: "grid", gap: 6 }}>{m.slice(0, 5).map(p => <div key={p.id} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 10px", background: "var(--ivory-2)", borderRadius: 7 }}>{p.title} · {p.area} · {money(p.rent)}/yr</div>)}</div>}
+      </PmCard>; })}</div>}
+  </div>;
+}
+
+/* ---------- E-signature -> signed PDF ---------- */
+function loadJsPDF() { return new Promise((res) => { if (window.jspdf) return res(true); const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; sc.onload = () => res(true); sc.onerror = () => res(false); document.body.appendChild(sc); }); }
+function EsignModal({ doc, onClose, toast }) {
+  const [sig, setSig] = useState(""); const [busy, setBusy] = useState(false);
+  const makePdf = async () => {
+    if (!sig.trim()) { toast("Type your full name to sign", "danger"); return; }
+    setBusy(true); const ok = await loadJsPDF();
+    if (!ok || !window.jspdf) { setBusy(false); toast("Could not load the PDF tool (check connection).", "danger"); return; }
+    try {
+      const { jsPDF } = window.jspdf; const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const margin = 48, width = pdf.internal.pageSize.getWidth() - margin * 2, bottom = pdf.internal.pageSize.getHeight() - 90; let y = margin;
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(14); pdf.text(doc.doc_type || "Document", margin, y); y += 22;
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(10.5);
+      pdf.splitTextToSize(doc.body || "", width).forEach(line => { if (y > bottom) { pdf.addPage(); y = margin; } pdf.text(line, margin, y); y += 14; });
+      y += 24; if (y > bottom) { pdf.addPage(); y = margin; }
+      pdf.setFont("helvetica", "bold"); pdf.text("Signed:", margin, y);
+      pdf.setFont("times", "italic"); pdf.setFontSize(20); pdf.text(sig, margin, y + 24);
+      pdf.setDrawColor(150); pdf.line(margin, y + 30, margin + 230, y + 30);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.text("Signed electronically on " + new Date().toLocaleString(), margin, y + 44);
+      pdf.save((doc.doc_type || "document").split(" ")[0].toLowerCase() + "-signed.pdf");
+      setBusy(false); toast("Signed PDF downloaded", "success"); onClose();
+    } catch (e) { setBusy(false); toast("Could not generate the PDF", "danger"); }
+  };
+  return <PmModal title="Sign document" onClose={onClose} wide>
+    <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>{doc.doc_type}{doc.subject ? " · " + doc.subject : ""}</div>
+    <div style={{ whiteSpace: "pre-wrap", fontSize: 12.5, lineHeight: 1.55, color: "var(--ink)", maxHeight: 220, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, marginBottom: 14 }}>{doc.body}</div>
+    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Type your full name to sign</label>
+    <input value={sig} onChange={e => setSig(e.target.value)} placeholder="Full legal name" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)", marginBottom: 8 }} />
+    {sig && <div className="serif" style={{ fontSize: 26, color: "var(--ink)", fontStyle: "italic", padding: "6px 2px 14px" }}>{sig}</div>}
+    <PmBtn kind="gold" icon={FileText} onClick={makePdf}>{busy ? "Generating…" : "Sign & download PDF"}</PmBtn>
+    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 10 }}>Produces a signed PDF for your records. For legally-binding e-signature with a full audit trail, a provider like DocuSign can be connected.</div>
+  </PmModal>;
+}
+
+/* ---------- NDPR: Data & privacy ---------- */
+function PrivacyScreen({ identity, toast }) {
+  const exportData = () => {
+    const data = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf("girard") === 0) data[k] = localStorage.getItem(k); } } catch (e) {}
+    const blob = new Blob([JSON.stringify({ account: identity && identity.email, exported: new Date().toISOString(), data }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "girard-my-data.json"; a.click(); URL.revokeObjectURL(url); toast("Your data has been exported", "success");
+  };
+  const deleteData = () => {
+    if (!window.confirm("This clears the Girard data stored on this device (saved searches, drafts, preferences and local records). This cannot be undone. Continue?")) return;
+    try { const keys = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf("girard") === 0 && k !== "girard_theme") keys.push(k); } keys.forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    try { notify({ title: "Data deletion request", body: ((identity && identity.email) || "A user") + " requested erasure of their data", audience: "admin" }); } catch (e) {}
+    toast("Your local data has been cleared", "success");
+  };
+  const Section = ({ h, children }) => <div style={{ marginBottom: 16 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 5 }}>{h}</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.65 }}>{children}</div></div>;
+  return <div>
+    <H2 title="Data & privacy" sub="How Girard handles your data, and your rights under the NDPA" />
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
+      <PmCard><div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#EAF2FE", display: "grid", placeItems: "center" }}><Download size={18} color="#3B82F6" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Export my data</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Download a copy of your data</div></div></div><PmBtn kind="navy" icon={Download} onClick={exportData}>Download my data</PmBtn></PmCard>
+      <PmCard><div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#FDECEC", display: "grid", placeItems: "center" }}><Trash2 size={18} color="#D0453B" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Delete my data</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Erase your data from this device</div></div></div><PmBtn kind="ghost" icon={Trash2} onClick={deleteData}>Request erasure</PmBtn></PmCard>
+    </div>
+    <PmCard>
+      <Section h="Who we are">Girard Property Limited ("Girard") is the data controller for personal data processed through this platform. For any privacy matter, contact privacy@girardproperty.com.</Section>
+      <Section h="What we collect">Account details such as name and email, the listings and applications you create, your messages and enquiries, payment records handled by our payment partner, and basic usage data needed to run the service.</Section>
+      <Section h="Why we process it">To provide the platform, manage tenancies and applications, process payments, prevent fraud, comply with legal obligations, and, where you have consented, send you service updates and match alerts.</Section>
+      <Section h="Lawful basis">We rely on your consent, the performance of our contract with you, our legitimate interest in operating and securing the platform, and compliance with our legal obligations under the Nigeria Data Protection Act 2023.</Section>
+      <Section h="Sharing">We share data with the service providers who help us run Girard, for example payment, messaging and hosting providers, under appropriate safeguards. We do not sell your personal data.</Section>
+      <Section h="Your rights">Under the NDPA you may access, correct, delete, restrict or object to the processing of your data, withdraw consent at any time, and request portability. Use the tools above or contact us to exercise these rights.</Section>
+      <Section h="Retention and security">We keep personal data only as long as needed for the purposes above or as required by law, and we apply reasonable technical and organisational measures to protect it.</Section>
+      <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>This notice is a plain-language summary and should be reviewed by qualified counsel before production use.</div>
+    </PmCard>
+  </div>;
+}
+
+/* ---------- Map view (Leaflet + OpenStreetMap) ---------- */
+const AREA_COORDS = { "Ikoyi": [6.452, 3.434], "Lekki": [6.4478, 3.542], "Lekki Phase 1": [6.4413, 3.4776], "Victoria Island": [6.4281, 3.4219], "VI": [6.4281, 3.4219], "Ikeja": [6.6018, 3.3515], "Ikeja GRA": [6.5836, 3.3555], "Yaba": [6.5095, 3.3711], "Surulere": [6.4969, 3.354], "Ajah": [6.4698, 3.5852], "Magodo": [6.618, 3.376], "Gbagada": [6.545, 3.386], "Maryland": [6.57, 3.367], "Oniru": [6.4262, 3.4514], "Chevron": [6.4463, 3.5637], "Banana Island": [6.4407, 3.4508] };
+function loadLeaflet() { return new Promise((res) => { if (window.L) return res(true); const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"; document.head.appendChild(css); const sc = document.createElement("script"); sc.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"; sc.onload = () => res(true); sc.onerror = () => res(false); document.body.appendChild(sc); }); }
+function MapScreen({ st }) {
+  const ref = useRef(null); const [status, setStatus] = useState("loading");
+  const props = (st && st.properties) || [];
+  useEffect(() => { let map; let alive = true;
+    (async () => { const ok = await loadLeaflet(); if (!alive) return; if (!ok || !window.L || !ref.current) { setStatus("error"); return; }
+      try { map = window.L.map(ref.current).setView([6.4531, 3.3958], 11); window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "\u00a9 OpenStreetMap contributors", maxZoom: 18 }).addTo(map);
+        props.forEach((p, i) => { const base = AREA_COORDS[p.area] || [6.4531, 3.3958]; const lat = base[0] + ((i % 5) - 2) * 0.004; const lng = base[1] + ((Math.floor(i / 5) % 5) - 2) * 0.004; window.L.marker([lat, lng]).addTo(map).bindPopup("<b>" + (p.title || "Listing") + "</b><br>" + (p.area || "") + "<br>" + money(p.rent || 0) + "/yr"); });
+        setStatus("ready"); } catch (e) { setStatus("error"); } })();
+    return () => { alive = false; if (map) { try { map.remove(); } catch (e) {} } };
+  }, []);
+  return <div>
+    <H2 title="Map view" sub="Explore listings across Lagos" />
+    <PmCard style={{ padding: 0, overflow: "hidden", position: "relative" }}>
+      <div ref={ref} style={{ height: 540, width: "100%", background: "var(--ivory-2)" }} />
+      {status !== "ready" && <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "var(--muted)", fontSize: 13.5, pointerEvents: "none" }}>{status === "loading" ? "Loading map\u2026" : "Map could not load. Please check your connection."}</div>}
+    </PmCard>
+    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 10 }}>{props.length} listing{props.length === 1 ? "" : "s"} shown. Pins are placed by area.</div>
+  </div>;
+}
+
+/* ---------- Consent banner (NDPR) ---------- */
+function ConsentBanner() {
+  const [show, setShow] = useState(() => { try { return localStorage.getItem("girard_consent") !== "1"; } catch (e) { return true; } });
+  if (!show) return null;
+  const ok = () => { try { localStorage.setItem("girard_consent", "1"); } catch (e) {} setShow(false); };
+  return <div style={{ position: "fixed", left: 16, right: 16, bottom: 16, zIndex: 9999, maxWidth: 640, margin: "0 auto", background: "var(--navy)", color: "#fff", borderRadius: 12, padding: "14px 16px", boxShadow: "0 18px 50px rgba(0,0,0,.4)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+    <div style={{ flex: 1, minWidth: 220, fontSize: 12.5, color: "rgba(255,255,255,.85)", lineHeight: 1.5 }}>We use essential cookies and local storage to run Girard and remember your preferences, in line with the Nigeria Data Protection Act. See Data & privacy for details.</div>
+    <button onClick={ok} style={{ background: "var(--gold)", color: "#201601", border: "none", borderRadius: 8, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Got it</button>
+  </div>;
+}
+
+/* ---------- Two-factor authentication (real TOTP, RFC 6238) ---------- */
+function _b32encode(bytes) { const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits = ""; bytes.forEach(b => bits += b.toString(2).padStart(8, "0")); let out = ""; for (let i = 0; i < bits.length; i += 5) { out += A[parseInt(bits.substr(i, 5).padEnd(5, "0"), 2)]; } return out; }
+function _b32decode(s) { s = (s || "").replace(/=+$/, "").toUpperCase().replace(/\s/g, ""); const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits = ""; for (const c of s) { const v = A.indexOf(c); if (v < 0) continue; bits += v.toString(2).padStart(5, "0"); } const bytes = []; for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.substr(i, 8), 2)); return new Uint8Array(bytes); }
+function twoFANewSecret() { const r = new Uint8Array(20); if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(r); else for (let i = 0; i < r.length; i++) r[i] = Math.floor(Math.random() * 256); return _b32encode(r); }
+async function _totpAt(secret, counter) { const key = _b32decode(secret); const msg = new Uint8Array(8); let c = counter; for (let i = 7; i >= 0; i--) { msg[i] = c & 0xff; c = Math.floor(c / 256); } const ck = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]); const sig = new Uint8Array(await crypto.subtle.sign("HMAC", ck, msg)); const off = sig[19] & 0xf; const bin = ((sig[off] & 0x7f) << 24) | ((sig[off + 1] & 0xff) << 16) | ((sig[off + 2] & 0xff) << 8) | (sig[off + 3] & 0xff); return String(bin % 1000000).padStart(6, "0"); }
+async function totpCheck(secret, code) { if (!/^\d{6}$/.test(code || "")) return false; const t = Math.floor(Date.now() / 1000 / 30); for (let w = -1; w <= 1; w++) { try { if (await _totpAt(secret, t + w) === code) return true; } catch (e) {} } return false; }
+function twoFAKey(email) { return "girard_2fa_" + (email || "").toLowerCase(); }
+function twoFAGet(email) { try { return localStorage.getItem(twoFAKey(email)) || ""; } catch (e) { return ""; } }
+function twoFASet(email, secret) { try { localStorage.setItem(twoFAKey(email), secret); } catch (e) {} }
+function twoFAClear(email) { try { localStorage.removeItem(twoFAKey(email)); } catch (e) {} }
+function loadQR() { return new Promise((res) => { if (window.QRCode && window.QRCode.toDataURL) return res(true); const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"; sc.onload = () => res(true); sc.onerror = () => res(false); document.body.appendChild(sc); }); }
+
+function SecurityScreen({ identity, toast }) {
+  const email = identity && identity.email;
+  const [secret, setSecret] = useState(""); const [qr, setQr] = useState(""); const [code, setCode] = useState("");
+  const [enabled, setEnabled] = useState(() => !!twoFAGet(email)); const [busy, setBusy] = useState(false);
+  const begin = async () => { setBusy(true); const sec = twoFANewSecret(); setSecret(sec); const uri = "otpauth://totp/Girard%20Property:" + encodeURIComponent(email || "user") + "?secret=" + sec + "&issuer=Girard%20Property&algorithm=SHA1&digits=6&period=30"; const ok = await loadQR(); if (ok && window.QRCode) { try { setQr(await window.QRCode.toDataURL(uri, { margin: 1, width: 200 })); } catch (e) {} } setBusy(false); };
+  const confirm = async () => { const ok = await totpCheck(secret, code.trim()); if (!ok) { toast("Incorrect code, please try again", "danger"); return; } twoFASet(email, secret); setEnabled(true); setSecret(""); setQr(""); setCode(""); toast("Two-factor authentication enabled", "success"); };
+  const disable = () => { if (!window.confirm("Turn off two-factor authentication for this account?")) return; twoFAClear(email); setEnabled(false); toast("Two-factor authentication disabled"); };
+  return <div>
+    <H2 title="Security" sub="Protect your account with two-factor authentication" />
+    <div style={{ maxWidth: 660 }}>
+      {enabled ? <PmCard>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}><div style={{ width: 42, height: 42, borderRadius: 10, background: "#E7F7F0", display: "grid", placeItems: "center" }}><ShieldCheck size={22} color="#10B981" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Two-factor authentication is on</div><div style={{ fontSize: 13, color: "var(--muted)" }}>You will be asked for a 6-digit code from your authenticator app when you sign in.</div></div></div>
+        <PmBtn kind="ghost" onClick={disable} style={{ marginTop: 16 }}>Turn off 2FA</PmBtn>
+      </PmCard> : <PmCard>
+        {!secret ? <>
+          <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Set up two-factor authentication</div>
+          <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, marginBottom: 14 }}>Use an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy. You will scan a QR code, then enter the 6-digit code it shows to confirm.</div>
+          <PmBtn kind="navy" icon={Lock} onClick={begin}>{busy ? "Preparing\u2026" : "Begin setup"}</PmBtn>
+        </> : <>
+          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 20, alignItems: "start" }} className="pm-grid2">
+            <div style={{ background: "#fff", borderRadius: 10, padding: 10, display: "grid", placeItems: "center", minHeight: 190 }}>{qr ? <img src={qr} alt="2FA QR code" style={{ width: 180, height: 180 }} /> : <div style={{ color: "var(--muted)", fontSize: 12 }}>Preparing QR\u2026</div>}</div>
+            <div>
+              <div style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6, marginBottom: 10 }}>1. Scan this QR code with your authenticator app.</div>
+              <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 4 }}>Or enter this key manually:</div>
+              <div style={{ fontFamily: "monospace", fontSize: 13, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "8px 10px", wordBreak: "break-all", color: "var(--ink)", marginBottom: 16 }}>{secret}</div>
+              <div style={{ fontSize: 13.5, color: "var(--ink)", marginBottom: 6 }}>2. Enter the 6-digit code to confirm:</div>
+              <input inputMode="numeric" maxLength={6} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ""))} placeholder="000000" style={{ width: 150, textAlign: "center", letterSpacing: 5, fontSize: 18, padding: "9px 10px", border: "1px solid var(--cream-line)", borderRadius: 8, background: "var(--ivory-2)", color: "var(--ink)" }} />
+              <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}><PmBtn kind="gold" icon={CheckCircle2} onClick={confirm}>Confirm & enable</PmBtn><PmBtn kind="ghost" onClick={() => { setSecret(""); setQr(""); setCode(""); }}>Cancel</PmBtn></div>
+            </div>
+          </div>
+        </>}
+      </PmCard>}
+    </div>
+  </div>;
 }

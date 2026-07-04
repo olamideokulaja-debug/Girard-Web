@@ -48,3 +48,20 @@ button { font-family: inherit; }
 .chart-bar { transform-box: fill-box; transform-origin: bottom; animation: barGrow .8s cubic-bezier(.2,.8,.2,1) both; }
 .chart-line { stroke-dasharray: 4000; stroke-dashoffset: 4000; animation: drawLine 1.5s ease forwards; }
 .chart-donut { animation: popIn .7s ease both; }
+
+/* ---- Dark mode ---- */
+[data-theme="dark"] {
+  --ivory: #0E1626;
+  --ivory-2: #16213A;
+  --white: #14203A;
+  --cream-line: #27364F;
+  --ink: #E9EEF6;
+  --muted: #9DB0CB;
+  --gold-soft: #2C2614;
+  --navy: #0A1730;
+  --navy-2: #0C2145;
+  --navy-line: #294066;
+}
+[data-theme="dark"] html, [data-theme="dark"] body { background: var(--ivory); }
+[data-theme="dark"] .card-soft { box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+[data-theme="dark"] .lift:hover { box-shadow: 0 18px 40px rgba(0,0,0,.45); }

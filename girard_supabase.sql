@@ -119,8 +119,41 @@ create policy "pay all" on public.payments for all to anon, authenticated using 
 create table if not exists public.documents (
   id text primary key,
   doc_type text, party_b text, subject text, body text, created_by text,
+  deal_key text, deal_label text,
   created_at timestamptz default now()
 );
+alter table public.documents add column if not exists deal_key text;
+alter table public.documents add column if not exists deal_label text;
 alter table public.documents enable row level security;
 drop policy if exists "doc all" on public.documents;
 create policy "doc all" on public.documents for all to anon, authenticated using (true) with check (true);
+
+-- 12) In-app notifications
+create table if not exists public.notifications (
+  id text primary key,
+  title text, body text, kind text, audience text,
+  created_at timestamptz default now()
+);
+alter table public.notifications enable row level security;
+drop policy if exists "notif all" on public.notifications;
+create policy "notif all" on public.notifications for all to anon, authenticated using (true) with check (true);
+
+-- 13) Audit / activity log
+create table if not exists public.audit (
+  id text primary key,
+  action text, detail text, actor text,
+  created_at timestamptz default now()
+);
+alter table public.audit enable row level security;
+drop policy if exists "audit all" on public.audit;
+create policy "audit all" on public.audit for all to anon, authenticated using (true) with check (true);
+
+-- 14) Tenant <-> Girard messages
+create table if not exists public.messages (
+  id text primary key,
+  tenant text, sender text, body text,
+  created_at timestamptz default now()
+);
+alter table public.messages enable row level security;
+drop policy if exists "msg all" on public.messages;
+create policy "msg all" on public.messages for all to anon, authenticated using (true) with check (true);
