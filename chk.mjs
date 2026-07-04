@@ -3,13 +3,18 @@ const b = await chromium.launch(); const c = await b.newContext({viewport:{width
 const log=[]; p.on('pageerror',e=>log.push('ERR:'+e.message)); const has=async t=>(await p.getByText(t,{exact:false}).count())>0;
 await p.goto('http://localhost:5199/',{waitUntil:'networkidle'}); await p.waitForTimeout(700);
 await p.getByText('Get started',{exact:false}).first().click(); await p.waitForTimeout(300);
-await p.getByText('Platform Admin',{exact:false}).first().click(); await p.waitForTimeout(300);
-await p.fill('input[type=email]','admin_rm@girardproperty.com'); await p.fill('input[type=password]','test1234');
+await p.getByText('Owner / Landlord',{exact:true}).first().click(); await p.waitForTimeout(300);
+await p.fill('input[type=email]','own_ai@girard.example'); await p.fill('input[type=password]','test1234');
 await p.getByText('Create account',{exact:false}).first().click(); await p.waitForTimeout(1100);
-await p.getByText('Rent reminders',{exact:false}).first().click(); await p.waitForTimeout(600);
-console.log('reminders load:', await has('Active tenancies'), await has('Sent'));
-// send one
-const sendBtn = p.getByText('Send now',{exact:false}).first();
-if (await sendBtn.count()) { await sendBtn.click(); await p.waitForTimeout(600); }
-console.log('after send, no crash:', await has('Rent reminders'), '| ERR:', log.length?log.join('|'):'none');
+console.log('AI documents nav present:', await has('AI documents'));
+await p.getByText('AI documents',{exact:false}).first().click(); await p.waitForTimeout(500);
+console.log('studio loaded:', await has('AI document studio'), '| doc types:', await has('Memorandum of Understanding'), '| fields:', await has('Party A'));
+await p.locator('input[placeholder="Other party name"]').fill('Ada Eze');
+await p.locator('input[placeholder="e.g. 3-bed flat, 12 Admiralty Way, Lekki"]').fill('3-bed flat, Lekki');
+await p.getByText('Generate with AI',{exact:false}).first().click(); await p.waitForTimeout(1200);
+console.log('offline fallback + draft:', await has('AI is not connected'), await has('WHEREAS the parties'), '| copy/download:', await has('Download'));
+// free mode
+await p.getByText('Ask anything',{exact:false}).first().click(); await p.waitForTimeout(300);
+console.log('free mode textarea:', await has('What do you need'));
+console.log('ERR:', log.length?log.join('|'):'none');
 await b.close();

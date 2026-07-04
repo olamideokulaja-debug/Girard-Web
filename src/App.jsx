@@ -1166,9 +1166,9 @@ function pmSave(s) { try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } ca
 const money = (a, c) => (c || "₦") + Number(a || 0).toLocaleString("en-NG");
 const propOf = (st, id) => st.properties.find(p => p.id === id);
 
-async function aiProxy(prompt, system) {
+async function aiProxy(prompt, system, max_tokens) {
   try {
-    const r = await fetch("/api/anthropic", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, system }) });
+    const r = await fetch("/api/anthropic", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, system, max_tokens }) });
     if (!r.ok) throw new Error("proxy");
     const d = await r.json();
     const text = (d.text || d.content || "").toString().trim();
@@ -1745,11 +1745,11 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
   tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Jobs & repairs", Wrench], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
-  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart]],
-  investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["work", "Overview", LayoutGrid]]
+  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["ai", "AI documents", Sparkles], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
+  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["wallet", "Earnings", Wallet], ["ai", "AI documents", Sparkles], ["reports", "Analytics", LineChart]],
+  investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["work", "Overview", LayoutGrid]]
 };
 function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const canSwitch = identity0.allAccess;
@@ -1791,6 +1791,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "feed") return <LiveFeed identity={identity} />;
     if (view === "crm") return <PipelineCRM identity={identity} toast={toast} />;
     if (view === "reports") return <ReportsScreen identity={identity} toast={toast} />;
+    if (view === "ai") return <AIStudio identity={identity} toast={toast} />;
     if (view === "work") return <InvestorOverview identity={identity} go={setView} />;
     return <WorkspaceSoon identity={identity} />;
   };
@@ -1817,7 +1818,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       <header style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "1 Bourdillon · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : "Digital Property Management · Lagos"}</div></div>
+          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "1 Bourdillon · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : view === "ai" ? "AI document studio" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -3727,5 +3728,63 @@ function SwapChecklist({ identity, onView }) {
         <div style={{ flex: 1 }}><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{step}</div><div style={{ fontSize: 12, fontWeight: 700, color: done ? "#1F9D57" : current ? "var(--gold-2)" : "var(--muted)" }}>{done ? "Achieved" : current ? "In progress" : "Not achieved"}</div></div>
         <PmBtn size="sm" kind="ghost" disabled={j.stage < i} onClick={() => onView("journey")}>View</PmBtn>
       </div>; })}</PmCard>}
+  </div>;
+}
+
+/* ---------- AI document studio ---------- */
+const AI_DOC_TYPES = ["Memorandum of Understanding (MOU)", "Tenancy Agreement", "Deed of Sale / Sale Agreement", "Joint Venture / Partnership Agreement", "Service / Vendor Agreement", "Non-Disclosure Agreement (NDA)", "Offer / Allocation Letter", "Demand Notice", "Power of Attorney", "Board Resolution", "Property Management Agreement", "Other (describe in key terms)"];
+const AI_SYS = "You are a senior Nigerian real estate and commercial lawyer drafting on behalf of Girard Property Limited. You produce complete, precise, enforceable documents in formal legal English. Where relevant include: title; parties and recitals; definitions; the operative clauses; obligations of each party; consideration and payment terms; term, renewal and termination; representations and warranties; confidentiality; indemnity; force majeure; dispute resolution by arbitration under the Arbitration and Mediation Act 2023 seated in Lagos; governing law (the laws of Lagos State and the Federal Republic of Nigeria); notices; and execution blocks with witnesses. Draft tightly to remove ambiguity and protect the client. Output plain text only. No markdown symbols and no commentary before or after the document.";
+function aiDocFallback(type, f) {
+  return type + "\n\nTHIS " + type.toUpperCase() + " is made on " + (f.date || "___________") + " BETWEEN " + (f.partyA || "Party A") + " (the First Party) AND " + (f.partyB || "Party B") + " (the Second Party).\n\nWHEREAS the parties wish to record their agreement in respect of " + (f.subject || "the subject matter") + ".\n\nNOW IT IS AGREED as follows:\n1. The parties shall cooperate in good faith in respect of " + (f.subject || "the subject matter") + ".\n2. Consideration: " + (f.amount || "as agreed between the parties") + ".\n3. Term: from the effective date until completed or terminated on reasonable notice.\n4. Governing law: the laws of " + (f.jurisdiction || "Lagos, Nigeria") + ". Disputes shall be resolved by arbitration seated in Lagos.\n\nIN WITNESS WHEREOF the parties have executed this document on the date first above written.\n\n____________________          ____________________\n" + (f.partyA || "First Party") + "                    " + (f.partyB || "Second Party") + "\n\n[AI drafting is not connected. Add ANTHROPIC_API_KEY in Vercel for a full, tailored document. This is a basic skeleton built from your inputs.]";
+}
+function AIStudio({ identity, toast }) {
+  const [mode, setMode] = useState("doc");
+  const [type, setType] = useState(AI_DOC_TYPES[0]);
+  const [f, setF] = useState({ partyA: "Girard Property Limited", partyB: "", subject: "", terms: "", amount: "", date: "", jurisdiction: "Lagos, Nigeria" });
+  const [prompt, setPrompt] = useState("");
+  const [out, setOut] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [offline, setOffline] = useState(false);
+  const [refine, setRefine] = useState("");
+  const set = (k, v) => setF(x => ({ ...x, [k]: v }));
+  const buildPrompt = () => mode === "free" ? prompt : ("Draft a complete, iron-clad " + type + " ready for execution.\nParty A: " + (f.partyA || "-") + "\nParty B: " + (f.partyB || "-") + "\nSubject / property: " + (f.subject || "-") + "\nKey commercial terms: " + (f.terms || "standard market terms") + "\nAmount / consideration: " + (f.amount || "as agreed") + "\nEffective date: " + (f.date || "the date of execution") + "\nJurisdiction: " + (f.jurisdiction || "Lagos, Nigeria") + "\n\nReturn the full document only.");
+  const run = async (instruction) => {
+    if (mode === "free" && !instruction && !prompt.trim()) { toast("Describe what you need", "danger"); return; }
+    setLoading(true); setOffline(false);
+    const pr = instruction ? ("Revise the document below according to this instruction and return the full revised document only.\nINSTRUCTION: " + instruction + "\n\nDOCUMENT:\n" + out) : buildPrompt();
+    const r = await aiProxy(pr, AI_SYS, 3200);
+    setLoading(false);
+    if (r && r.ok && r.text) { setOut(r.text); setRefine(""); }
+    else { setOffline(true); if (!instruction) setOut(mode === "free" ? "" : aiDocFallback(type, f)); toast("AI is not connected. Add ANTHROPIC_API_KEY in Vercel.", "danger"); }
+  };
+  const copy = () => { try { navigator.clipboard.writeText(out); toast("Copied to clipboard", "success"); } catch (e) {} };
+  const download = () => { try { const blob = new Blob([out], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = (mode === "free" ? "girard-document" : type.split(" ")[0].toLowerCase() + "-girard") + ".txt"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } catch (e) {} };
+  const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 14, fontFamily: "inherit" };
+  return <div>
+    <H2 title="AI document studio" sub="Draft iron-clad agreements, MOUs and letters, tailored to Nigerian law" />
+    <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{[["doc", "Agreements & MOUs"], ["free", "Ask anything"]].map(([k, l]) => <button key={k} onClick={() => setMode(k)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid " + (mode === k ? "var(--gold)" : "var(--cream-line)"), background: mode === k ? "var(--gold-soft)" : "transparent", color: mode === k ? "var(--gold-2)" : "var(--muted)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{l}</button>)}</div>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 16 }} className="pm-grid2">
+      <PmCard>
+        {mode === "doc" ? <div style={{ display: "grid", gap: 12 }}>
+          <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Document type</label><select value={type} onChange={e => setType(e.target.value)} style={inp}>{AI_DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+          <PmField label="Party A" value={f.partyA} onChange={v => set("partyA", v)} />
+          <PmField label="Party B" value={f.partyB} onChange={v => set("partyB", v)} placeholder="Other party name" />
+          <PmField label="Subject / property" value={f.subject} onChange={v => set("subject", v)} placeholder="e.g. 3-bed flat, 12 Admiralty Way, Lekki" />
+          <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Key terms</label><textarea value={f.terms} onChange={e => set("terms", e.target.value)} rows={3} placeholder="Anything specific: rent, duration, obligations, milestones, penalties…" style={{ ...inp, resize: "vertical" }} /></div>
+          <div style={{ display: "flex", gap: 10 }}><div style={{ flex: 1 }}><PmField label="Amount" value={f.amount} onChange={v => set("amount", v)} placeholder="₦…" /></div><div style={{ flex: 1 }}><PmField label="Effective date" value={f.date} onChange={v => set("date", v)} placeholder="e.g. 1 Aug 2026" /></div></div>
+          <PmField label="Jurisdiction" value={f.jurisdiction} onChange={v => set("jurisdiction", v)} />
+        </div> : <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>What do you need?</label><textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={11} placeholder="e.g. Draft a strongly worded 7-day demand notice for 3 months of unpaid rent (₦2.1m) on a Lekki flat. Or: summarise the key risks of buying land in Ibeju-Lekki and how to mitigate them." style={{ ...inp, resize: "vertical" }} /></div>}
+        <PmBtn kind="gold" icon={Sparkles} style={{ marginTop: 14 }} onClick={() => run()}>{loading ? "Drafting…" : "Generate with AI"}</PmBtn>
+      </PmCard>
+      <PmCard>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Draft</div>{out && <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={ClipboardCheck} onClick={copy}>Copy</PmBtn><PmBtn size="sm" kind="ghost" icon={FileText} onClick={download}>Download</PmBtn></div>}</div>
+        {offline && <div style={{ background: "rgba(224,161,6,.1)", border: "1px solid rgba(224,161,6,.3)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", marginBottom: 10 }}>AI is not connected yet. Add <b>ANTHROPIC_API_KEY</b> in Vercel and redeploy for full, tailored drafting. Showing a basic skeleton for now.</div>}
+        {loading ? <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Drafting your document…</div>
+          : out ? <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16 }}>{out}</div>
+          : <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Your AI-drafted document will appear here.</div>}
+        {out && <div style={{ display: "flex", gap: 8, marginTop: 12 }}><input value={refine} onChange={e => setRefine(e.target.value)} placeholder="Refine, e.g. add a penalty clause" style={{ ...inp, flex: 1 }} onKeyDown={e => e.key === "Enter" && refine.trim() && run(refine)} /><PmBtn kind="navy" onClick={() => refine.trim() && run(refine)}>Refine</PmBtn></div>}
+        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 12 }}>AI drafts are a starting point. Have important documents reviewed by a qualified lawyer before signing.</div>
+      </PmCard>
+    </div>
   </div>;
 }

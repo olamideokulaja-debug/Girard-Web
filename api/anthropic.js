@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     return;
   }
   try {
-    const { prompt, system } = req.body || {};
+    const { prompt, system, max_tokens } = req.body || {};
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1000,
+        max_tokens: Math.min(Math.max(Number(max_tokens) || 1000, 256), 4000),
         system: system || undefined,
         messages: [{ role: "user", content: String(prompt || "") }]
       })

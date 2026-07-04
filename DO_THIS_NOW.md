@@ -45,6 +45,9 @@ These make the database and real payments work. You only do this once.
 **For taking payments IN (from Paystack → Settings → API Keys):**
 - [ ] `VITE_PAYSTACK_PUBLIC_KEY` = your key starting with `pk_`
 
+**For the AI document studio (agreements, MOUs, letters):**
+- [ ] `ANTHROPIC_API_KEY` = your Anthropic API key (from console.anthropic.com → API Keys). No `VITE_` prefix.
+
 **For sending payouts OUT (agent withdrawals, escrow):**
 - [ ] `PAYSTACK_SECRET_KEY` = your key starting with `sk_`
 - [ ] In Paystack, go to **Settings → Transfers** and turn Transfers on (follow any steps it asks for).
@@ -71,6 +74,6 @@ If rows appear in Supabase, everything is connected. 🎉
 ## Quick safety checks
 - Root `index.html` starts with `<!doctype html>`.
 - `src/index.css` starts with `:root {`.
-- `src/App.jsx` is about 3731 lines.
+- `src/App.jsx` is about 3790 lines.
 
 If anything looks wrong, tell me which step and what you saw, and I'll help.
