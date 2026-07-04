@@ -1,4 +1,4 @@
-# Girard Property Estate Limited — platform
+# Girard Property Limited — platform
 
 A complete property platform: an editorial marketing site plus a role-aware web app for owners, tenants, agents, investors and admins. Vite + React, Supabase auth, optional AI and Stripe. Brand: deep navy and gold with the Lora typeface, the Girard logo, and real 1 Bourdillon Residences renders.
 
@@ -65,7 +65,7 @@ Steps:
 1. Unzip `girard-web`. On GitHub, upload the folder contents (Add file, Upload files, then drag everything in, keeping folders), and Commit. This overwrites old files with the correct ones.
 2. In Supabase (one time), run the enquiries SQL from the "Multi-user enquiries" section above.
 3. In Vercel, confirm the environment variables (below), then Redeploy.
-4. Open the site in a fresh Incognito window (or hard-refresh with Ctrl+Shift+R / Cmd+Shift+R). `src/App.jsx` should read about 2930 lines.
+4. Open the site in a fresh Incognito window (or hard-refresh with Ctrl+Shift+R / Cmd+Shift+R). `src/App.jsx` should read about 3159 lines.
 
 Sanity check after upload: root `index.html` starts with `<!doctype html>`; `src/index.css` starts with `:root {`.
 
