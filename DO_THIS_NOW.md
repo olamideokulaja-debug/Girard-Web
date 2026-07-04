@@ -52,6 +52,11 @@ These make the database and real payments work. You only do this once.
 - [ ] `PAYSTACK_SECRET_KEY` = your key starting with `sk_`
 - [ ] In Paystack, go to **Settings → Transfers** and turn Transfers on (follow any steps it asks for).
 
+**Turn on automatic payment confirmation (webhook):**
+- [ ] In Paystack, go to **Settings → API Keys & Webhooks**.
+- [ ] In the **Webhook URL** box, paste: `https://YOUR-SITE-ADDRESS/api/paystack-webhook` (replace YOUR-SITE-ADDRESS with your real website address, e.g. girardpropertylimited.com).
+- [ ] Save. Now payments are confirmed by Paystack even if the person closes the tab.
+
 (Optional, only if you want live emails and texts: `RESEND_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`, `TWILIO_WHATSAPP_FROM`.)
 
 ---
@@ -74,6 +79,6 @@ If rows appear in Supabase, everything is connected. 🎉
 ## Quick safety checks
 - Root `index.html` starts with `<!doctype html>`.
 - `src/index.css` starts with `:root {`.
-- `src/App.jsx` is about 3790 lines.
+- `src/App.jsx` is about 3812 lines.
 
 If anything looks wrong, tell me which step and what you saw, and I'll help.

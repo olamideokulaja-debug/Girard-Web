@@ -725,15 +725,16 @@ const supabase = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 const DEMO = !supabase;
 const PAYSTACK_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 function loadPaystack() { return new Promise((resolve) => { if (window.PaystackPop) return resolve(true); const sc = document.createElement("script"); sc.src = "https://js.paystack.co/v1/inline.js"; sc.onload = () => resolve(true); sc.onerror = () => resolve(false); document.body.appendChild(sc); }); }
-async function payWithPaystack({ email, amountNaira, label, onSuccess, onCancel }) {
+async function payWithPaystack({ email, amountNaira, label, purpose, target, onSuccess, onCancel }) {
   const amount = Math.round((+amountNaira || 0) * 100);
+  const reference = "GIRARD-" + (purpose || "pay") + "-" + Date.now();
   if (PAYSTACK_KEY && amount > 0) {
     const ok = await loadPaystack();
     if (ok && window.PaystackPop) {
       try {
         const handler = window.PaystackPop.setup({
-          key: PAYSTACK_KEY, email: email || "customer@girardpropertylimited.com", amount, currency: "NGN",
-          metadata: { custom_fields: [{ display_name: "Purpose", variable_name: "purpose", value: label || "Girard payment" }] },
+          key: PAYSTACK_KEY, email: email || "customer@girardpropertylimited.com", amount, currency: "NGN", ref: reference,
+          metadata: { purpose: purpose || "payment", target: target || email || "", custom_fields: [{ display_name: "Purpose", variable_name: "purpose", value: label || "Girard payment" }] },
           callback: function (res) { onSuccess && onSuccess(res.reference); },
           onClose: function () { onCancel && onCancel(); }
         });
@@ -1604,19 +1605,31 @@ function ReviewModal({ st, app, onClose, onAct }) {
   const checks = appChecks(app, rent);
   const [doc, setDoc] = useState(null);
   const got = checks.filter(c => c.ok).length;
-  return <PmModal title={"Review application"} onClose={onClose}>
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-      <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " · " + p.area : app.property} · Income {money(app.income)}</div></div>
-      <div style={{ textAlign: "right" }}><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Documents</div><div className="serif" style={{ fontSize: 22, fontWeight: 600, color: got === checks.length ? "#1F9D57" : "var(--gold-2)" }}>{got}/{checks.length}</div></div>
-    </div>
-    {app.note && <div style={{ background: "var(--ivory)", borderRadius: 8, padding: 12, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>{app.note}</div>}
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>{checks.map(c => <div key={c.k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, padding: "8px 10px", background: "var(--ivory-2)", borderRadius: 8 }}>
-      <span style={{ width: 20, height: 20, borderRadius: 999, background: c.ok ? "rgba(31,157,87,.15)" : "rgba(184,147,74,.18)", color: c.ok ? "#1F9D57" : "var(--gold-2)", display: "grid", placeItems: "center", flexShrink: 0 }}>{c.ok ? <Check size={13} /> : <Clock size={12} />}</span>
-      <div style={{ minWidth: 0 }}><b style={{ color: "var(--ink)" }}>{c.k}</b><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{c.doc}</div></div>
-      <button onClick={() => setDoc(c)} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid var(--cream-line)", borderRadius: 7, padding: "5px 10px", cursor: "pointer", color: "var(--ink)", fontSize: 12.5, fontWeight: 600, flexShrink: 0 }}><FileText size={13} /> View</button>
-    </div>)}</div>
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><PmBtn kind="gold" icon={Check} onClick={() => onAct(app.id, "Approved")}>Approve</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "More Info Required")}>Request info</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "Rejected")}>Reject</PmBtn></div>
-    {doc && <DocViewer app={app} p={p} check={doc} onClose={() => setDoc(null)} />}
+  return <PmModal title={doc ? "Document" : "Review application"} onClose={onClose} wide>
+    {doc ? <div>
+      <button onClick={() => setDoc(null)} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "7px 12px", cursor: "pointer", color: "var(--ink)", fontSize: 13, fontWeight: 600, marginBottom: 14 }}><ArrowLeft size={16} /> Back to all documents</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{doc.doc}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{app.tenant} · {doc.k}</div></div>
+        <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: doc.ok ? "rgba(31,157,87,.14)" : "var(--gold-soft)", color: doc.ok ? "#1F9D57" : "var(--gold-2)" }}>{doc.ok ? "Received" : "Awaiting upload"}</span>
+      </div>
+      <div style={{ background: "#fff", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 20, minHeight: 120 }}>{doc.ok ? docBody(doc.type, app, p, rent) : <div style={{ color: "var(--muted)", textAlign: "center", padding: "34px 0" }}>This document has not been uploaded yet.</div>}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+        <div style={{ fontSize: 11.5, color: "var(--muted)" }}>Sample document shown for demonstration.</div>
+        <PmBtn size="sm" kind="ghost" icon={ArrowLeft} onClick={() => setDoc(null)}>Back to documents</PmBtn>
+      </div>
+    </div> : <div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+        <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " · " + p.area : app.property} · Income {money(app.income)}</div></div>
+        <div style={{ textAlign: "right" }}><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Documents</div><div className="serif" style={{ fontSize: 22, fontWeight: 600, color: got === checks.length ? "#1F9D57" : "var(--gold-2)" }}>{got}/{checks.length}</div></div>
+      </div>
+      {app.note && <div style={{ background: "var(--ivory)", borderRadius: 8, padding: 12, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>{app.note}</div>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>{checks.map(c => <div key={c.k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, padding: "8px 10px", background: "var(--ivory-2)", borderRadius: 8 }}>
+        <span style={{ width: 20, height: 20, borderRadius: 999, background: c.ok ? "rgba(31,157,87,.15)" : "rgba(184,147,74,.18)", color: c.ok ? "#1F9D57" : "var(--gold-2)", display: "grid", placeItems: "center", flexShrink: 0 }}>{c.ok ? <Check size={13} /> : <Clock size={12} />}</span>
+        <div style={{ minWidth: 0 }}><b style={{ color: "var(--ink)" }}>{c.k}</b><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{c.doc}</div></div>
+        <button onClick={() => setDoc(c)} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid var(--cream-line)", borderRadius: 7, padding: "5px 10px", cursor: "pointer", color: "var(--ink)", fontSize: 12.5, fontWeight: 600, flexShrink: 0 }}><FileText size={13} /> View</button>
+      </div>)}</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><PmBtn kind="gold" icon={Check} onClick={() => onAct(app.id, "Approved")}>Approve</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "More Info Required")}>Request info</PmBtn><PmBtn kind="ghost" onClick={() => onAct(app.id, "Rejected")}>Reject</PmBtn></div>
+    </div>}
   </PmModal>;
 }
 function LeaseModal({ st, setSt, app, onClose, toast }) {
@@ -3172,7 +3185,7 @@ function AgentWallet({ toast, identity }) {
   const earned = w.deals.reduce((s, d) => s + d.value * 0.05, 0);
   const withdrawn = myWds.reduce((s, x) => s + Number(x.amount || 0), 0);
   const balance = earned - withdrawn;
-  const pay = () => { payWithPaystack({ email: owner, amountNaira: AGENT_FEE, label: "Agent registration fee", onSuccess: () => { setW({ ...w, paid: true }); agentStateSave(owner, true); toast("Agent account activated", "success"); } }); };
+  const pay = () => { payWithPaystack({ email: owner, amountNaira: AGENT_FEE, label: "Agent registration fee", purpose: "agent", target: owner, onSuccess: () => { setW({ ...w, paid: true }); agentStateSave(owner, true); toast("Agent account activated", "success"); } }); };
   const withdraw = () => { const a = Math.round(+String(amt).replace(/,/g, "")); if (!(a > 0)) { toast("Enter an amount", "danger"); return; } if (a > balance) { toast("Amount exceeds available balance", "danger"); return; } if (!acctNum.trim() || !acctName.trim()) { toast("Add your account name and number", "danger"); return; } const code = (NG_BANKS.find(x => x[0] === bankName) || [])[1] || ""; const rec = { id: "WD-" + Date.now(), agent: identity && identity.email, amount: a, bank: bankName + " · " + acctNum, account_name: acctName, account_number: acctNum, bank_code: code, status: "Pending", date: new Date().toISOString() }; wdInsert(rec); setWds([rec, ...wds]); setAmt(""); setAcctNum(""); toast("Withdrawal requested", "success"); };
   if (!w.paid) return <div>
     <H2 title="Agent earnings" sub="Activate your agent account to start earning" />
@@ -3291,7 +3304,7 @@ const SWAP_POOL = [
   { id: "SM-5", title: "Brownstone Apartment", place: "New York, USA", value: "$1.1M", by: "J. Rivera" }
 ];
 const SJ_KEY = "girard_swapjourney_v1";
-function sjDefault() { return { stage: 0, paid: false, prop: { market: "Nigeria", area: "", value: "", currency: "₦", photos: [], docs: [] }, verified: false, targets: [], match: null, chat: [], agreementText: "", signedMe: false, signedThem: false, escrowFunded: false, balanceValue: "", finalMe: false, finalThem: false, revealed: false, contractText: "", stopped: false, flagged: false }; }
+function sjDefault() { return { stage: 0, paid: false, prop: { market: "Nigeria", area: "", value: "", currency: "₦", photos: [], docs: [] }, verified: false, targets: [], match: null, chat: [], agreementText: "", signedMe: false, signedThem: false, escrowFunded: false, balanceValue: "", finalMe: false, finalThem: false, revealed: false, contractText: "", payoutName: "", payoutNum: "", payoutBank: NG_BANKS[0][0], stopped: false, flagged: false }; }
 function sjLoad() { try { const r = localStorage.getItem(SJ_KEY); if (r) return { ...sjDefault(), ...JSON.parse(r) }; } catch (e) {} return sjDefault(); }
 function sjSave(s) { try { localStorage.setItem(SJ_KEY, JSON.stringify(s)); } catch (e) {} }
 async function swapSaveMine(owner, j) {
@@ -3347,7 +3360,7 @@ function SwapJourney({ identity, toast }) {
       <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Start a property swap</div>
       <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px" }}>List your property, get verified by Girard, then browse and match with owners in the markets you choose. A one-off registration fee applies.</p>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--ink)" }}>${SWAP_FEE_USD.toLocaleString()}</div><span style={{ color: "var(--muted)", fontSize: 13 }}>≈ {money(SWAP_FEE_NGN)} · one-off</span></div>
-      <PmBtn kind="gold" icon={CreditCard} onClick={() => { payWithPaystack({ email: owner, amountNaira: SWAP_FEE_NGN, label: "Swap registration fee", onSuccess: () => { setJ({ paid: true, stage: 1 }); toast("Registration fee received", "success"); } }); }}>Pay registration fee &amp; begin</PmBtn>
+      <PmBtn kind="gold" icon={CreditCard} onClick={() => { payWithPaystack({ email: owner, amountNaira: SWAP_FEE_NGN, label: "Swap registration fee", purpose: "swap", target: owner, onSuccess: () => { setJ({ paid: true, stage: 1 }); toast("Registration fee received", "success"); } }); }}>Pay registration fee &amp; begin</PmBtn>
       <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Recorded for demonstration. Connect Paystack to take the fee in USD or Naira.</div>
     </PmCard>;
     if (j.stage === 1) return <div>{confid}<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
@@ -3409,7 +3422,16 @@ function SwapJourney({ identity, toast }) {
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Balancing payment & escrow</div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}><div style={{ flex: 1, minWidth: 180 }}><PmField label="Balancing amount (if any)" value={j.balanceValue} onChange={v => setJ({ balanceValue: v })} placeholder="e.g. 20,000,000" /></div>
           {!j.escrowFunded ? <PmBtn kind="gold" icon={Banknote} onClick={() => { setJ({ escrowFunded: true }); toast("Funds placed in escrow. Counterparty notified.", "success"); }}>Send balance to escrow</PmBtn> : <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#1F9D57", fontWeight: 700, fontSize: 13.5 }}><CheckCircle2 size={18} /> In escrow · released on final sign-off</div>}</div>
-        <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 10 }}>Recorded for demonstration. Connect a Paystack escrow flow to hold and release real funds.</div>
+        <div style={{ marginTop: 16, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
+          <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Receiving party bank details</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Where the escrow balance is released on completion. Held in confidence by Girard.</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+            <PmField label="Account name" value={j.payoutName} onChange={v => setJ({ payoutName: v })} placeholder="Name on the account" />
+            <PmField label="Account number" value={j.payoutNum} onChange={v => setJ({ payoutNum: v })} placeholder="10-digit NUBAN" />
+          </div>
+          <div style={{ marginTop: 10 }}><PmSelect label="Bank" value={j.payoutBank} onChange={v => setJ({ payoutBank: v })} options={NG_BANKS.map(x => x[0])} /></div>
+        </div>
+        <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>With bank details and a Paystack secret key set, escrow release on completion becomes a live transfer.</div>
       </PmCard>
       <PmCard>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Final sign-off</div>
@@ -3429,7 +3451,7 @@ function SwapJourney({ identity, toast }) {
           : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 220, overflow: "auto" }}>{j.contractText}</div>}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 14, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
           <div style={{ fontSize: 13, color: "var(--muted)" }}>Girard concierge to perfect documents · <b style={{ color: "var(--ink)" }}>10% of sales value</b></div>
-          <PmBtn kind="gold" icon={CheckCircle2} onClick={async () => { const bal = Math.round(+String(j.balanceValue || "").replace(/,/g, "")) || 0; if (j.escrowFunded && bal > 0) { const r = await paystackTransfer({ amount: bal, account_number: "", bank_code: "", name: "Swap counterparty", reason: "Escrow release " + owner }); toast(r && r.configured && r.ok ? "Swap completed. Escrow released via Paystack." : "Swap completed. Escrow release recorded (add counterparty bank for a live transfer).", "success"); } else { toast("Swap completed. Girard concierge engaged.", "success"); } }}>Complete swap</PmBtn>
+          <PmBtn kind="gold" icon={CheckCircle2} onClick={async () => { const bal = Math.round(+String(j.balanceValue || "").replace(/,/g, "")) || 0; if (j.escrowFunded && bal > 0) { const code = (NG_BANKS.find(x => x[0] === j.payoutBank) || [])[1] || ""; const r = await paystackTransfer({ amount: bal, account_number: j.payoutNum, bank_code: code, name: j.payoutName || "Swap counterparty", reason: "Escrow release " + owner }); toast(r && r.configured && r.ok ? "Swap completed. Escrow released via Paystack." : "Swap completed. Escrow release recorded (add counterparty bank for a live transfer).", "success"); } else { toast("Swap completed. Girard concierge engaged.", "success"); } }}>Complete swap</PmBtn>
         </div>
       </PmCard>}
     </div>;
