@@ -1,50 +1,16 @@
-:root {
-  --navy: #0A1A38;
-  --navy-2: #0C2145;
-  --navy-3: #163564;
-  --navy-line: #2A456E;
-  --navy-deep: #06112A;
-  --gold: #C6A15B;
-  --gold-2: #B8934A;
-  --gold-soft: #E7D6AE;
-  --ivory: #F5F0E6;
-  --ivory-2: #FBF8F1;
-  --cream-line: #E4DAC7;
-  --ink: #12203A;
-  --muted: #5A6472;
-  --white: #FFFFFF;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
-  background: var(--ivory);
-  color: var(--ink);
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  line-height: 1.5;
-}
-.serif { font-family: "Lora", Georgia, "Times New Roman", serif; }
-a { color: inherit; text-decoration: none; }
-button { font-family: inherit; }
-::selection { background: var(--gold); color: #201601; }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
-
-/* ---- Motion & depth (kills the "flat" feel across the whole platform) ---- */
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-@keyframes popIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
-@keyframes floatY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-@keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-@keyframes drawLine { to { stroke-dashoffset: 0; } }
-
-.lift { transition: transform .22s ease, box-shadow .22s ease; }
-.lift:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(10,26,56,.14); }
-.card-soft { box-shadow: 0 4px 18px rgba(10,26,56,.05); }
-.view-enter { animation: fadeInUp .42s ease both; }
-.float-orb { animation: floatY 7s ease-in-out infinite; }
-
-.btn-gold, .btn-line, .btn-line.on-navy, .btn-line.on-ivory { transition: transform .16s ease, box-shadow .16s ease, background .18s ease, color .18s ease, border-color .18s ease; }
-.btn-gold:hover, .btn-line:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(10,26,56,.16); }
-
-/* chart draw-in */
-.chart-bar { transform-box: fill-box; transform-origin: bottom; animation: barGrow .8s cubic-bezier(.2,.8,.2,1) both; }
-.chart-line { stroke-dasharray: 4000; stroke-dashoffset: 4000; animation: drawLine 1.5s ease forwards; }
-.chart-donut { animation: popIn .7s ease both; }
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Girard Property Estate Limited. Digital property management and cross-border swaps on one governed platform, across Nigeria, the UK and beyond. Managed with discipline, moved without borders." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>Girard Property Estate Limited</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
