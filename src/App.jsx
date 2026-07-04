@@ -2880,7 +2880,7 @@ function RentRemindersScreen({ toast }) {
     <PmCard pad={16} style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <BellRing size={18} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} />
-        <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55 }}>Girard automatically emails and texts each tenant 3 months before their rent is due. To send live messages, add <b style={{ color: "var(--ink)" }}>RESEND_API_KEY</b> (email) and <b style={{ color: "var(--ink)" }}>TWILIO_ACCOUNT_SID</b>, <b style={{ color: "var(--ink)" }}>TWILIO_AUTH_TOKEN</b>, <b style={{ color: "var(--ink)" }}>TWILIO_FROM</b> (SMS) in Vercel. Until then, reminders are scheduled and logged.</div>
+        <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55 }}>Girard automatically emails each tenant and messages them on WhatsApp 3 months before their rent is due. To send live messages, add <b style={{ color: "var(--ink)" }}>RESEND_API_KEY</b> (email) and <b style={{ color: "var(--ink)" }}>TWILIO_ACCOUNT_SID</b>, <b style={{ color: "var(--ink)" }}>TWILIO_AUTH_TOKEN</b>, <b style={{ color: "var(--ink)" }}>TWILIO_WHATSAPP_FROM</b> (WhatsApp) in Vercel. Until then, reminders are scheduled and logged.</div>
       </div>
     </PmCard>
     <PmCard pad={0} style={{ overflow: "hidden" }}>
@@ -3472,6 +3472,17 @@ async function swapFetchAll() {
   if (supabase) { try { const { data, error } = await supabase.from("swaps").select("*").order("updated_at", { ascending: false }); if (!error && data) return data.map(r => ({ owner: r.owner, data: { ...sjDefault(), ...(r.data || {}) } })); } catch (e) {} }
   const j = sjLoad(); return j.paid ? [{ owner: "This device", data: j }] : [];
 }
+function swapFiledKey(owner) { return "girard_swaps_filed_" + (owner || "guest").toLowerCase(); }
+function swapFiledLoad(owner) { try { return JSON.parse(localStorage.getItem(swapFiledKey(owner)) || "[]"); } catch (e) { return []; } }
+function swapFileCompleted(owner, j) {
+  const cur = (j.prop && j.prop.currency) || "";
+  const rec = { id: "SWAP-" + Date.now(), owner, area: (j.prop && (j.prop.area || j.prop.market)) || "Property", place: (j.match && j.match.place) || "Counterparty", value: (j.prop ? (cur + (j.prop.value || "")) : ""), balance: j.balanceValue ? (cur + j.balanceValue) : "", completed_at: new Date().toISOString() };
+  try { const list = swapFiledLoad(owner); list.unshift(rec); localStorage.setItem(swapFiledKey(owner), JSON.stringify(list.slice(0, 100))); } catch (e) {}
+  try { if (supabase) supabase.from("swaps").upsert([{ id: rec.id, owner, stage: 11, value: rec.value, flagged: false, stopped: false, data: { ...j, filed: true, completedAt: rec.completed_at }, updated_at: rec.completed_at }]); } catch (e) {}
+  try { notify({ title: "Swap completed", body: rec.area + " to " + rec.place, audience: "admin" }); } catch (e) {}
+  try { auditLog("Swap completed and filed", rec.area + " to " + rec.place, owner); } catch (e) {}
+  return rec;
+}
 
 function Stepper({ steps, current }) {
   return <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
@@ -3496,6 +3507,7 @@ function SwapJourney({ identity, toast, toAi }) {
   const setJ = (patch) => { setJraw(prev => { const n = { ...prev, ...patch }; swapSaveMine(owner, n); return n; }); };
   const [msg, setMsg] = useState("");
   const [gen, setGen] = useState(false);
+  const [filed, setFiled] = useState(() => swapFiledLoad(owner));
   const STEPS = ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
   const blocked = j.stopped;
   const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1100; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); setJ({ prop: { ...j.prop, photos: [...j.prop.photos, cv.toDataURL("image/jpeg", 0.72)].slice(0, 5) } }); }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
@@ -3605,7 +3617,7 @@ function SwapJourney({ identity, toast, toAi }) {
           : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 220, overflow: "auto" }}>{j.contractText}</div>}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 14, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
           <div style={{ fontSize: 13, color: "var(--muted)" }}>Girard concierge to perfect documents · <b style={{ color: "var(--ink)" }}>10% of sales value</b></div>
-          <PmBtn kind="gold" icon={CheckCircle2} onClick={async () => { const bal = Math.round(+String(j.balanceValue || "").replace(/,/g, "")) || 0; if (j.escrowFunded && bal > 0) { const code = (NG_BANKS.find(x => x[0] === j.payoutBank) || [])[1] || ""; const r = await paystackTransfer({ amount: bal, account_number: j.payoutNum, bank_code: code, name: j.payoutName || "Swap counterparty", reason: "Escrow release " + owner }); toast(r && r.configured && r.ok ? "Swap completed. Escrow released via Paystack." : "Swap completed. Escrow release recorded (add counterparty bank for a live transfer).", "success"); } else { toast("Swap completed. Girard concierge engaged.", "success"); } }}>Complete swap</PmBtn>
+          <PmBtn kind="gold" icon={CheckCircle2} onClick={async () => { const bal = Math.round(+String(j.balanceValue || "").replace(/,/g, "")) || 0; if (j.escrowFunded && bal > 0) { const code = (NG_BANKS.find(x => x[0] === j.payoutBank) || [])[1] || ""; const r = await paystackTransfer({ amount: bal, account_number: j.payoutNum, bank_code: code, name: j.payoutName || "Swap counterparty", reason: "Escrow release " + owner }); toast(r && r.configured && r.ok ? "Swap completed and filed. Escrow released via Paystack." : "Swap completed and filed. Escrow release recorded (add counterparty bank for a live transfer).", "success"); } else { toast("Swap completed and filed. You can start another swap now.", "success"); } const rec = swapFileCompleted(owner, j); setFiled(prev => [rec, ...prev]); swapSaveMine(owner, sjDefault()); setJraw(sjDefault()); }}>Complete swap</PmBtn>
         </div>
       </PmCard>}
     </div>;
@@ -3616,6 +3628,13 @@ function SwapJourney({ identity, toast, toAi }) {
     <FraudBar flagged={j.flagged} stopped={j.stopped} />
     {blocked ? <PmCard><div style={{ color: "var(--muted)" }}>This transaction is paused by Girard for manual review. You will be able to continue once it is cleared.</div></PmCard> : body()}
     {j.stage > 0 && !blocked && <div style={{ marginTop: 16 }}><button onClick={() => { if (confirm("Reset this swap journey?")) { swapSaveMine(owner, sjDefault()); setJraw(sjDefault()); } }} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "underline" }}>Reset journey</button></div>}
+    {filed.length > 0 && <PmCard style={{ marginTop: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><FileText size={16} color="var(--gold-2)" /><div style={{ fontWeight: 700, color: "var(--ink)" }}>Completed swaps ({filed.length})</div></div>
+      <div style={{ display: "grid", gap: 8 }}>{filed.map(fx => <div key={fx.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, border: "1px solid var(--cream-line)", borderRadius: 9, padding: "10px 13px" }}>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>{fx.area} → {fx.place}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{fx.id} · {new Date(fx.completed_at).toLocaleDateString()}{fx.balance ? " · balance " + fx.balance : ""}</div></div>
+        <span style={{ fontSize: 11.5, fontWeight: 700, padding: "4px 10px", borderRadius: 999, background: "rgba(31,157,87,.14)", color: "#1F9D57", display: "flex", alignItems: "center", gap: 5 }}><CheckCircle2 size={13} /> Filed</span>
+      </div>)}</div>
+    </PmCard>}
   </div>;
 }
 
