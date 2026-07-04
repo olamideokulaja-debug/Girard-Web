@@ -675,7 +675,7 @@ function Landing({ onStart, onSignIn }) {
             <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
               {TEAM.map(t => (
                 <div key={t.name} className="lift card-soft" style={{ background: "var(--white)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                  <div style={{ height: 260, background: "var(--navy-2)" }}><img src={t.photo} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} /></div>
+                  <div style={{ height: 260, flexShrink: 0, background: "var(--navy-2)", overflow: "hidden" }}><img src={t.photo} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} /></div>
                   <div style={{ padding: 20, flex: 1 }}>
                     <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{t.name}</div>
                     <div style={{ fontSize: 11.5, color: "var(--gold-2)", fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: .5 }}>{t.role}</div>
