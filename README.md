@@ -1,62 +1,71 @@
-# Girard Property Estate Limited, web platform
+# Girard Property Estate Limited — platform
 
-Stage 1 of the Girard build: the public marketing landing and brand.
+A complete property platform: an editorial marketing site plus a role-aware web app for owners, tenants, agents, investors and admins. Vite + React, Supabase auth, optional AI and Stripe. Brand: deep navy and gold with the Lora typeface, the Girard logo, and real 1 Bourdillon Residences renders.
 
-Stack: Vite + React (single-file `src/App.jsx`). Deep green with a restrained gold accent and a Fraunces serif display face, loaded from Google Fonts. No backend, no keys and no environment variables are required at this stage. Supabase, Stripe and the serverless functions arrive in Stage 2.
+## Highlights
 
-## What is on the page
+- Marketing landing with the real Girard logo, your service copy, the deep navy/gold brand palette and a featured 1 Bourdillon Residences band using the brochure renders.
+- Sign in with a role picker; identity resolved by email.
+- Founder / Admin workspace switcher: sign in as admin (or a founder email) and a "Workspace" switcher appears in the top bar to move between the owner, tenant, agent, investor and admin workspaces instantly, like Qura.
+- Digital Property Management (1 Bourdillon Residences is the featured property, with a gallery and project stats), an Applications tab to review screening and approve (Owner, Admin and Agents), automatic rent reminders sent to tenants 3 months before rent is due (Owner and Admin), Property Swap Marketplace, Live feed, CRM, Analytics, Market Intelligence, Support Services, Plans & pricing, notifications, settings and admin user management.
 
-- A sticky top bar with the Girard wordmark, navigation, Sign in and Get started.
-- A hero with the 24/7 global positioning line and two calls to action.
-- A region lens (Nigeria, UK, Middle East, International) that switches the market copy, currency symbol, the rotating new-instruction ticker and the blurred live-listings teaser. It defaults to a blended International view.
-- A blurred, rotating live-listings teaser with a Sign in to view overlay.
-- A services section covering Management, Property Swap, Market Intelligence and Support Services.
-- A who-we-serve section for Owners and Landlords, Tenants, Agents, and Investors and Developers.
-- A closing call to action and a footer.
+## What is in the download
 
-## Run it on your own computer (optional)
+```
+girard-web/
+  index.html, package.json, package-lock.json, vite.config.js, vercel.json
+  src/   (main.jsx, index.css, App.jsx)
+  api/   (anthropic.js, refresh-intel.js, create-checkout-session.js, rent-reminders.js, whatsapp.js)
+  public/img/   (six 1 Bourdillon renders: tower, lobby, living, bedroom, pool, entrance)
+```
 
-You do not need to do this to go live. If you want to preview locally:
+New this round: the `public/img` folder of renders, and an updated `src/index.css` (deeper navy) and `src/App.jsx`.
 
-1. Install Node.js 18 or newer.
-2. In a terminal, from inside this folder, run `npm install`.
-3. Run `npm run dev` and open the address it prints, usually `http://localhost:5173`.
+## Founder / Admin access and switcher
 
-## Put it online, one step at a time (for a non-technical founder)
+Admin access is limited to approved accounts: anyone signing in with a **@girardproperty.com** email may use the Admin workspace and the top-bar **WORKSPACE** switcher to move between all five workspaces. Anyone choosing Platform Admin with another email is blocked. Named founders (including olamideokulaja@girardproperty.com as Olamide Okulaja) are pre-approved; edit the `FOUNDERS` list and `ADMIN_DOMAIN` near the top of `src/App.jsx` to change this.
 
-You will do this twice: once to place the code on GitHub, once to publish it on Vercel. It takes about 10 minutes and needs no coding.
+The Admin/Founder workspace has two aggregation tabs: **Financials** (total revenue, MRR, rent, swap fees, a revenue trend, source breakdown and recent transactions) and **Sign-ups** (total users, monthly growth, role breakdown, an activation funnel and recent sign-ups). Greetings now use first names, e.g. "Good day, Olamide".
 
-### Part A, place the code on GitHub
+## Environment variables (Vercel: Settings → Environment Variables)
 
-1. Go to `github.com` and sign in, or create a free account.
-2. Click the green **New** button to create a new repository.
-3. Name it `girard-web`, leave everything else as default, and click **Create repository**.
-4. On the next page, click the link that says **uploading an existing file**.
-5. On your computer, unzip the file you were given and open the `girard-web` folder.
-6. Select all the files and folders **inside** `girard-web` (not the folder itself) and drag them onto the GitHub upload area.
-7. Wait for the upload to finish, then click **Commit changes**.
+Required for real accounts: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+Optional: `ANTHROPIC_API_KEY` (live AI + daily intelligence refresh), `STRIPE_SECRET_KEY` (real checkout), `RESEND_API_KEY` (reminder emails), and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` (reminder SMS), and `TWILIO_WHATSAPP_FROM` (WhatsApp notifications). All server-side, no `VITE_` prefix. Reminders and everything else work without them.
 
-### Part B, publish it on Vercel
+## Multi-user enquiries (Supabase)
 
-1. Go to `vercel.com` and sign in with your GitHub account.
-2. Click **Add New**, then **Project**.
-3. Find `girard-web` in the list and click **Import**.
-4. Leave every setting as it is. Vercel detects Vite automatically.
-5. Click **Deploy** and wait for it to finish.
-6. Vercel gives you a live web address. That is your Girard landing page.
+Enquiries and viewings now save to Supabase so your whole team sees them on any device (they fall back to this-device storage if Supabase is not connected). One-time setup: in Supabase, open SQL Editor, paste the following and click Run.
 
-### Later, when you receive an update
+```sql
+create table if not exists public.enquiries (
+  id text primary key,
+  type text, prop_id text, prop_title text, area text,
+  name text, phone text, email text, message text,
+  date text, time text,
+  status text default 'New',
+  created_at timestamptz default now()
+);
+alter table public.enquiries enable row level security;
+create policy "public insert" on public.enquiries for insert to anon, authenticated with check (true);
+create policy "staff read"    on public.enquiries for select to authenticated using (true);
+create policy "staff update"  on public.enquiries for update to authenticated using (true);
+```
 
-1. Unzip the new file and open the `girard-web` folder.
-2. In your GitHub repository, click **Add file**, then **Upload files**.
-3. Select all the contents inside `girard-web` and drag them in, then **Commit changes**.
-4. In Vercel, open the **Deployments** tab, find the newest entry, click the three-dot menu and choose **Redeploy**.
-5. If a page looks unchanged, open it in a private or incognito window to bypass the cache.
+## Final upload (recommended: replace the whole folder)
 
-## Environment variables
+Because individual files must sit in the right folders, the safest way to deploy this final version is to upload the entire project, so every file lands in place.
 
-None for Stage 1. When Stage 2 adds sign-in and payments, you will be given the exact variable names to paste into Vercel under Settings, Environment Variables.
+File placement (what goes where):
+- Root folder: `index.html`, `package.json`, `package-lock.json`, `vite.config.js`, `vercel.json`
+- `src/` : `App.jsx`, `main.jsx`, `index.css`
+- `public/img/` : all images incl. `girard-emblem.png`, `girard-logo.png`, `team-1.jpg` ... `team-5.jpg`, and the `bourdillon_*.jpg` renders
+- `api/` : `anthropic.js`, `refresh-intel.js`, `create-checkout-session.js`, `rent-reminders.js`, `whatsapp.js`
 
-## Compliance note
+Steps:
+1. Unzip `girard-web`. On GitHub, upload the folder contents (Add file, Upload files, then drag everything in, keeping folders), and Commit. This overwrites old files with the correct ones.
+2. In Supabase (one time), run the enquiries SQL from the "Multi-user enquiries" section above.
+3. In Vercel, confirm the environment variables (below), then Redeploy.
+4. Open the site in a fresh Incognito window (or hard-refresh with Ctrl+Shift+R / Cmd+Shift+R). `src/App.jsx` should read about 2930 lines.
 
-Girard flags KYC, escrow handling, data privacy and Nigerian, UK and other conveyancing and tenancy matters as they arise. The platform keeps human oversight at critical steps and is not a substitute for legal or financial advice.
+Sanity check after upload: root `index.html` starts with `<!doctype html>`; `src/index.css` starts with `:root {`.
+

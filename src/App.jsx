@@ -538,6 +538,9 @@ function Landing({ onStart, onSignIn }) {
             <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 18 }}>Girard Property Estate Limited is a premier real estate development and asset management company dedicated to elevating the standards of luxury, urban living and sustainable property investment across Nigeria's rapidly evolving landscape.</p>
             <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 14 }}>Driven by a leadership team of seasoned professionals in real estate law, project development, finance, governance and estate management, the company upholds an unyielding commitment to quality, compliance and strategic growth.</p>
           </div>
+          <div className="glance-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0, marginTop: 34, background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, overflow: "hidden" }}>
+            {[["Sector", "Development, asset & estate management, property investment"], ["Head office", "21 Fatai Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos"], ["Portfolio", "Approximately 30 properties across various stages of development"], ["Service lines", "Six integrated services across development, management, investment and advisory"], ["Clients", "Investors, homeowners, institutions and development partners"], ["Office hours", "Monday to Saturday, 8am to 5pm"]].map(([k, v], i) => <div key={k} style={{ padding: 20, borderRight: (i % 3 !== 2) ? "1px solid var(--cream-line)" : "none", borderBottom: i < 3 ? "1px solid var(--cream-line)" : "none" }}><div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .5 }}>{k}</div><div style={{ fontSize: 14, color: "var(--ink)", marginTop: 6, lineHeight: 1.5 }}>{v}</div></div>)}
+          </div>
           <div className="vm-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 34 }}>
             <div style={{ background: "var(--navy)", color: "#fff", borderRadius: 14, padding: 26 }}>
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 10 }}>Our vision</div>
@@ -554,7 +557,7 @@ function Landing({ onStart, onSignIn }) {
               {[["Integrity", "Anchored on transparency, sound governance and ethical practice."], ["Precision", "Disciplined planning, rigorous due diligence and strict compliance."], ["Innovation", "Technology-powered operations and advanced digital modelling."], ["Quality & Compliance", "Premium standards aligned with international best practices."], ["Strategic Growth", "Long-term value creation for clients, partners and communities."]].map(([t, d]) => <div key={t} style={{ borderTop: "2px solid var(--gold)", paddingTop: 12 }}><div className="serif" style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{t}</div><div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6, lineHeight: 1.55 }}>{d}</div></div>)}
             </div>
           </div>
-          <style>{`@media(max-width:820px){.vm-grid{grid-template-columns:1fr!important}.val-grid{grid-template-columns:1fr 1fr!important}}`}</style>
+          <style>{`@media(max-width:820px){.vm-grid{grid-template-columns:1fr!important}.val-grid{grid-template-columns:1fr 1fr!important}.glance-grid{grid-template-columns:1fr!important}}`}</style>
         </div>
       </section>
 
@@ -663,31 +666,7 @@ function Landing({ onStart, onSignIn }) {
       </section>
 
       {/* LEADERSHIP */}
-      {TEAM.length > 0 && (
-        <section id="leadership" style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
-          <div className="wrap">
-            <div style={{ maxWidth: 780, marginBottom: 40 }}>
-              <Rule />
-              <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Our people</div>
-              <h2 className="serif sec-h">Our leadership.</h2>
-              <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65 }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships.</p>
-            </div>
-            <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
-              {TEAM.map(t => (
-                <div key={t.name} className="lift card-soft" style={{ background: "var(--white)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                  <div style={{ height: 260, flexShrink: 0, background: "var(--navy-2)", overflow: "hidden" }}><img src={t.photo} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} /></div>
-                  <div style={{ padding: 20, flex: 1 }}>
-                    <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{t.name}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--gold-2)", fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: .5 }}>{t.role}</div>
-                    <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 12, lineHeight: 1.6 }}>{t.bio}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <style>{`@media(max-width:900px){.team-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.team-grid{grid-template-columns:1fr!important}}`}</style>
-          </div>
-        </section>
-      )}
+      <LeadershipSection />
 
       <ContactSection />
 
@@ -2892,4 +2871,60 @@ function UnitModal({ unit, onClose, onSave }) {
     {u.status !== "Available" && <div><PmField label="Buyer name" value={u.buyer} onChange={v => setU({ ...u, buyer: v })} placeholder="Full name" /><PmField label="Buyer phone" value={u.phone} onChange={v => setU({ ...u, phone: v })} placeholder="+234..." /></div>}
     <PmBtn kind="gold" onClick={() => onSave(u)} style={{ marginTop: 6 }}>Save unit</PmBtn>
   </PmModal>;
+}
+
+/* ===================================================================
+   Leadership: grid shows photo + name only; click opens a detail view
+   with photo and name on the left and the full bio on the right.
+   =================================================================== */
+function LeadershipSection() {
+  const [open, setOpen] = useState(null);
+  if (!TEAM.length) return null;
+  return <section id="leadership" style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
+    <div className="wrap">
+      <div style={{ maxWidth: 780, marginBottom: 40 }}>
+        <Rule />
+        <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Our people</div>
+        <h2 className="serif sec-h">Our leadership.</h2>
+        <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65 }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships. Tap a profile to read more.</p>
+      </div>
+      <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+        {TEAM.map(t => (
+          <button key={t.name} onClick={() => setOpen(t)} className="lift card-soft" style={{ background: "var(--white)", borderRadius: 14, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", textAlign: "left", display: "block", width: "100%" }}>
+            <div style={{ height: 300, background: "var(--navy-2)", overflow: "hidden" }}><img src={t.photo} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} /></div>
+            <div style={{ padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{t.name}</div>
+                <div style={{ fontSize: 11, color: "var(--gold-2)", fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: .5 }}>{t.role}</div>
+              </div>
+              <ArrowUpRight size={18} color="var(--gold-2)" style={{ flexShrink: 0 }} />
+            </div>
+          </button>
+        ))}
+      </div>
+      <style>{`@media(max-width:900px){.team-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.team-grid{grid-template-columns:1fr!important}}`}</style>
+    </div>
+    {open && <LeaderModal member={open} onClose={() => setOpen(null)} />}
+  </section>;
+}
+function LeaderModal({ member, onClose }) {
+  return <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(6,17,42,.72)", zIndex: 300, display: "grid", placeItems: "center", padding: 20 }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", color: "var(--ink)", borderRadius: 16, width: "min(880px, 100%)", maxHeight: "90vh", overflow: "auto", position: "relative" }}>
+      <button onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,.9)", border: "1px solid var(--cream-line)", borderRadius: 999, width: 34, height: 34, display: "grid", placeItems: "center", cursor: "pointer", zIndex: 2 }}><X size={18} /></button>
+      <div className="leader-modal" style={{ display: "grid", gridTemplateColumns: "300px 1fr" }}>
+        <div style={{ background: "var(--ivory)" }}>
+          <div style={{ height: 320, background: "var(--navy-2)", overflow: "hidden" }}><img src={member.photo} alt={member.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} /></div>
+          <div style={{ padding: "18px 22px" }}>
+            <div className="serif" style={{ fontSize: 21, fontWeight: 600, color: "var(--ink)" }}>{member.name}</div>
+            <div style={{ fontSize: 11.5, color: "var(--gold-2)", fontWeight: 700, marginTop: 5, textTransform: "uppercase", letterSpacing: .5 }}>{member.role}</div>
+          </div>
+        </div>
+        <div style={{ padding: "40px 36px" }}>
+          <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 14 }}>Profile</div>
+          <p style={{ fontSize: 16, lineHeight: 1.8, color: "var(--muted)" }}>{member.bio}</p>
+        </div>
+      </div>
+      <style>{`@media(max-width:640px){.leader-modal{grid-template-columns:1fr!important}}`}</style>
+    </div>
+  </div>;
 }
