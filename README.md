@@ -51,6 +51,36 @@ create policy "staff read"    on public.enquiries for select to authenticated us
 create policy "staff update"  on public.enquiries for update to authenticated using (true);
 ```
 
+
+### Partners and agent payouts tables
+
+Run this once too, so partner applications, vetting and agent withdrawals are shared across devices (they fall back to this-device storage if Supabase is not connected).
+
+```sql
+create table if not exists public.partners (
+  id text primary key,
+  kind text, business text, category text,
+  name text, phone text, email text, about text, years text,
+  status text default 'Pending',
+  created_at timestamptz default now()
+);
+alter table public.partners enable row level security;
+create policy "public insert" on public.partners for insert to anon, authenticated with check (true);
+create policy "staff read"    on public.partners for select to authenticated using (true);
+create policy "staff update"  on public.partners for update to authenticated using (true);
+
+create table if not exists public.withdrawals (
+  id text primary key,
+  agent text, amount bigint, bank text,
+  status text default 'Pending',
+  created_at timestamptz default now()
+);
+alter table public.withdrawals enable row level security;
+create policy "auth insert" on public.withdrawals for insert to authenticated with check (true);
+create policy "auth read"   on public.withdrawals for select to authenticated using (true);
+create policy "auth update" on public.withdrawals for update to authenticated using (true);
+```
+
 ## Final upload (recommended: replace the whole folder)
 
 Because individual files must sit in the right folders, the safest way to deploy this final version is to upload the entire project, so every file lands in place.
@@ -65,7 +95,7 @@ Steps:
 1. Unzip `girard-web`. On GitHub, upload the folder contents (Add file, Upload files, then drag everything in, keeping folders), and Commit. This overwrites old files with the correct ones.
 2. In Supabase (one time), run the enquiries SQL from the "Multi-user enquiries" section above.
 3. In Vercel, confirm the environment variables (below), then Redeploy.
-4. Open the site in a fresh Incognito window (or hard-refresh with Ctrl+Shift+R / Cmd+Shift+R). `src/App.jsx` should read about 3159 lines.
+4. Open the site in a fresh Incognito window (or hard-refresh with Ctrl+Shift+R / Cmd+Shift+R). `src/App.jsx` should read about 3569 lines.
 
 Sanity check after upload: root `index.html` starts with `<!doctype html>`; `src/index.css` starts with `:root {`.
 

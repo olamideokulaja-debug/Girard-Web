@@ -847,6 +847,7 @@ function EntryStyles() {
 }
 
 function RolePage({ onPick, onSignIn, onBack }) {
+  const [partner, setPartner] = useState(false);
   return (
     <div style={{ minHeight: "100vh", background: "var(--navy)", color: "#fff", display: "flex", flexDirection: "column" }}>
       <div className="wrap" style={{ paddingTop: 26, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20 }}>
@@ -869,8 +870,17 @@ function RolePage({ onPick, onSignIn, onBack }) {
               <div style={{ color: "rgba(255,255,255,.68)", fontSize: 13.5, lineHeight: 1.5 }}>{r.blurb}</div>
             </button>
           ))}
+          <button className="role-card rise" onClick={() => setPartner(true)}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center" }}><Handshake size={22} /></div>
+              <ChevronRight size={18} color="var(--gold)" />
+            </div>
+            <div className="serif" style={{ fontSize: 20, fontWeight: 600, marginBottom: 6 }}>Vendor / Partner</div>
+            <div style={{ color: "rgba(255,255,255,.68)", fontSize: 13.5, lineHeight: 1.5 }}>Maintenance vendors and support-service providers, apply to join our vetted network.</div>
+          </button>
         </div>
       </div>
+      {partner && <PartnerModal onClose={() => setPartner(false)} />}
     </div>
   );
 }
@@ -1084,6 +1094,7 @@ function seedProperties() {
       id: "PR-" + (1000 + i), title: (beds === 0 ? "Studio " : beds + "-Bed ") + type, area, type, beds,
       rent: baseRent(area, beds), status, verified: status !== "Pending Verification",
       amenities: am.length ? am : ["Parking", "Security"], address: (10 + i) + " " + PM_STREETS[i % 6] + ", " + area,
+      letType: i % 5 === 0 ? "Short let" : "Long let", term: i % 5 === 0 ? null : (i % 2 === 0 ? "2 years" : "1 year"),
       hue: 200 + (i * 7) % 30
     };
   });
@@ -1326,7 +1337,7 @@ function PropertiesScreen({ st, setSt, identity }) {
 
 /* ---------- ADD PROPERTY ---------- */
 function AddPropertyScreen({ st, setSt, toast }) {
-  const [f, setF] = useState({ type: PM_TYPES[0], area: PM_AREAS[0], beds: "3", amenities: [] });
+  const [f, setF] = useState({ type: PM_TYPES[0], area: PM_AREAS[0], beds: "3", amenities: [], letType: "Long let", term: "1 year" });
   const [ai, setAi] = useState(null);
   const [price, setPrice] = useState("");
   const [done, setDone] = useState(false);
@@ -1336,7 +1347,7 @@ function AddPropertyScreen({ st, setSt, toast }) {
   const rec = async () => { setAi({ loading: true }); const r = await aiRent(f); setAi({ loading: false, ...r }); setPrice(String(r.annual)); };
   const submit = () => {
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, img: photos[0], photos, amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30 };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.letType === "Short let" ? null : f.term, img: photos[0], photos, amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30 };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); }}>Add another</PmBtn></div></PmCard></div>;
@@ -1347,6 +1358,8 @@ function AddPropertyScreen({ st, setSt, toast }) {
         <PmSelect label="Property type" value={f.type} onChange={v => setF({ ...f, type: v })} options={PM_TYPES} />
         <PmSelect label="Area (Lagos)" value={f.area} onChange={v => setF({ ...f, area: v })} options={PM_AREAS} />
         <PmSelect label="Bedrooms" value={f.beds} onChange={v => setF({ ...f, beds: v })} options={["0", "1", "2", "3", "4", "5"]} />
+        <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v })} options={["Long let", "Short let"]} />
+        {f.letType === "Long let" ? <PmSelect label="Acceptable length of stay" value={f.term} onChange={v => setF({ ...f, term: v })} options={["1 year", "2 years", "3 years", "5 years"]} /> : <div style={{ fontSize: 12.5, color: "var(--muted)", background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px" }}>Short let: guests choose their stay in days, weeks or months.</div>}
         <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Amenities</label><div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{PM_AMEN.map(a => <button key={a} onClick={() => toggle(a)} style={{ border: "1px solid " + (f.amenities.includes(a) ? "var(--gold)" : "var(--cream-line)"), background: f.amenities.includes(a) ? "var(--gold-soft)" : "transparent", color: f.amenities.includes(a) ? "var(--gold-2)" : "var(--muted)", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{a}</button>)}</div></div>
         <PmBtn kind="navy" icon={Sparkles} onClick={rec}>Get AI rent recommendation</PmBtn>
       </div></PmCard>
@@ -1702,9 +1715,9 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Maintenance", Wrench], ["swap", "Swap marketplace", Repeat], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
-  tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Maintenance", Wrench], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Maintenance", Wrench], ["swpipe", "Swap pipeline", Handshake], ["vetting", "Vetting & payouts", BadgeCheck], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
+  tenant: [["find", "Find a home", Search], ["rent", "Pay rent", CreditCard], ["maint", "Jobs & repairs", Wrench], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart]],
   investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["work", "Overview", LayoutGrid]]
 };
@@ -1730,7 +1743,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "apps") return <ApplicationsScreen {...P} />;
     if (view === "find") return <TenantFind {...P} />;
     if (view === "rent") return <RentScreen {...P} />;
-    if (view === "maint") return <MaintenanceScreen {...P} />;
+    if (view === "maint") return <JobsScreen identity={identity} toast={toast} />;
     if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" />;
     if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" />;
     if (view === "intel") return <IntelScreen />;
@@ -1743,7 +1756,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "reminders") return <RentRemindersScreen toast={toast} />;
     if (view === "enquiries") return <EnquiriesScreen toast={toast} />;
     if (view === "sales") return <SalesBoard toast={toast} />;
-    if (view === "wallet") return <AgentWallet toast={toast} />;
+    if (view === "wallet") return <AgentWallet toast={toast} identity={identity} />;
     if (view === "vetting") return <VettingScreen toast={toast} />;
     if (view === "feed") return <LiveFeed identity={identity} />;
     if (view === "crm") return <PipelineCRM identity={identity} toast={toast} />;
@@ -2079,14 +2092,19 @@ function IntelSoon() {
 
 const SWAP_TABS = [["browse", "Browse", Search], ["list", "List for swap", Plus], ["matches", "My matches", ArrowRightLeft], ["deals", "Deals", Handshake]];
 function SwapHub({ identity, toast, initial }) {
-  const [tab, setTab] = useState(initial || "browse");
+  const isAdmin = identity.role === "admin";
+  const [tab, setTab] = useState(isAdmin ? "oversight" : "journey");
   const [sw, setSwRaw] = useState(swLoad);
   const setSw = (n) => { setSwRaw(n); swSave(n); };
-  const tabs = identity.role === "admin" ? SWAP_TABS.filter(t => t[0] === "browse" || t[0] === "deals") : SWAP_TABS;
+  const tabs = isAdmin
+    ? [["oversight", "Girard oversight", ShieldCheck], ["browse", "Browse", Search], ["deals", "Deals", Handshake]]
+    : [["journey", "Start a swap", Repeat], ...SWAP_TABS];
   return <div>
     <div style={{ display: "flex", gap: 6, marginBottom: 22, borderBottom: "1px solid var(--cream-line)", flexWrap: "wrap" }}>
       {tabs.map(([k, label, Icon]) => <button key={k} onClick={() => setTab(k)} style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", borderBottom: "2px solid " + (tab === k ? "var(--gold)" : "transparent"), color: tab === k ? "var(--ink)" : "var(--muted)", fontWeight: tab === k ? 700 : 500, fontSize: 14, padding: "10px 6px", cursor: "pointer", marginBottom: -1 }}><Icon size={15} />{label}</button>)}
     </div>
+    {tab === "journey" && <SwapJourney identity={identity} toast={toast} />}
+    {tab === "oversight" && <SwapOversight toast={toast} />}
     {tab === "browse" && <SwapBrowse sw={sw} setSw={setSw} toast={toast} />}
     {tab === "list" && <SwapList sw={sw} setSw={setSw} toast={toast} />}
     {tab === "matches" && <SwapMatches sw={sw} toast={toast} goDeals={() => setTab("deals")} />}
@@ -2724,18 +2742,20 @@ async function enqSetStatusRemote(id, status) {
 }
 
 function LeadModal({ mode, property, onClose }) {
-  const [f, setF] = useState({ name: "", phone: "", email: "", message: "", date: "", time: "10:00" });
+  const isShort = property.letType === "Short let";
+  const [f, setF] = useState({ name: "", phone: "", email: "", message: "", date: "", time: "10:00", stayNum: "", stayUnit: isShort ? "Months" : "Years", stayYears: property.term || "1 year" });
+  const stayStr = isShort ? (f.stayNum ? f.stayNum + " " + f.stayUnit : "") : f.stayYears;
   const [done, setDone] = useState(null);
   const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", color: "var(--ink)", fontSize: 14, marginBottom: 10, fontFamily: "inherit" };
-  const valid = f.name.trim() && f.phone.trim() && (mode !== "viewing" || f.date);
+  const valid = f.name.trim() && f.phone.trim() && (mode !== "viewing" || f.date) && (isShort ? +f.stayNum > 0 : !!f.stayYears);
   const submit = () => {
     if (!valid) return;
-    const rec = { id: "ENQ-" + Date.now(), type: mode === "viewing" ? "Viewing" : "Enquiry", propId: property.id, propTitle: property.title, area: property.area, name: f.name, phone: f.phone, email: f.email, message: f.message, date: f.date, time: f.time, status: "New", createdAt: Date.now() };
+    const rec = { id: "ENQ-" + Date.now(), type: mode === "viewing" ? "Viewing" : "Enquiry", propId: property.id, propTitle: property.title, area: property.area, name: f.name, phone: f.phone, email: f.email, message: (f.message ? f.message + " · " : "") + "Intended stay: " + stayStr, stay: stayStr, date: f.date, time: f.time, status: "New", createdAt: Date.now() };
     enqInsert(rec);
     sendWhatsApp(OFFICE_WA, "New " + rec.type + " from " + f.name + " (" + f.phone + ") for " + property.title + (mode === "viewing" ? " on " + f.date + " at " + f.time : ""));
     const msg = mode === "viewing"
-      ? "Hello Girard, I'd like to book a viewing of " + property.title + " (" + property.area + ") on " + f.date + " at " + f.time + ". My name is " + f.name + " (" + f.phone + ")."
-      : "Hello Girard, I'm enquiring about " + property.title + " (" + property.area + "). My name is " + f.name + " (" + f.phone + ")." + (f.message ? " " + f.message : "");
+      ? "Hello Girard, I'd like to book a viewing of " + property.title + " (" + property.area + ") on " + f.date + " at " + f.time + ". Intended stay: " + stayStr + ". My name is " + f.name + " (" + f.phone + ")."
+      : "Hello Girard, I'm enquiring about " + property.title + " (" + property.area + "). Intended stay: " + stayStr + ". My name is " + f.name + " (" + f.phone + ")." + (f.message ? " " + f.message : "");
     setDone(msg);
   };
   return <div style={{ position: "fixed", inset: 0, background: "rgba(6,17,42,.62)", zIndex: 200, display: "grid", placeItems: "center", padding: 18 }} onClick={onClose}>
@@ -2752,6 +2772,13 @@ function LeadModal({ mode, property, onClose }) {
         <input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Full name *" style={inp} />
         <input value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} placeholder="Phone / WhatsApp *" style={inp} />
         <input value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="Email (optional)" style={inp} />
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>How long do you intend to stay?{!isShort && property.term ? " (this property accepts up to " + property.term + ")" : isShort ? " (short let)" : ""}</label>
+          {isShort ? <div style={{ display: "flex", gap: 8 }}>
+            <input type="number" min="1" value={f.stayNum} onChange={e => setF({ ...f, stayNum: e.target.value })} placeholder="e.g. 6" style={{ ...inp, flex: 1, marginBottom: 0 }} />
+            <select value={f.stayUnit} onChange={e => setF({ ...f, stayUnit: e.target.value })} style={{ ...inp, flex: 1, marginBottom: 0 }}>{["Days", "Weeks", "Months"].map(u => <option key={u} value={u}>{u}</option>)}</select>
+          </div> : <select value={f.stayYears} onChange={e => setF({ ...f, stayYears: e.target.value })} style={{ ...inp, marginBottom: 0 }}>{["1 year", "2 years", "3 years", "4 years", "5 years"].map(u => <option key={u} value={u}>{u}</option>)}</select>}
+        </div>
         {mode === "viewing" ? <div style={{ display: "flex", gap: 10 }}>
           <input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} style={{ ...inp, flex: 1 }} />
           <select value={f.time} onChange={e => setF({ ...f, time: e.target.value })} style={{ ...inp, flex: 1 }}>{["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"].map(t => <option key={t} value={t}>{t}</option>)}</select>
@@ -2782,6 +2809,7 @@ function PublicListings({ onSignIn }) {
           <div style={{ position: "relative", height: 180 }}>
             <img src={p.img || poolPhoto(p.id)} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             {p.featured && <span style={{ position: "absolute", top: 12, left: 12, background: "var(--gold)", color: "#201601", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>Featured</span>}
+            <span style={{ position: "absolute", top: 12, right: 12, background: p.letType === "Short let" ? "var(--navy)" : "rgba(255,255,255,.92)", color: p.letType === "Short let" ? "#fff" : "var(--ink)", fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>{p.letType === "Short let" ? "Short let" : (p.term || "Annual")}</span>
           </div>
           <div style={{ padding: 18, display: "flex", flexDirection: "column", flex: 1 }}>
             <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{p.title}</div>
@@ -2972,14 +3000,30 @@ const SUPPORT_CATS = ["Legal & documentation", "Insurance", "Moving & logistics"
 function partnerLoad() {
   try { const r = localStorage.getItem(PARTNER_KEY); if (r) return JSON.parse(r); } catch (e) {}
   const seed = { items: [
-    { id: "PT-1001", kind: "Vendor", business: "SwiftFix Services", category: "Plumbing", name: "Musa Ibrahim", phone: "+2348060000011", email: "musa@example.com", about: "Over 10 years of plumbing across Lekki and Ikoyi.", years: "10", status: "Pending" },
+    { id: "PT-1001", kind: "Vendor", business: "SwiftFix Services", category: "Plumbing", name: "Musa Ibrahim", phone: "+2348060000011", email: "musa@example.com", about: "Over 10 years of plumbing across Lekki and Ikoyi.", years: "10", status: "Approved" },
+    { id: "PT-1003", kind: "Vendor", business: "ElectroPro NG", category: "Electrical", name: "Tunde Bakare", phone: "+2348060000013", email: "tunde@example.com", about: "Certified electricians, inverters and wiring.", years: "12", status: "Approved" },
+    { id: "PT-1004", kind: "Vendor", business: "CoolAir Systems", category: "HVAC / air-conditioning", name: "Ngozi Alu", phone: "+2348060000014", email: "ngozi@example.com", about: "AC installation, servicing and repair.", years: "7", status: "Approved" },
+    { id: "PT-1005", kind: "Vendor", business: "BrightClean", category: "Cleaning", name: "Sola Ade", phone: "+2348060000015", email: "sola@example.com", about: "Deep cleaning and post-construction cleanup.", years: "5", status: "Approved" },
     { id: "PT-1002", kind: "Support", business: "Lex & Co Chambers", category: "Legal & documentation", name: "Ada Nwosu", phone: "+2348060000012", email: "ada@example.com", about: "Property law, title verification and tenancy documentation.", years: "8", status: "Approved" }
   ] };
   try { localStorage.setItem(PARTNER_KEY, JSON.stringify(seed)); } catch (e) {}
   return seed;
 }
 function partnerSave(s) { try { localStorage.setItem(PARTNER_KEY, JSON.stringify(s)); } catch (e) {} }
-function partnerAdd(rec) { const st = partnerLoad(); const n = { items: [rec, ...st.items] }; partnerSave(n); return n; }
+function partnerRecToRow(r) { return { id: r.id, kind: r.kind, business: r.business, category: r.category, name: r.name, phone: r.phone, email: r.email || null, about: r.about || null, years: r.years || null, status: r.status }; }
+function partnerRowToRec(r) { return { id: r.id, kind: r.kind, business: r.business, category: r.category, name: r.name, phone: r.phone, email: r.email, about: r.about, years: r.years, status: r.status }; }
+async function partnerInsert(rec) {
+  if (supabase) { try { const { error } = await supabase.from("partners").insert([partnerRecToRow(rec)]); if (!error) return true; } catch (e) {} }
+  const st = partnerLoad(); partnerSave({ items: [rec, ...st.items] }); return false;
+}
+async function partnerFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("partners").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(partnerRowToRec); } catch (e) {} }
+  return partnerLoad().items;
+}
+async function partnerSetStatusRemote(id, status) {
+  if (supabase) { try { await supabase.from("partners").update({ status }).eq("id", id); return; } catch (e) {} }
+  const st = partnerLoad(); partnerSave({ items: st.items.map(x => x.id === id ? { ...x, status } : x) });
+}
 
 function PartnerModal({ onClose }) {
   const [f, setF] = useState({ kind: "Vendor", business: "", category: VENDOR_CATS[0], name: "", phone: "", email: "", about: "", years: "" });
@@ -2988,7 +3032,7 @@ function PartnerModal({ onClose }) {
   const setKind = k => setF({ ...f, kind: k, category: (k === "Vendor" ? VENDOR_CATS : SUPPORT_CATS)[0] });
   const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", color: "var(--ink)", fontSize: 14, marginBottom: 10, fontFamily: "inherit" };
   const valid = f.business.trim() && f.name.trim() && f.phone.trim();
-  const submit = () => { if (!valid) return; partnerAdd({ id: "PT-" + Date.now(), kind: f.kind, business: f.business, category: f.category, name: f.name, phone: f.phone, email: f.email, about: f.about, years: f.years, status: "Pending" }); setDone(true); };
+  const submit = () => { if (!valid) return; partnerInsert({ id: "PT-" + Date.now(), kind: f.kind, business: f.business, category: f.category, name: f.name, phone: f.phone, email: f.email, about: f.about, years: f.years, status: "Pending" }); setDone(true); };
   return <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(6,17,42,.62)", zIndex: 200, display: "grid", placeItems: "center", padding: 18 }}>
     <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 16, padding: 26, width: "min(460px, 100%)", maxHeight: "90vh", overflow: "auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
@@ -3051,16 +3095,33 @@ function agentLoad() {
   return seed;
 }
 function agentSave(s) { try { localStorage.setItem(AGENT_KEY, JSON.stringify(s)); } catch (e) {} }
+const WD_KEY = "girard_withdrawals_v1";
+function wdLoadLocal() { try { const r = localStorage.getItem(WD_KEY); if (r) return JSON.parse(r); } catch (e) {} return { items: [] }; }
+function wdSaveLocal(s) { try { localStorage.setItem(WD_KEY, JSON.stringify(s)); } catch (e) {} }
+async function wdInsert(rec) {
+  if (supabase) { try { const { error } = await supabase.from("withdrawals").insert([{ id: rec.id, agent: rec.agent || null, amount: rec.amount, bank: rec.bank, status: rec.status }]); if (!error) return true; } catch (e) {} }
+  const st = wdLoadLocal(); wdSaveLocal({ items: [rec, ...st.items] }); return false;
+}
+async function wdFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("withdrawals").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(r => ({ id: r.id, agent: r.agent, amount: r.amount, bank: r.bank, status: r.status, date: r.created_at })); } catch (e) {} }
+  return wdLoadLocal().items;
+}
+async function wdSettleRemote(id) {
+  if (supabase) { try { await supabase.from("withdrawals").update({ status: "Paid" }).eq("id", id); return; } catch (e) {} }
+  const st = wdLoadLocal(); wdSaveLocal({ items: st.items.map(x => x.id === id ? { ...x, status: "Paid" } : x) });
+}
 
-function AgentWallet({ toast }) {
+function AgentWallet({ toast, identity }) {
   const [w, setWraw] = useState(agentLoad);
   const setW = n => { setWraw(n); agentSave(n); };
   const [amt, setAmt] = useState(""); const [bank, setBank] = useState("");
+  const [wds, setWds] = useState([]);
+  useEffect(() => { let on = true; wdFetch().then(x => { if (on) setWds(x); }); return () => { on = false; }; }, []);
   const earned = w.deals.reduce((s, d) => s + d.value * 0.05, 0);
-  const withdrawn = w.withdrawals.reduce((s, x) => s + x.amount, 0);
+  const withdrawn = wds.reduce((s, x) => s + Number(x.amount || 0), 0);
   const balance = earned - withdrawn;
   const pay = () => { setW({ ...w, paid: true }); toast("Agent account activated", "success"); };
-  const withdraw = () => { const a = Math.round(+amt); if (!(a > 0)) { toast("Enter an amount", "danger"); return; } if (a > balance) { toast("Amount exceeds available balance", "danger"); return; } if (!bank.trim()) { toast("Add your bank details", "danger"); return; } setW({ ...w, withdrawals: [{ id: "WD-" + Date.now(), amount: a, bank, status: "Pending", date: new Date().toISOString() }, ...w.withdrawals] }); setAmt(""); setBank(""); toast("Withdrawal requested", "success"); };
+  const withdraw = () => { const a = Math.round(+amt); if (!(a > 0)) { toast("Enter an amount", "danger"); return; } if (a > balance) { toast("Amount exceeds available balance", "danger"); return; } if (!bank.trim()) { toast("Add your bank details", "danger"); return; } const rec = { id: "WD-" + Date.now(), agent: identity && identity.email, amount: a, bank, status: "Pending", date: new Date().toISOString() }; wdInsert(rec); setWds([rec, ...wds]); setAmt(""); setBank(""); toast("Withdrawal requested", "success"); };
   if (!w.paid) return <div>
     <H2 title="Agent earnings" sub="Activate your agent account to start earning" />
     <PmCard style={{ maxWidth: 520 }}>
@@ -3103,9 +3164,9 @@ function AgentWallet({ toast }) {
     </div>
     <PmCard pad={0} style={{ overflow: "hidden", marginTop: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", padding: "16px 18px 10px" }}>Withdrawal history</div>
-      {w.withdrawals.length === 0 ? <div style={{ padding: "0 18px 18px", color: "var(--muted)", fontSize: 13.5 }}>No withdrawals yet.</div> : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 460 }}>
+      {wds.length === 0 ? <div style={{ padding: "0 18px 18px", color: "var(--muted)", fontSize: 13.5 }}>No withdrawals yet.</div> : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 460 }}>
         <thead><tr style={{ background: "var(--ivory)" }}>{["Reference", "Amount", "Bank", "Status", "Date"].map(h => <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
-        <tbody>{w.withdrawals.map(x => <tr key={x.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
+        <tbody>{wds.map(x => <tr key={x.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
           <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--ink)" }}>{x.id}</td>
           <td style={{ padding: "11px 16px", fontWeight: 700, color: "var(--ink)" }}>{money(x.amount)}</td>
           <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--muted)" }}>{x.bank}</td>
@@ -3118,25 +3179,24 @@ function AgentWallet({ toast }) {
 }
 
 function VettingScreen({ toast }) {
-  const [pt, setPtRaw] = useState(partnerLoad);
-  const setPt = n => { setPtRaw(n); partnerSave(n); };
-  const [ag, setAgRaw] = useState(agentLoad);
-  const setAg = n => { setAgRaw(n); agentSave(n); };
-  const setStatus = (id, status) => { setPt({ items: pt.items.map(x => x.id === id ? { ...x, status } : x) }); toast("Partner " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
-  const settle = id => { setAg({ ...ag, withdrawals: ag.withdrawals.map(x => x.id === id ? { ...x, status: "Paid" } : x) }); toast("Withdrawal marked paid", "success"); };
-  const pending = pt.items.filter(x => x.status === "Pending").length;
-  const wds = ag.withdrawals.filter(x => x.status === "Pending");
+  const [items, setItems] = useState([]);
+  const [allWds, setAllWds] = useState([]);
+  useEffect(() => { let on = true; partnerFetch().then(x => { if (on) setItems(x); }); wdFetch().then(x => { if (on) setAllWds(x); }); return () => { on = false; }; }, []);
+  const setStatus = (id, status) => { setItems(items.map(x => x.id === id ? { ...x, status } : x)); partnerSetStatusRemote(id, status); toast("Partner " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
+  const settle = id => { setAllWds(allWds.map(x => x.id === id ? { ...x, status: "Paid" } : x)); wdSettleRemote(id); toast("Withdrawal marked paid", "success"); };
+  const pending = items.filter(x => x.status === "Pending").length;
+  const wds = allWds.filter(x => x.status === "Pending");
   return <div>
     <H2 title="Vetting & payouts" sub="Approve partners and settle agent withdrawals" />
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
       <PmStat icon={BadgeCheck} label="Pending partners" value={String(pending)} tone="#F59E0B" />
-      <PmStat icon={Wrench} label="Vendors" value={String(pt.items.filter(x => x.kind === "Vendor").length)} tone="var(--muted)" />
-      <PmStat icon={ConciergeBell} label="Support" value={String(pt.items.filter(x => x.kind === "Support").length)} tone="var(--muted)" />
+      <PmStat icon={Wrench} label="Vendors" value={String(items.filter(x => x.kind === "Vendor").length)} tone="var(--muted)" />
+      <PmStat icon={ConciergeBell} label="Support" value={String(items.filter(x => x.kind === "Support").length)} tone="var(--muted)" />
       <PmStat icon={Banknote} label="Payouts due" value={String(wds.length)} tone="#8B5CF6" />
     </div>
     <PmCard pad={0} style={{ overflow: "hidden", marginBottom: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", padding: "16px 18px 12px" }}>Partner applications</div>
-      {pt.items.map((x, i) => <div key={x.id} style={{ padding: 16, borderTop: "1px solid var(--cream-line)", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+      {items.map((x, i) => <div key={x.id} style={{ padding: 16, borderTop: "1px solid var(--cream-line)", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ width: 40, height: 40, borderRadius: 9, background: x.kind === "Vendor" ? "rgba(245,158,11,.14)" : "rgba(59,130,246,.14)", color: x.kind === "Vendor" ? "#B26A00" : "#2F6FB0", display: "grid", placeItems: "center", flexShrink: 0 }}>{x.kind === "Vendor" ? <Wrench size={18} /> : <ConciergeBell size={18} />}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontWeight: 700, color: "var(--ink)" }}>{x.business} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 12.5 }}>· {x.category}</span></div>
@@ -3150,10 +3210,360 @@ function VettingScreen({ toast }) {
     </PmCard>
     <PmCard pad={0} style={{ overflow: "hidden" }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", padding: "16px 18px 12px" }}>Agent withdrawal requests</div>
-      {ag.withdrawals.length === 0 ? <div style={{ padding: "0 18px 18px", color: "var(--muted)", fontSize: 13.5 }}>No withdrawal requests.</div> : ag.withdrawals.map(x => <div key={x.id} style={{ padding: 16, borderTop: "1px solid var(--cream-line)", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+      {allWds.length === 0 ? <div style={{ padding: "0 18px 18px", color: "var(--muted)", fontSize: 13.5 }}>No withdrawal requests.</div> : allWds.map(x => <div key={x.id} style={{ padding: 16, borderTop: "1px solid var(--cream-line)", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ flex: 1, minWidth: 200 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>{money(x.amount)}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>{x.bank} · {fmtDate(x.date)}</div></div>
         {x.status === "Pending" ? <PmBtn size="sm" kind="gold" icon={CheckCircle2} onClick={() => settle(x.id)}>Mark paid</PmBtn> : <PmPill label="Paid" />}
       </div>)}
     </PmCard>
+  </div>;
+}
+
+/* ===================================================================
+   SWAP MARKETPLACE — full guided journey + Girard oversight.
+   Payment ($1k fee), escrow, verification SMS, counterparty, AI fraud
+   and two-party chat are simulated and labelled; wire Paystack / Twilio
+   / a realtime backend to make them live. Journey stored per-browser.
+   =================================================================== */
+const SWAP_FEE_USD = 1000, SWAP_FEE_NGN = 1650000;
+const SWAP_MARKETS = ["Nigeria", "United Kingdom", "United Arab Emirates", "Canada", "United States"];
+const SWAP_LOCATIONS = ["Lagos, Nigeria", "Abuja, Nigeria", "London, UK", "Manchester, UK", "Dubai, UAE", "Toronto, Canada", "Ontario, Canada", "New York, USA"];
+const OWNERSHIP_DOCS = ["Certificate of Occupancy (C of O)", "Deed of Assignment", "Registered Survey Plan", "Governor's Consent"];
+const SWAP_CUR = ["₦", "£", "$", "CAD", "AED"];
+const SWAP_POOL = [
+  { id: "SM-1", title: "3-Bed Condo, waterfront", place: "Ontario, Canada", value: "CAD 720,000", by: "K. Mensah" },
+  { id: "SM-2", title: "2-Bed Riverside Flat", place: "London, UK", value: "£640,000", by: "A. Whitmore" },
+  { id: "SM-3", title: "4-Bed Villa, Palm", place: "Dubai, UAE", value: "AED 3.2M", by: "R. Haddad" },
+  { id: "SM-4", title: "Detached Townhouse", place: "Toronto, Canada", value: "CAD 910,000", by: "L. Okafor" },
+  { id: "SM-5", title: "Brownstone Apartment", place: "New York, USA", value: "$1.1M", by: "J. Rivera" }
+];
+const SJ_KEY = "girard_swapjourney_v1";
+function sjDefault() { return { stage: 0, paid: false, prop: { market: "Nigeria", area: "", value: "", currency: "₦", photos: [], docs: [] }, verified: false, targets: [], match: null, chat: [], agreementText: "", signedMe: false, signedThem: false, escrowFunded: false, balanceValue: "", finalMe: false, finalThem: false, revealed: false, contractText: "", stopped: false, flagged: false }; }
+function sjLoad() { try { const r = localStorage.getItem(SJ_KEY); if (r) return { ...sjDefault(), ...JSON.parse(r) }; } catch (e) {} return sjDefault(); }
+function sjSave(s) { try { localStorage.setItem(SJ_KEY, JSON.stringify(s)); } catch (e) {} }
+
+function Stepper({ steps, current }) {
+  return <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+    {steps.map((s, i) => <div key={s} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 999, background: i === current ? "var(--navy)" : i < current ? "rgba(31,157,87,.12)" : "var(--ivory)", color: i === current ? "#fff" : i < current ? "#1F9D57" : "var(--muted)", fontSize: 12.5, fontWeight: 700, border: "1px solid " + (i === current ? "var(--navy)" : "var(--cream-line)") }}>
+      <span style={{ width: 18, height: 18, borderRadius: 999, background: i === current ? "var(--gold)" : i < current ? "#1F9D57" : "var(--cream-line)", color: i <= current ? "#fff" : "var(--muted)", display: "grid", placeItems: "center", fontSize: 10.5 }}>{i < current ? "✓" : i + 1}</span>{s}
+    </div>)}
+  </div>;
+}
+function FraudBar({ flagged, stopped }) {
+  const bad = flagged || stopped;
+  return <div style={{ display: "flex", alignItems: "center", gap: 10, background: bad ? "rgba(208,69,59,.1)" : "rgba(31,157,87,.08)", border: "1px solid " + (bad ? "rgba(208,69,59,.3)" : "rgba(31,157,87,.25)"), borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13 }}>
+    <ShieldCheck size={17} color={bad ? "#D0453B" : "#1F9D57"} />
+    <span style={{ color: "var(--ink)" }}>{stopped ? "Paused by Girard for manual review. You cannot proceed until it is cleared." : flagged ? "Flagged for review by Girard's fraud checks." : "Girard is monitoring this transaction. AI fraud check: clear."}</span>
+  </div>;
+}
+
+function SwapJourney({ identity, toast }) {
+  const [j, setJraw] = useState(sjLoad);
+  const setJ = (patch) => { setJraw(prev => { const n = { ...prev, ...patch }; sjSave(n); return n; }); };
+  const [msg, setMsg] = useState("");
+  const [gen, setGen] = useState(false);
+  const STEPS = ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
+  const blocked = j.stopped;
+  const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1100; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); setJ({ prop: { ...j.prop, photos: [...j.prop.photos, cv.toDataURL("image/jpeg", 0.72)].slice(0, 5) } }); }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
+  const toggleDoc = d => setJ({ prop: { ...j.prop, docs: j.prop.docs.includes(d) ? j.prop.docs.filter(x => x !== d) : [...j.prop.docs, d] } });
+  const toggleTarget = t => setJ({ targets: j.targets.includes(t) ? j.targets.filter(x => x !== t) : [...j.targets, t] });
+  const sendMsg = () => { if (!msg.trim()) return; const mine = { me: true, text: msg }; setJ({ chat: [...j.chat, mine] }); setMsg(""); setTimeout(() => setJraw(prev => { const n = { ...prev, chat: [...prev.chat, { me: false, text: "Thank you. That works for me, let us proceed to the agreement." }] }; sjSave(n); return n; }), 900); };
+  const genAgreement = async () => { setGen(true); const r = await aiProxy("Draft a concise cross-border property swap agreement (about 150 words) between two owners exchanging properties, one in " + (j.prop.area || j.prop.market) + " and one in " + (j.match ? j.match.place : "the counterparty location") + ". Include parties, the swap, any balancing payment held in escrow, verification of title, and governing law. Plain text, no markdown."); setGen(false); setJ({ agreementText: (r && r.ok && r.text) ? r.text : ("CROSS-BORDER PROPERTY SWAP AGREEMENT\n\nThis agreement is made between the initiating owner (property in " + (j.prop.area || j.prop.market) + ") and the counterparty (property in " + (j.match ? j.match.place : "") + "), each warranting good and marketable title verified by Girard. The parties agree to exchange the said properties. Any balancing sum shall be held in escrow and released on final sign-off by both parties. Title documents shall be released to each party only upon completion. This agreement is subject to the laws of the applicable jurisdictions and to Girard's verification and anti-fraud review.") }); };
+  const genContract = async () => { setGen(true); const r = await aiProxy("Draft a short contract of sale (about 120 words) to perfect a completed property swap, referencing transfer of title, the balancing payment released from escrow, and each party's obligation to perfect registration. Plain text, no markdown."); setGen(false); setJ({ contractText: (r && r.ok && r.text) ? r.text : "CONTRACT OF SALE\n\nFollowing the completed swap and release of escrow, each party agrees to execute all instruments necessary to perfect transfer and registration of title in the other's favour. Girard may act as concierge to perfect the documents. Completion is subject to both parties' final sign-off and Girard's verification." }); };
+  const locked = !(j.signedMe && j.signedThem && j.escrowFunded && j.finalMe && j.finalThem);
+
+  const confid = <div style={{ display: "flex", gap: 10, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: "12px 14px", fontSize: 12.5, color: "var(--muted)", marginBottom: 16 }}><Lock size={16} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 1 }} /><span>Everything you share is held in strict confidence and used only by Girard for verification and matching. Your details and documents are never revealed to anyone else without your consent.</span></div>;
+
+  function body() {
+    if (j.stage === 0) return <PmCard style={{ maxWidth: 560 }}>
+      {confid}
+      <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Start a property swap</div>
+      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px" }}>List your property, get verified by Girard, then browse and match with owners in the markets you choose. A one-off registration fee applies.</p>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--ink)" }}>${SWAP_FEE_USD.toLocaleString()}</div><span style={{ color: "var(--muted)", fontSize: 13 }}>≈ {money(SWAP_FEE_NGN)} · one-off</span></div>
+      <PmBtn kind="gold" icon={CreditCard} onClick={() => { setJ({ paid: true, stage: 1 }); toast("Registration fee recorded", "success"); }}>Pay registration fee &amp; begin</PmBtn>
+      <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Recorded for demonstration. Connect Paystack to take the fee in USD or Naira.</div>
+    </PmCard>;
+    if (j.stage === 1) return <div>{confid}<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
+      <PmCard><div style={{ display: "grid", gap: 12 }}>
+        <PmSelect label="Property market" value={j.prop.market} onChange={v => setJ({ prop: { ...j.prop, market: v } })} options={SWAP_MARKETS} />
+        <PmField label="Location / city" value={j.prop.area} onChange={v => setJ({ prop: { ...j.prop, area: v } })} placeholder="e.g. Ikeja, Lagos" />
+        <div style={{ display: "flex", gap: 10 }}><div style={{ flex: 1 }}><PmField label="Estimated value" value={j.prop.value} onChange={v => setJ({ prop: { ...j.prop, value: v } })} placeholder="e.g. 250,000,000" /></div><div style={{ width: 96 }}><PmSelect label="Currency" value={j.prop.currency} onChange={v => setJ({ prop: { ...j.prop, currency: v } })} options={SWAP_CUR} /></div></div>
+        <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Ownership documents you can provide</label><div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{OWNERSHIP_DOCS.map(d => <button key={d} onClick={() => toggleDoc(d)} style={{ border: "1px solid " + (j.prop.docs.includes(d) ? "var(--gold)" : "var(--cream-line)"), background: j.prop.docs.includes(d) ? "var(--gold-soft)" : "transparent", color: j.prop.docs.includes(d) ? "var(--gold-2)" : "var(--muted)", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d}</button>)}</div></div>
+      </div></PmCard>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Photos & documents <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 12.5 }}>({j.prop.photos.length}/5)</span></div>
+        <label onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); addPhotos(e.dataTransfer.files); }} style={{ display: "block", border: "2px dashed var(--cream-line)", borderRadius: 12, padding: "24px 20px", textAlign: "center", cursor: "pointer", background: "var(--ivory-2)" }}>
+          <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => { addPhotos(e.target.files); e.target.value = ""; }} />
+          <ImageIcon size={24} color="var(--gold-2)" /><div style={{ fontWeight: 600, color: "var(--ink)", marginTop: 6 }}>Upload photos & document scans</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>Landscape, sharp, 1600×1200+. Optimised automatically.</div>
+        </label>
+        {j.prop.photos.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(90px,1fr))", gap: 8, marginTop: 12 }}>{j.prop.photos.map((src, i) => <div key={i} style={{ position: "relative", aspectRatio: "4 / 3", borderRadius: 8, overflow: "hidden" }}><img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /><button onClick={() => setJ({ prop: { ...j.prop, photos: j.prop.photos.filter((_, k) => k !== i) } })} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.55)", color: "#fff", border: "none", borderRadius: 999, width: 20, height: 20, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={11} /></button></div>)}</div>}
+        <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={() => { if (!j.prop.area || !j.prop.value) { toast("Add location and value", "danger"); return; } setJ({ stage: 2 }); toast("Submitted for Girard verification"); }}>Submit for verification</PmBtn>
+      </PmCard>
+    </div></div>;
+    if (j.stage === 2) return <PmCard style={{ maxWidth: 620 }}>
+      <div style={{ width: 52, height: 52, borderRadius: 12, background: "var(--gold-soft)", color: "var(--gold-2)", display: "grid", placeItems: "center", marginBottom: 14 }}><ShieldCheck size={26} /></div>
+      <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Girard is verifying you</div>
+      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px" }}>Before you can browse swaps, Girard verifies your identity, your property and your title documents. You will receive an SMS the moment browsing is enabled.</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>{["Identity / KYC", "Property ownership", "Title documents"].map(c => <div key={c} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5 }}><Clock size={16} color="var(--gold-2)" /><b style={{ color: "var(--ink)" }}>{c}</b><span style={{ color: "var(--muted)", marginLeft: "auto", fontSize: 12.5 }}>In review</span></div>)}</div>
+      <PmBtn kind="navy" icon={CheckCircle2} onClick={() => { setJ({ verified: true, stage: 3 }); toast("Verified. SMS sent: you can now browse swaps.", "success"); }}>Girard has verified me (demo)</PmBtn>
+      <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>In production a Girard officer approves this from the oversight desk and Twilio sends the SMS.</div>
+    </PmCard>;
+    if (j.stage === 3) { const matches = SWAP_POOL.filter(m => j.targets.length === 0 || j.targets.includes(m.place)); return <div>
+      <PmCard style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Where would you accept a swap?</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{SWAP_LOCATIONS.map(t => <button key={t} onClick={() => toggleTarget(t)} style={{ border: "1px solid " + (j.targets.includes(t) ? "var(--gold)" : "var(--cream-line)"), background: j.targets.includes(t) ? "var(--gold-soft)" : "transparent", color: j.targets.includes(t) ? "var(--gold-2)" : "var(--muted)", borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{t}</button>)}</div>
+      </PmCard>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
+        {matches.map(m => <PmCard key={m.id} className="lift"><div style={{ fontWeight: 700, color: "var(--ink)" }}>{m.title}</div><div style={{ fontSize: 12.5, color: "var(--muted)", margin: "3px 0" }}>{m.place}</div><div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--navy)", marginBottom: 12 }}>{m.value}</div><PmBtn size="sm" kind="gold" icon={ArrowRightLeft} onClick={() => { setJ({ match: m, stage: 4, chat: [{ me: false, text: "Hello, I saw your property is a potential match. Happy to discuss a swap." }] }); toast("Match requested. Counterparty notified.", "success"); }}>Request swap</PmBtn></PmCard>)}
+        {matches.length === 0 && <div style={{ color: "var(--muted)" }}>No matches in the selected locations yet.</div>}
+      </div>
+    </div>; }
+    if (j.stage === 4) return <PmCard style={{ maxWidth: 640 }}>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Negotiation · {j.match ? j.match.title + " · " + j.match.place : ""}</div>
+      <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Private chat room. Documents stay hidden until both sign after payment.</div>
+      <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, height: 240, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+        {j.chat.map((c, i) => <div key={i} style={{ alignSelf: c.me ? "flex-end" : "flex-start", maxWidth: "78%", background: c.me ? "var(--navy)" : "var(--white)", color: c.me ? "#fff" : "var(--ink)", border: c.me ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "8px 12px", fontSize: 13.5 }}>{c.text}</div>)}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder="Type a message" style={{ flex: 1, border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit" }} /><PmBtn onClick={sendMsg}>Send</PmBtn></div>
+      <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 14 }} onClick={() => { setJ({ stage: 5 }); toast("Terms agreed. Generating agreement."); }}>Agree terms &amp; continue</PmBtn>
+    </PmCard>;
+    if (j.stage === 5) return <PmCard style={{ maxWidth: 720 }}>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Swap agreement</div>
+      {!j.agreementText ? <PmBtn kind="navy" icon={Sparkles} onClick={genAgreement}>{gen ? "Generating…" : "Generate agreement (AI)"}</PmBtn>
+        : <><div style={{ position: "relative", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto" }}>{j.agreementText}<div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--muted)" }}><Lock size={12} /> Locked</div></div>
+          <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.signedMe ? "#1F9D57" : "var(--ink)" }}>{j.signedMe ? "Signed ✓" : "Awaiting signature"}</div>{!j.signedMe && <PmBtn size="sm" style={{ marginTop: 8 }} onClick={() => { setJ({ signedMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, signedThem: true }; sjSave(n); return n; }), 800); toast("You e-signed. Counterparty notified."); }}>E-sign</PmBtn>}</div>
+            <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedThem ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>Counterparty</div><div style={{ fontWeight: 700, color: j.signedThem ? "#1F9D57" : "var(--ink)" }}>{j.signedThem ? "Signed ✓" : "Awaiting signature"}</div></div>
+          </div>
+          {j.signedMe && j.signedThem && <PmBtn kind="gold" icon={ArrowRightLeft} style={{ marginTop: 14 }} onClick={() => setJ({ stage: 6 })}>Continue to escrow &amp; completion</PmBtn>}</>}
+    </PmCard>;
+    if (j.stage === 6) return <div style={{ display: "grid", gap: 16 }}>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Balancing payment & escrow</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}><div style={{ flex: 1, minWidth: 180 }}><PmField label="Balancing amount (if any)" value={j.balanceValue} onChange={v => setJ({ balanceValue: v })} placeholder="e.g. 20,000,000" /></div>
+          {!j.escrowFunded ? <PmBtn kind="gold" icon={Banknote} onClick={() => { setJ({ escrowFunded: true }); toast("Funds placed in escrow. Counterparty notified.", "success"); }}>Send balance to escrow</PmBtn> : <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#1F9D57", fontWeight: 700, fontSize: 13.5 }}><CheckCircle2 size={18} /> In escrow · released on final sign-off</div>}</div>
+        <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 10 }}>Recorded for demonstration. Connect a Paystack escrow flow to hold and release real funds.</div>
+      </PmCard>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Final sign-off</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.finalMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.finalMe ? "#1F9D57" : "var(--ink)" }}>{j.finalMe ? "Signed off ✓" : "Pending"}</div>{!j.finalMe && <PmBtn size="sm" style={{ marginTop: 8 }} disabled={!j.escrowFunded} onClick={() => { setJ({ finalMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, finalThem: true, revealed: true }; sjSave(n); return n; }), 800); toast("Final sign-off recorded."); }}>Final e-sign</PmBtn>}</div>
+          <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.finalThem ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>Counterparty</div><div style={{ fontWeight: 700, color: j.finalThem ? "#1F9D57" : "var(--ink)" }}>{j.finalThem ? "Signed off ✓" : "Pending"}</div></div>
+        </div>
+      </PmCard>
+      <PmCard>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Title documents</div>{locked ? <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#D0453B", fontWeight: 700 }}><Lock size={14} /> Locked until both sign after payment</span> : <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#1F9D57", fontWeight: 700 }}><CheckCircle2 size={14} /> Revealed</span>}</div>
+        {locked ? <div style={{ color: "var(--muted)", fontSize: 13.5 }}>Both parties' verified title documents unlock here once escrow is funded and both have signed off. Documents cannot be downloaded or copied before then.</div>
+          : <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{[["Your documents", j.prop.docs], ["Counterparty documents", OWNERSHIP_DOCS.slice(0, 3)]].map(([t, ds]) => <div key={t} style={{ flex: 1, minWidth: 220, border: "1px solid var(--cream-line)", borderRadius: 9, padding: 13 }}><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5, marginBottom: 6 }}>{t}</div>{(ds && ds.length ? ds : ["Verified by Girard"]).map(d => <div key={d} style={{ fontSize: 12.5, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6, padding: "2px 0" }}><FileText size={13} color="var(--gold-2)" />{d}</div>)}<div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, fontStyle: "italic" }}>View only · download disabled</div></div>)}</div>}
+      </PmCard>
+      {!locked && <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Contract of sale & concierge</div>
+        {!j.contractText ? <PmBtn kind="navy" icon={Sparkles} onClick={genContract}>{gen ? "Drafting…" : "Draft contract of sale (AI)"}</PmBtn>
+          : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 220, overflow: "auto" }}>{j.contractText}</div>}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 14, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
+          <div style={{ fontSize: 13, color: "var(--muted)" }}>Girard concierge to perfect documents · <b style={{ color: "var(--ink)" }}>10% of sales value</b></div>
+          <PmBtn kind="gold" icon={CheckCircle2} onClick={() => toast("Swap completed. Girard concierge engaged.", "success")}>Complete swap</PmBtn>
+        </div>
+      </PmCard>}
+    </div>;
+    return null;
+  }
+  return <div>
+    <Stepper steps={STEPS} current={j.stage} />
+    <FraudBar flagged={j.flagged} stopped={j.stopped} />
+    {blocked ? <PmCard><div style={{ color: "var(--muted)" }}>This transaction is paused by Girard for manual review. You will be able to continue once it is cleared.</div></PmCard> : body()}
+    {j.stage > 0 && !blocked && <div style={{ marginTop: 16 }}><button onClick={() => { if (confirm("Reset this swap journey?")) { sjSave(sjDefault()); setJraw(sjDefault()); } }} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "underline" }}>Reset journey</button></div>}
+  </div>;
+}
+
+function SwapOversight({ toast }) {
+  const [j, setJraw] = useState(sjLoad);
+  const setJ = (patch) => { setJraw(prev => { const n = { ...prev, ...patch }; sjSave(n); return n; }); };
+  const STEPS = ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
+  const val = j.prop.value ? (j.prop.currency + j.prop.value) : "—";
+  return <div>
+    <H2 title="Swap oversight" sub="Monitor every swap in progress, intervene or stop on fraud" />
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      <PmStat icon={Repeat} label="Active swaps" value={j.paid ? "1" : "0"} tone="var(--muted)" />
+      <PmStat icon={ShieldCheck} label="Fraud checks" value={j.flagged ? "1 flag" : "Clear"} tone={j.flagged ? "#D0453B" : "#1F9D57"} />
+      <PmStat icon={Banknote} label="In escrow" value={j.escrowFunded ? "Yes" : "No"} tone="#8B5CF6" />
+    </div>
+    {!j.paid ? <PmCard><div style={{ color: "var(--muted)" }}>No swaps in progress.</div></PmCard> : <PmCard>
+      <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{j.prop.area || j.prop.market} → {j.match ? j.match.place : "browsing"}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Value {val} · Stage {j.stage + 1} of {STEPS.length}: {STEPS[j.stage]}</div></div>
+        <span style={{ fontSize: 11.5, fontWeight: 700, padding: "4px 10px", borderRadius: 999, height: "fit-content", background: j.stopped ? "rgba(208,69,59,.14)" : j.flagged ? "var(--gold-soft)" : "rgba(31,157,87,.14)", color: j.stopped ? "#D0453B" : j.flagged ? "var(--gold-2)" : "#1F9D57" }}>{j.stopped ? "Paused" : j.flagged ? "Flagged" : "Running"}</span>
+      </div>
+      <Stepper steps={STEPS} current={j.stage} />
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+        {j.stage === 2 && !j.verified && <PmBtn kind="gold" icon={CheckCircle2} onClick={() => { setJ({ verified: true, stage: 3 }); toast("Verified. Applicant notified by SMS.", "success"); }}>Approve verification</PmBtn>}
+        {!j.stopped ? <PmBtn kind="ghost" icon={AlertTriangle} onClick={() => { setJ({ stopped: true }); toast("Swap paused for review", "danger"); }}>Stop / manual review</PmBtn> : <PmBtn icon={CheckCircle2} onClick={() => { setJ({ stopped: false }); toast("Swap resumed", "success"); }}>Resume</PmBtn>}
+        {!j.flagged ? <PmBtn kind="ghost" icon={ShieldCheck} onClick={() => { setJ({ flagged: true }); toast("Flagged for fraud review", "danger"); }}>Flag fraud</PmBtn> : <PmBtn kind="ghost" onClick={() => setJ({ flagged: false })}>Clear flag</PmBtn>}
+      </div>
+      <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted)", display: "flex", gap: 8, alignItems: "flex-start" }}><Sparkles size={15} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 1 }} />AI fraud monitor watches value mismatches, document anomalies and identity signals, and auto-pauses suspicious swaps for a Girard officer to terminate or approve. Connect a fraud model to make this live.</div>
+    </PmCard>}
+  </div>;
+}
+
+/* ===================================================================
+   JOBS & REPAIRS — service requests with vendor matching, AI estimate,
+   who-pays logic (Girard-owned vs other properties), vendor completion
+   with editable final cost, client rating, and Girard's 25% admin charge.
+   =================================================================== */
+const JOBS_KEY = "girard_jobs_v1";
+const JOB_PROPS = [
+  { id: "GP-1", title: "1 Bourdillon, Ikoyi", girardOwned: true },
+  { id: "GP-2", title: "Girard Court, Lekki Phase 1", girardOwned: true },
+  { id: "GP-3", title: "Girard Residences, Victoria Island", girardOwned: true },
+  { id: "XP-1", title: "Client Duplex, Magodo", girardOwned: false },
+  { id: "XP-2", title: "Client Flat, Yaba", girardOwned: false },
+  { id: "XP-3", title: "Client Terrace, Ajah", girardOwned: false }
+];
+const JOB_EST = { "Plumbing": 45000, "Electrical": 60000, "HVAC / air-conditioning": 120000, "Cleaning": 35000, "Security": 80000, "Painting & finishing": 150000, "General maintenance": 50000 };
+function jobsLoad() {
+  try { const r = localStorage.getItem(JOBS_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  const seed = { items: [
+    { id: "JB-2001", propTitle: "1 Bourdillon, Ikoyi", girardOwned: true, category: "Electrical", desc: "Inverter not switching over", vendorName: "ElectroPro NG", status: "Completed", estimate: 60000, finalCost: 72000, paidBy: "Girard", rating: 0, ratedOk: null, review: "", createdAt: "2026-06-28" },
+    { id: "JB-2002", propTitle: "Client Flat, Yaba", girardOwned: false, category: "Plumbing", desc: "Leaking faucet, master bath", vendorName: "SwiftFix Services", status: "Rated", estimate: 45000, finalCost: 40000, paidBy: "Client", rating: 5, ratedOk: true, review: "Fast and neat.", createdAt: "2026-07-01" }
+  ] };
+  try { localStorage.setItem(JOBS_KEY, JSON.stringify(seed)); } catch (e) {} return seed;
+}
+function jobsSave(s) { try { localStorage.setItem(JOBS_KEY, JSON.stringify(s)); } catch (e) {} }
+function Stars({ n, size = 15, onPick }) {
+  return <span style={{ display: "inline-flex", gap: 2 }}>{[1, 2, 3, 4, 5].map(i => <span key={i} onClick={onPick ? () => onPick(i) : undefined} style={{ color: i <= n ? "var(--gold)" : "var(--cream-line)", fontSize: size, cursor: onPick ? "pointer" : "default", lineHeight: 1 }}>★</span>)}</span>;
+}
+function jobMoney(j) { const base = j.finalCost != null ? j.finalCost : (j.estimate || 0); const girard = Math.round(base * 0.25); return { base, girard, vendor: base - girard }; }
+function jobStatusPill(s) { const m = { "Assigned": ["#2F6FB0", "rgba(59,130,246,.14)"], "Completed": ["#B26A00", "var(--gold-soft)"], "Rated": ["#1F9D57", "rgba(31,157,87,.14)"], "No vendor": ["#D0453B", "rgba(208,69,59,.12)"] }[s] || ["var(--muted)", "var(--ivory)"]; return <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999, color: m[0], background: m[1] }}>{s}</span>; }
+
+function JobCompletionModal({ job, onClose, onDone }) {
+  const [cost, setCost] = useState(String(job.estimate || ""));
+  const [note, setNote] = useState("");
+  return <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(6,17,42,.6)", zIndex: 200, display: "grid", placeItems: "center", padding: 18 }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 16, padding: 24, width: "min(440px,100%)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>Job completion</div><button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><X size={19} /></button></div>
+      <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>{job.vendorName} · {job.category} · {job.propTitle}</div>
+      <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "var(--muted)", marginBottom: 12 }}>AI estimate was {money(job.estimate)}. Adjust to the actual final cost below.</div>
+      <PmField label="Final cost (₦)" value={cost} onChange={setCost} />
+      <div style={{ marginTop: 10 }}><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Completion notes</label><textarea value={note} onChange={e => setNote(e.target.value)} rows={3} placeholder="Work done, parts replaced, etc." style={{ width: "100%", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", resize: "vertical" }} /></div>
+      <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 14 }} onClick={() => { const c = Math.round(+String(cost).replace(/,/g, "")); if (!(c > 0)) return; onDone({ status: "Completed", finalCost: c, note }); onClose(); }}>Submit completion</PmBtn>
+    </div>
+  </div>;
+}
+function JobRatingModal({ job, onClose, onDone }) {
+  const [ok, setOk] = useState(null);
+  const [stars, setStars] = useState(0);
+  const [review, setReview] = useState("");
+  return <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(6,17,42,.6)", zIndex: 200, display: "grid", placeItems: "center", padding: 18 }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 16, padding: 24, width: "min(440px,100%)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>Rate the job</div><button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><X size={19} /></button></div>
+      <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>{job.vendorName} · {job.category} · {job.propTitle}</div>
+      <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5, marginBottom: 8 }}>Was the job done properly?</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{[["Yes", true], ["No", false]].map(([l, v]) => <button key={l} onClick={() => setOk(v)} style={{ flex: 1, padding: "10px", borderRadius: 8, border: "1px solid " + (ok === v ? (v ? "#1F9D57" : "#D0453B") : "var(--cream-line)"), background: ok === v ? (v ? "rgba(31,157,87,.1)" : "rgba(208,69,59,.1)") : "transparent", color: ok === v ? (v ? "#1F9D57" : "#D0453B") : "var(--muted)", fontWeight: 700, cursor: "pointer" }}>{l}</button>)}</div>
+      <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5, marginBottom: 8 }}>Rate the vendor</div>
+      <div style={{ marginBottom: 14 }}><Stars n={stars} size={28} onPick={setStars} /></div>
+      <textarea value={review} onChange={e => setReview(e.target.value)} rows={3} placeholder="Leave a short review (optional)" style={{ width: "100%", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", resize: "vertical" }} />
+      <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 14 }} onClick={() => { if (ok === null) return; onDone({ status: "Rated", ratedOk: ok, rating: stars, review }); onClose(); }}>Submit rating</PmBtn>
+    </div>
+  </div>;
+}
+
+function JobCard({ j, isAdmin, onComplete, onRate }) {
+  const m = jobMoney(j);
+  return <PmCard className="lift" style={{ marginBottom: 0 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
+      <div style={{ minWidth: 180 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span style={{ fontWeight: 700, color: "var(--ink)" }}>{j.propTitle}</span>{j.girardOwned ? <span style={{ fontSize: 10.5, fontWeight: 800, color: "var(--gold-2)", background: "var(--gold-soft)", padding: "2px 7px", borderRadius: 999 }}>GIRARD-OWNED</span> : <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--muted)", background: "var(--ivory)", padding: "2px 7px", borderRadius: 999 }}>EXTERNAL</span>}</div>
+        <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>{j.category} · {j.desc}</div>
+        <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>{j.vendorName || "Vendor: sourcing"} · Paid by {j.paidBy}</div>
+        {j.status === "Rated" && <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}><Stars n={j.rating} /><span style={{ fontSize: 12, color: j.ratedOk ? "#1F9D57" : "#D0453B", fontWeight: 700 }}>{j.ratedOk ? "Done properly" : "Not satisfactory"}</span>{j.review && <span style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic" }}>“{j.review}”</span>}</div>}
+      </div>
+      <div style={{ textAlign: "right" }}>
+        {jobStatusPill(j.status)}
+        <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>{j.finalCost != null ? "Final " + money(j.finalCost) : "Est. " + money(j.estimate)}</div>
+        {isAdmin && (j.finalCost != null || j.estimate) && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>Girard 25% {money(m.girard)} · Vendor {money(m.vendor)}</div>}
+      </div>
+    </div>
+    <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+      {j.status === "Assigned" && <PmBtn size="sm" kind="navy" icon={Wrench} onClick={() => onComplete(j)}>Vendor completion form</PmBtn>}
+      {j.status === "Completed" && !isAdmin && <PmBtn size="sm" kind="gold" onClick={() => onRate(j)}>Rate the job</PmBtn>}
+      {j.status === "Completed" && isAdmin && <span style={{ fontSize: 12, color: "var(--muted)" }}>Awaiting client rating · payment routed through Girard</span>}
+      {j.status === "No vendor" && <span style={{ fontSize: 12, color: "#D0453B" }}>No vendor yet · Girard notified to source one</span>}
+    </div>
+  </PmCard>;
+}
+
+function JobsScreen({ identity, toast }) {
+  const isAdmin = identity.role === "admin";
+  const [store, setStoreRaw] = useState(jobsLoad);
+  const setStore = n => { setStoreRaw(n); jobsSave(n); };
+  const jobs = store.items;
+  const upd = (id, patch) => setStore({ items: jobs.map(j => j.id === id ? { ...j, ...patch } : j) });
+  const [tab, setTab] = useState(isAdmin ? "all" : "request");
+  const [completing, setCompleting] = useState(null);
+  const [rating, setRating] = useState(null);
+  const [prop, setProp] = useState(JOB_PROPS[0].id);
+  const [cat, setCat] = useState(VENDOR_CATS[0]);
+  const [desc, setDesc] = useState("");
+  const [vendors, setVendors] = useState(null);
+  const [picked, setPicked] = useState(null);
+  const [paidBy, setPaidBy] = useState("Client");
+  const propObj = JOB_PROPS.find(x => x.id === prop);
+  const est = JOB_EST[cat] || 50000;
+  const sel = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", color: "var(--ink)", fontSize: 14, fontFamily: "inherit" };
+  const findVendors = async () => { const all = await partnerFetch(); const m = all.filter(v => v.kind === "Vendor" && v.status === "Approved" && v.category === cat); setVendors(m); setPicked(null); if (m.length === 0) toast("No vendor available for " + cat + " right now. Girard has been notified and will source one.", "danger"); };
+  const submit = () => {
+    if (!desc.trim()) { toast("Describe the issue", "danger"); return; }
+    const j = { id: "JB-" + Date.now(), propTitle: propObj.title, girardOwned: propObj.girardOwned, category: cat, desc, vendorName: picked ? picked.business : null, status: picked ? "Assigned" : "No vendor", estimate: est, finalCost: null, paidBy: propObj.girardOwned ? paidBy : "Client", rating: 0, ratedOk: null, review: "", createdAt: new Date().toISOString().slice(0, 10) };
+    setStore({ items: [j, ...jobs] });
+    toast(picked ? "Job requested and assigned to " + picked.business : "Job logged. Girard will source a vendor.", picked ? "success" : "danger");
+    setDesc(""); setVendors(null); setPicked(null); setTab(isAdmin ? "all" : "mine");
+  };
+  const tabs = isAdmin ? [["all", "All jobs"]] : [["request", "Request a job"], ["mine", "My jobs"]];
+  const list = jobs;
+
+  return <div>
+    <H2 title="Jobs & repairs" sub={isAdmin ? "Every job, vendor payout and Girard's 25% charge" : "Request a repair, choose a vetted vendor and rate the work"} />
+    {tabs.length > 1 && <div style={{ display: "flex", gap: 6, marginBottom: 20, borderBottom: "1px solid var(--cream-line)" }}>{tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} style={{ background: "none", border: "none", borderBottom: "2px solid " + (tab === k ? "var(--gold)" : "transparent"), color: tab === k ? "var(--ink)" : "var(--muted)", fontWeight: tab === k ? 700 : 500, fontSize: 14, padding: "8px 6px", cursor: "pointer", marginBottom: -1 }}>{l}</button>)}</div>}
+
+    {tab === "request" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
+      <PmCard><div style={{ display: "grid", gap: 12 }}>
+        <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Property</label>
+          <select value={prop} onChange={e => { setProp(e.target.value); const po = JOB_PROPS.find(x => x.id === e.target.value); if (!po.girardOwned) setPaidBy("Client"); }} style={sel}>
+            <optgroup label="Girard-owned / managed">{JOB_PROPS.filter(x => x.girardOwned).map(x => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>
+            <optgroup label="Other properties">{JOB_PROPS.filter(x => !x.girardOwned).map(x => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>
+          </select>
+        </div>
+        <PmSelect label="Service category" value={cat} onChange={v => { setCat(v); setVendors(null); setPicked(null); }} options={VENDOR_CATS} />
+        <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Describe the issue</label><textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="e.g. Kitchen tap dripping, needs a new cartridge" style={{ ...sel, resize: "vertical" }} /></div>
+        <PmBtn kind="navy" icon={Search} onClick={findVendors}>Find available vendors</PmBtn>
+      </div></PmCard>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Available vendors</div>
+        {vendors === null ? <div style={{ color: "var(--muted)", fontSize: 13.5, padding: "16px 0" }}>Choose a category and find vendors matched to your request.</div>
+          : vendors.length === 0 ? <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.25)", borderRadius: 10, padding: 14, fontSize: 13.5, color: "var(--ink)" }}><b style={{ color: "#D0453B" }}>No vendor available.</b> No vetted {cat.toLowerCase()} vendor is free right now. Girard has been notified and will source one, and you will be updated. You can still log the job below.</div>
+          : <div style={{ display: "grid", gap: 8 }}>{vendors.map(v => <button key={v.id} onClick={() => setPicked(v)} style={{ textAlign: "left", border: "1px solid " + (picked && picked.id === v.id ? "var(--gold)" : "var(--cream-line)"), background: picked && picked.id === v.id ? "var(--gold-soft)" : "var(--white)", borderRadius: 10, padding: 12, cursor: "pointer" }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>{v.business}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>{v.category} · {v.years || "—"} yrs · vetted</div></button>)}</div>}
+        <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--gold-2)", fontWeight: 700, marginBottom: 4 }}><Sparkles size={14} /> AI cost estimate</div>
+          <div className="serif" style={{ fontSize: 22, fontWeight: 600, color: "var(--ink)" }}>{money(est)}</div>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 4 }}>Indicative only. The final cost may be more or less at completion, and the vendor confirms it on the completion form.</div>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Who pays for this service?</div>
+          {propObj.girardOwned ? <div style={{ display: "flex", gap: 8 }}>{[["Client", "Paid by client"], ["Girard", "Covered by Girard"]].map(([v, l]) => <button key={v} onClick={() => setPaidBy(v)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1px solid " + (paidBy === v ? "var(--gold)" : "var(--cream-line)"), background: paidBy === v ? "var(--gold-soft)" : "transparent", color: paidBy === v ? "var(--gold-2)" : "var(--muted)", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>{l}</button>)}</div>
+            : <div style={{ fontSize: 12.5, color: "var(--muted)", background: "var(--ivory)", borderRadius: 8, padding: "9px 12px" }}>This is an external property, so the service is always paid for by the client.</div>}
+        </div>
+        <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>{picked ? "Request job" : "Log job (no vendor yet)"}</PmBtn>
+      </PmCard>
+    </div>}
+
+    {(tab === "mine" || tab === "all") && <div style={{ display: "grid", gap: 12 }}>
+      {isAdmin && <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 4 }}>
+        <PmStat icon={Wrench} label="Active jobs" value={String(jobs.filter(j => j.status === "Assigned" || j.status === "No vendor").length)} tone="var(--muted)" />
+        <PmStat icon={Banknote} label="Girard 25% (completed)" value={money(jobs.filter(j => j.finalCost != null).reduce((s, j) => s + Math.round(j.finalCost * 0.25), 0))} tone="#8B5CF6" />
+        <PmStat icon={ShieldCheck} label="Awaiting vendor" value={String(jobs.filter(j => j.status === "No vendor").length)} tone="#D0453B" />
+      </div>}
+      {list.length === 0 ? <PmCard><div style={{ color: "var(--muted)" }}>No jobs yet.</div></PmCard> : list.map(j => <JobCard key={j.id} j={j} isAdmin={isAdmin} onComplete={setCompleting} onRate={setRating} />)}
+    </div>}
+
+    {completing && <JobCompletionModal job={completing} onClose={() => setCompleting(null)} onDone={patch => { upd(completing.id, patch); toast("Completion submitted. Payment routed through Girard (25% admin charge).", "success"); }} />}
+    {rating && <JobRatingModal job={rating} onClose={() => setRating(null)} onDone={patch => { upd(rating.id, patch); toast("Thank you, your rating has been recorded.", "success"); }} />}
   </div>;
 }
