@@ -433,7 +433,7 @@ function Landing({ onStart, onSignIn }) {
         .rise{animation:rise .8s ease both}
         .hero-h{font-size:clamp(46px,6.6vw,86px);line-height:1.02;font-weight:600;letter-spacing:-1px}
         .sec-h{font-size:clamp(32px,4.4vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.5px}
-        @media(max-width:1024px){
+        @media(max-width:1120px){
           .nav-links{display:none!important}.burger{display:inline-flex!important}
           .grid-2{grid-template-columns:1fr!important}.hero-grid{grid-template-columns:1fr!important}
           .hero-photo{display:none!important}.mod-grid{grid-template-columns:1fr!important}
@@ -452,9 +452,10 @@ function Landing({ onStart, onSignIn }) {
               <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -1 }}>PROPERTY LIMITED</div>
             </div>
           </div>
-          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
+          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
             <a className="nav-link" href="#about">About</a>
             <a className="nav-link" href="#listings">Listings</a>
+            <a className="nav-link" href="#leadership">Leadership</a>
             <a className="nav-link" href="#services">Services</a>
             <a className="nav-link" href="#who">Who we serve</a>
             <a className="nav-link" href="#partners">Partners</a>
