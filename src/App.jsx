@@ -433,7 +433,7 @@ function Landing({ onStart, onSignIn }) {
         .rise{animation:rise .8s ease both}
         .hero-h{font-size:clamp(46px,6.6vw,86px);line-height:1.02;font-weight:600;letter-spacing:-1px}
         .sec-h{font-size:clamp(32px,4.4vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.5px}
-        @media(max-width:940px){
+        @media(max-width:1024px){
           .nav-links{display:none!important}.burger{display:inline-flex!important}
           .grid-2{grid-template-columns:1fr!important}.hero-grid{grid-template-columns:1fr!important}
           .hero-photo{display:none!important}.mod-grid{grid-template-columns:1fr!important}
@@ -444,24 +444,22 @@ function Landing({ onStart, onSignIn }) {
 
       {/* NAV */}
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,31,60,.9)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--navy-line)" }}>
-        <div className="wrap" style={{ height: 74, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="wrap" style={{ height: 74, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
             <GirardMark size={38} />
             <div>
               <div className="serif" style={{ fontSize: 20, fontWeight: 600, letterSpacing: 1, color: "#fff" }}>GIRARD</div>
               <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -1 }}>PROPERTY LIMITED</div>
             </div>
           </div>
-          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 30 }}>
+          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
             <a className="nav-link" href="#about">About</a>
             <a className="nav-link" href="#listings">Listings</a>
-            <a className="nav-link" href="#leadership">Leadership</a>
             <a className="nav-link" href="#services">Services</a>
-            <a className="nav-link" href="#platform">Platform</a>
             <a className="nav-link" href="#who">Who we serve</a>
             <a className="nav-link" href="#partners">Partners</a>
             <a className="nav-link" href="#contact">Contact</a>
-            <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 18px" }}>Sign in</a>
+            <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 16px" }}>Sign in</a>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
           </nav>
           <button className="burger" onClick={() => setMenu(m => !m)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", color: "#fff" }}>{menu ? <X size={24} /> : <Menu size={24} />}</button>
@@ -724,6 +722,33 @@ const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 const DEMO = !supabase;
+const PAYSTACK_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+function loadPaystack() { return new Promise((resolve) => { if (window.PaystackPop) return resolve(true); const sc = document.createElement("script"); sc.src = "https://js.paystack.co/v1/inline.js"; sc.onload = () => resolve(true); sc.onerror = () => resolve(false); document.body.appendChild(sc); }); }
+async function payWithPaystack({ email, amountNaira, label, onSuccess, onCancel }) {
+  const amount = Math.round((+amountNaira || 0) * 100);
+  if (PAYSTACK_KEY && amount > 0) {
+    const ok = await loadPaystack();
+    if (ok && window.PaystackPop) {
+      try {
+        const handler = window.PaystackPop.setup({
+          key: PAYSTACK_KEY, email: email || "customer@girardpropertylimited.com", amount, currency: "NGN",
+          metadata: { custom_fields: [{ display_name: "Purpose", variable_name: "purpose", value: label || "Girard payment" }] },
+          callback: function (res) { onSuccess && onSuccess(res.reference); },
+          onClose: function () { onCancel && onCancel(); }
+        });
+        handler.openIframe(); return;
+      } catch (e) {}
+    }
+  }
+  onSuccess && onSuccess("DEMO-" + Date.now());
+}
+async function agentStateLoad(email) {
+  if (supabase && email) { try { const { data, error } = await supabase.from("agents").select("paid").eq("email", email).maybeSingle(); if (!error && data) return { paid: !!data.paid }; } catch (e) {} }
+  return null;
+}
+async function agentStateSave(email, paid) {
+  if (supabase && email) { try { await supabase.from("agents").upsert([{ email, paid, activated_at: new Date().toISOString() }]); } catch (e) {} }
+}
 
 const ROLES = [
   { key: "owner", name: "Owner / Landlord", icon: Home, blurb: "List and manage rentals, collect rent and track income." },
@@ -1761,6 +1786,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "feed") return <LiveFeed identity={identity} />;
     if (view === "crm") return <PipelineCRM identity={identity} toast={toast} />;
     if (view === "reports") return <ReportsScreen identity={identity} toast={toast} />;
+    if (view === "work") return <InvestorOverview identity={identity} go={setView} />;
     return <WorkspaceSoon identity={identity} />;
   };
   return <div style={{ display: "flex", minHeight: "100vh", background: "var(--ivory)" }}>
@@ -2108,7 +2134,7 @@ function SwapHub({ identity, toast, initial }) {
     {tab === "browse" && <SwapBrowse sw={sw} setSw={setSw} toast={toast} />}
     {tab === "list" && <SwapList sw={sw} setSw={setSw} toast={toast} />}
     {tab === "matches" && <SwapMatches sw={sw} toast={toast} goDeals={() => setTab("deals")} />}
-    {tab === "deals" && <SwapDeals sw={sw} setSw={setSw} identity={identity} toast={toast} />}
+    {tab === "deals" && (isAdmin ? <SwapDeals sw={sw} setSw={setSw} identity={identity} toast={toast} /> : <SwapChecklist identity={identity} onView={setTab} />)}
   </div>;
 }
 
@@ -2884,15 +2910,25 @@ function unitSeed() {
 const UNIT_KEY = "girard_units_v1";
 function unitLoad() { try { const r = localStorage.getItem(UNIT_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = unitSeed(); try { localStorage.setItem(UNIT_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 function unitSave(s) { try { localStorage.setItem(UNIT_KEY, JSON.stringify(s)); } catch (e) {} }
+function unitToRow(u) { return { id: u.id, floor: u.floor, unit: u.unit, beds: u.beds, label: u.label, size: u.size, price: u.price, status: u.status, buyer: u.buyer || null, phone: u.phone || null }; }
+function unitRowToRec(r) { return { id: r.id, floor: r.floor, unit: r.unit, beds: r.beds, label: r.label, size: r.size, price: r.price, status: r.status, buyer: r.buyer || "", phone: r.phone || "" }; }
+async function unitsFetch() {
+  if (supabase) { try { let { data, error } = await supabase.from("units").select("*").order("floor", { ascending: true }); if (!error && data && data.length === 0) { const seed = unitSeed(); await supabase.from("units").insert(seed.map(unitToRow)); return seed; } if (!error && data) return data.map(unitRowToRec); } catch (e) {} }
+  return unitLoad();
+}
+async function unitUpsertRemote(u) {
+  if (supabase) { try { await supabase.from("units").upsert([unitToRow(u)]); return; } catch (e) {} }
+  const all = unitLoad(); unitSave(all.map(x => x.id === u.id ? u : x));
+}
 const U_COLORS = { Available: "#10B981", Reserved: "#F59E0B", Sold: "#D0453B" };
 function moneyShort(n) { return "\u20a6" + (n >= 1e9 ? (n / 1e9).toFixed(1) + "b" : (n / 1e6).toFixed(0) + "m"); }
 
 function SalesBoard({ toast }) {
-  const [units, setUnitsRaw] = useState(unitLoad);
+  const [units, setUnits] = useState([]);
   const [sel, setSel] = useState(null);
   const [filter, setFilter] = useState("All");
-  const setUnits = (n) => { setUnitsRaw(n); unitSave(n); };
-  const save = (u) => { setUnits(units.map(x => x.id === u.id ? u : x)); setSel(null); toast("Unit " + u.id.slice(1) + " · " + u.status.toLowerCase(), "success"); };
+  useEffect(() => { let on = true; unitsFetch().then(x => { if (on) setUnits(x); }); return () => { on = false; }; }, []);
+  const save = (u) => { setUnits(us => us.map(x => x.id === u.id ? u : x)); unitUpsertRemote(u); setSel(null); toast("Unit " + u.id.slice(1) + " · " + u.status.toLowerCase(), "success"); };
   const sold = units.filter(u => u.status === "Sold");
   const reserved = units.filter(u => u.status === "Reserved");
   const avail = units.filter(u => u.status === "Available");
@@ -3112,15 +3148,17 @@ async function wdSettleRemote(id) {
 }
 
 function AgentWallet({ toast, identity }) {
+  const owner = (identity && identity.email) || "guest";
   const [w, setWraw] = useState(agentLoad);
   const setW = n => { setWraw(n); agentSave(n); };
   const [amt, setAmt] = useState(""); const [bank, setBank] = useState("");
   const [wds, setWds] = useState([]);
-  useEffect(() => { let on = true; wdFetch().then(x => { if (on) setWds(x); }); return () => { on = false; }; }, []);
+  useEffect(() => { let on = true; wdFetch().then(x => { if (on) setWds(x); }); agentStateLoad(owner).then(a => { if (on && a) setWraw(prev => { const n = { ...prev, paid: a.paid }; agentSave(n); return n; }); }); return () => { on = false; }; }, []);
+  const myWds = wds.filter(x => !x.agent || x.agent === owner);
   const earned = w.deals.reduce((s, d) => s + d.value * 0.05, 0);
-  const withdrawn = wds.reduce((s, x) => s + Number(x.amount || 0), 0);
+  const withdrawn = myWds.reduce((s, x) => s + Number(x.amount || 0), 0);
   const balance = earned - withdrawn;
-  const pay = () => { setW({ ...w, paid: true }); toast("Agent account activated", "success"); };
+  const pay = () => { payWithPaystack({ email: owner, amountNaira: AGENT_FEE, label: "Agent registration fee", onSuccess: () => { setW({ ...w, paid: true }); agentStateSave(owner, true); toast("Agent account activated", "success"); } }); };
   const withdraw = () => { const a = Math.round(+amt); if (!(a > 0)) { toast("Enter an amount", "danger"); return; } if (a > balance) { toast("Amount exceeds available balance", "danger"); return; } if (!bank.trim()) { toast("Add your bank details", "danger"); return; } const rec = { id: "WD-" + Date.now(), agent: identity && identity.email, amount: a, bank, status: "Pending", date: new Date().toISOString() }; wdInsert(rec); setWds([rec, ...wds]); setAmt(""); setBank(""); toast("Withdrawal requested", "success"); };
   if (!w.paid) return <div>
     <H2 title="Agent earnings" sub="Activate your agent account to start earning" />
@@ -3164,9 +3202,9 @@ function AgentWallet({ toast, identity }) {
     </div>
     <PmCard pad={0} style={{ overflow: "hidden", marginTop: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", padding: "16px 18px 10px" }}>Withdrawal history</div>
-      {wds.length === 0 ? <div style={{ padding: "0 18px 18px", color: "var(--muted)", fontSize: 13.5 }}>No withdrawals yet.</div> : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 460 }}>
+      {myWds.length === 0 ? <div style={{ padding: "0 18px 18px", color: "var(--muted)", fontSize: 13.5 }}>No withdrawals yet.</div> : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 460 }}>
         <thead><tr style={{ background: "var(--ivory)" }}>{["Reference", "Amount", "Bank", "Status", "Date"].map(h => <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
-        <tbody>{wds.map(x => <tr key={x.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
+        <tbody>{myWds.map(x => <tr key={x.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
           <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--ink)" }}>{x.id}</td>
           <td style={{ padding: "11px 16px", fontWeight: 700, color: "var(--ink)" }}>{money(x.amount)}</td>
           <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--muted)" }}>{x.bank}</td>
@@ -3240,6 +3278,18 @@ const SJ_KEY = "girard_swapjourney_v1";
 function sjDefault() { return { stage: 0, paid: false, prop: { market: "Nigeria", area: "", value: "", currency: "₦", photos: [], docs: [] }, verified: false, targets: [], match: null, chat: [], agreementText: "", signedMe: false, signedThem: false, escrowFunded: false, balanceValue: "", finalMe: false, finalThem: false, revealed: false, contractText: "", stopped: false, flagged: false }; }
 function sjLoad() { try { const r = localStorage.getItem(SJ_KEY); if (r) return { ...sjDefault(), ...JSON.parse(r) }; } catch (e) {} return sjDefault(); }
 function sjSave(s) { try { localStorage.setItem(SJ_KEY, JSON.stringify(s)); } catch (e) {} }
+async function swapSaveMine(owner, j) {
+  try { localStorage.setItem(SJ_KEY, JSON.stringify(j)); } catch (e) {}
+  if (supabase && owner) { try { await supabase.from("swaps").upsert([{ id: owner, owner, stage: j.stage, value: (j.prop.currency + (j.prop.value || "")), flagged: !!j.flagged, stopped: !!j.stopped, data: j, updated_at: new Date().toISOString() }]); } catch (e) {} }
+}
+async function swapLoadMine(owner) {
+  if (supabase && owner) { try { const { data, error } = await supabase.from("swaps").select("data").eq("id", owner).maybeSingle(); if (!error && data && data.data) return { ...sjDefault(), ...data.data }; } catch (e) {} }
+  return null;
+}
+async function swapFetchAll() {
+  if (supabase) { try { const { data, error } = await supabase.from("swaps").select("*").order("updated_at", { ascending: false }); if (!error && data) return data.map(r => ({ owner: r.owner, data: { ...sjDefault(), ...(r.data || {}) } })); } catch (e) {} }
+  const j = sjLoad(); return j.paid ? [{ owner: "This device", data: j }] : [];
+}
 
 function Stepper({ steps, current }) {
   return <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
@@ -3257,8 +3307,10 @@ function FraudBar({ flagged, stopped }) {
 }
 
 function SwapJourney({ identity, toast }) {
+  const owner = (identity && identity.email) || "guest";
   const [j, setJraw] = useState(sjLoad);
-  const setJ = (patch) => { setJraw(prev => { const n = { ...prev, ...patch }; sjSave(n); return n; }); };
+  useEffect(() => { let on = true; swapLoadMine(owner).then(x => { if (on && x) setJraw(x); }); return () => { on = false; }; }, []);
+  const setJ = (patch) => { setJraw(prev => { const n = { ...prev, ...patch }; swapSaveMine(owner, n); return n; }); };
   const [msg, setMsg] = useState("");
   const [gen, setGen] = useState(false);
   const STEPS = ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
@@ -3266,7 +3318,7 @@ function SwapJourney({ identity, toast }) {
   const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1100; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); setJ({ prop: { ...j.prop, photos: [...j.prop.photos, cv.toDataURL("image/jpeg", 0.72)].slice(0, 5) } }); }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
   const toggleDoc = d => setJ({ prop: { ...j.prop, docs: j.prop.docs.includes(d) ? j.prop.docs.filter(x => x !== d) : [...j.prop.docs, d] } });
   const toggleTarget = t => setJ({ targets: j.targets.includes(t) ? j.targets.filter(x => x !== t) : [...j.targets, t] });
-  const sendMsg = () => { if (!msg.trim()) return; const mine = { me: true, text: msg }; setJ({ chat: [...j.chat, mine] }); setMsg(""); setTimeout(() => setJraw(prev => { const n = { ...prev, chat: [...prev.chat, { me: false, text: "Thank you. That works for me, let us proceed to the agreement." }] }; sjSave(n); return n; }), 900); };
+  const sendMsg = () => { if (!msg.trim()) return; const mine = { me: true, text: msg }; setJ({ chat: [...j.chat, mine] }); setMsg(""); setTimeout(() => setJraw(prev => { const n = { ...prev, chat: [...prev.chat, { me: false, text: "Thank you. That works for me, let us proceed to the agreement." }] }; swapSaveMine(owner, n); return n; }), 900); };
   const genAgreement = async () => { setGen(true); const r = await aiProxy("Draft a concise cross-border property swap agreement (about 150 words) between two owners exchanging properties, one in " + (j.prop.area || j.prop.market) + " and one in " + (j.match ? j.match.place : "the counterparty location") + ". Include parties, the swap, any balancing payment held in escrow, verification of title, and governing law. Plain text, no markdown."); setGen(false); setJ({ agreementText: (r && r.ok && r.text) ? r.text : ("CROSS-BORDER PROPERTY SWAP AGREEMENT\n\nThis agreement is made between the initiating owner (property in " + (j.prop.area || j.prop.market) + ") and the counterparty (property in " + (j.match ? j.match.place : "") + "), each warranting good and marketable title verified by Girard. The parties agree to exchange the said properties. Any balancing sum shall be held in escrow and released on final sign-off by both parties. Title documents shall be released to each party only upon completion. This agreement is subject to the laws of the applicable jurisdictions and to Girard's verification and anti-fraud review.") }); };
   const genContract = async () => { setGen(true); const r = await aiProxy("Draft a short contract of sale (about 120 words) to perfect a completed property swap, referencing transfer of title, the balancing payment released from escrow, and each party's obligation to perfect registration. Plain text, no markdown."); setGen(false); setJ({ contractText: (r && r.ok && r.text) ? r.text : "CONTRACT OF SALE\n\nFollowing the completed swap and release of escrow, each party agrees to execute all instruments necessary to perfect transfer and registration of title in the other's favour. Girard may act as concierge to perfect the documents. Completion is subject to both parties' final sign-off and Girard's verification." }); };
   const locked = !(j.signedMe && j.signedThem && j.escrowFunded && j.finalMe && j.finalThem);
@@ -3279,7 +3331,7 @@ function SwapJourney({ identity, toast }) {
       <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Start a property swap</div>
       <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px" }}>List your property, get verified by Girard, then browse and match with owners in the markets you choose. A one-off registration fee applies.</p>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--ink)" }}>${SWAP_FEE_USD.toLocaleString()}</div><span style={{ color: "var(--muted)", fontSize: 13 }}>≈ {money(SWAP_FEE_NGN)} · one-off</span></div>
-      <PmBtn kind="gold" icon={CreditCard} onClick={() => { setJ({ paid: true, stage: 1 }); toast("Registration fee recorded", "success"); }}>Pay registration fee &amp; begin</PmBtn>
+      <PmBtn kind="gold" icon={CreditCard} onClick={() => { payWithPaystack({ email: owner, amountNaira: SWAP_FEE_NGN, label: "Swap registration fee", onSuccess: () => { setJ({ paid: true, stage: 1 }); toast("Registration fee received", "success"); } }); }}>Pay registration fee &amp; begin</PmBtn>
       <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Recorded for demonstration. Connect Paystack to take the fee in USD or Naira.</div>
     </PmCard>;
     if (j.stage === 1) return <div>{confid}<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
@@ -3331,7 +3383,7 @@ function SwapJourney({ identity, toast }) {
       {!j.agreementText ? <PmBtn kind="navy" icon={Sparkles} onClick={genAgreement}>{gen ? "Generating…" : "Generate agreement (AI)"}</PmBtn>
         : <><div style={{ position: "relative", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto" }}>{j.agreementText}<div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--muted)" }}><Lock size={12} /> Locked</div></div>
           <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-            <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.signedMe ? "#1F9D57" : "var(--ink)" }}>{j.signedMe ? "Signed ✓" : "Awaiting signature"}</div>{!j.signedMe && <PmBtn size="sm" style={{ marginTop: 8 }} onClick={() => { setJ({ signedMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, signedThem: true }; sjSave(n); return n; }), 800); toast("You e-signed. Counterparty notified."); }}>E-sign</PmBtn>}</div>
+            <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.signedMe ? "#1F9D57" : "var(--ink)" }}>{j.signedMe ? "Signed ✓" : "Awaiting signature"}</div>{!j.signedMe && <PmBtn size="sm" style={{ marginTop: 8 }} onClick={() => { setJ({ signedMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, signedThem: true }; swapSaveMine(owner, n); return n; }), 800); toast("You e-signed. Counterparty notified."); }}>E-sign</PmBtn>}</div>
             <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedThem ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>Counterparty</div><div style={{ fontWeight: 700, color: j.signedThem ? "#1F9D57" : "var(--ink)" }}>{j.signedThem ? "Signed ✓" : "Awaiting signature"}</div></div>
           </div>
           {j.signedMe && j.signedThem && <PmBtn kind="gold" icon={ArrowRightLeft} style={{ marginTop: 14 }} onClick={() => setJ({ stage: 6 })}>Continue to escrow &amp; completion</PmBtn>}</>}
@@ -3346,7 +3398,7 @@ function SwapJourney({ identity, toast }) {
       <PmCard>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Final sign-off</div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.finalMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.finalMe ? "#1F9D57" : "var(--ink)" }}>{j.finalMe ? "Signed off ✓" : "Pending"}</div>{!j.finalMe && <PmBtn size="sm" style={{ marginTop: 8 }} disabled={!j.escrowFunded} onClick={() => { setJ({ finalMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, finalThem: true, revealed: true }; sjSave(n); return n; }), 800); toast("Final sign-off recorded."); }}>Final e-sign</PmBtn>}</div>
+          <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.finalMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.finalMe ? "#1F9D57" : "var(--ink)" }}>{j.finalMe ? "Signed off ✓" : "Pending"}</div>{!j.finalMe && <PmBtn size="sm" style={{ marginTop: 8 }} disabled={!j.escrowFunded} onClick={() => { setJ({ finalMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, finalThem: true, revealed: true }; swapSaveMine(owner, n); return n; }), 800); toast("Final sign-off recorded."); }}>Final e-sign</PmBtn>}</div>
           <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.finalThem ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>Counterparty</div><div style={{ fontWeight: 700, color: j.finalThem ? "#1F9D57" : "var(--ink)" }}>{j.finalThem ? "Signed off ✓" : "Pending"}</div></div>
         </div>
       </PmCard>
@@ -3371,35 +3423,42 @@ function SwapJourney({ identity, toast }) {
     <Stepper steps={STEPS} current={j.stage} />
     <FraudBar flagged={j.flagged} stopped={j.stopped} />
     {blocked ? <PmCard><div style={{ color: "var(--muted)" }}>This transaction is paused by Girard for manual review. You will be able to continue once it is cleared.</div></PmCard> : body()}
-    {j.stage > 0 && !blocked && <div style={{ marginTop: 16 }}><button onClick={() => { if (confirm("Reset this swap journey?")) { sjSave(sjDefault()); setJraw(sjDefault()); } }} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "underline" }}>Reset journey</button></div>}
+    {j.stage > 0 && !blocked && <div style={{ marginTop: 16 }}><button onClick={() => { if (confirm("Reset this swap journey?")) { swapSaveMine(owner, sjDefault()); setJraw(sjDefault()); } }} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "underline" }}>Reset journey</button></div>}
   </div>;
 }
 
 function SwapOversight({ toast }) {
-  const [j, setJraw] = useState(sjLoad);
-  const setJ = (patch) => { setJraw(prev => { const n = { ...prev, ...patch }; sjSave(n); return n; }); };
+  const [rows, setRows] = useState([]);
+  useEffect(() => { let on = true; swapFetchAll().then(x => { if (on) setRows(x); }); return () => { on = false; }; }, []);
   const STEPS = ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
-  const val = j.prop.value ? (j.prop.currency + j.prop.value) : "—";
+  const update = (owner, data, note, tone) => { setRows(rs => rs.map(r => r.owner === owner ? { ...r, data } : r)); swapSaveMine(owner, data); if (note) toast(note, tone || "success"); };
+  const flagged = rows.filter(r => r.data.flagged).length;
+  const escrow = rows.filter(r => r.data.escrowFunded).length;
   return <div>
     <H2 title="Swap oversight" sub="Monitor every swap in progress, intervene or stop on fraud" />
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-      <PmStat icon={Repeat} label="Active swaps" value={j.paid ? "1" : "0"} tone="var(--muted)" />
-      <PmStat icon={ShieldCheck} label="Fraud checks" value={j.flagged ? "1 flag" : "Clear"} tone={j.flagged ? "#D0453B" : "#1F9D57"} />
-      <PmStat icon={Banknote} label="In escrow" value={j.escrowFunded ? "Yes" : "No"} tone="#8B5CF6" />
+      <PmStat icon={Repeat} label="Active swaps" value={String(rows.length)} tone="var(--muted)" />
+      <PmStat icon={ShieldCheck} label="Fraud flags" value={String(flagged)} tone={flagged ? "#D0453B" : "#1F9D57"} />
+      <PmStat icon={Banknote} label="In escrow" value={String(escrow)} tone="#8B5CF6" />
     </div>
-    {!j.paid ? <PmCard><div style={{ color: "var(--muted)" }}>No swaps in progress.</div></PmCard> : <PmCard>
+    {rows.length === 0 ? <PmCard><div style={{ color: "var(--muted)" }}>No swaps in progress.</div></PmCard> : <div style={{ display: "grid", gap: 14 }}>{rows.map(r => { const j = r.data; const val = j.prop.value ? (j.prop.currency + j.prop.value) : "\u2014"; return <PmCard key={r.owner}>
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
-        <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{j.prop.area || j.prop.market} → {j.match ? j.match.place : "browsing"}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Value {val} · Stage {j.stage + 1} of {STEPS.length}: {STEPS[j.stage]}</div></div>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{(j.prop.area || j.prop.market) + " \u2192 " + (j.match ? j.match.place : "browsing")}</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>{r.owner + " \u00b7 Value " + val + " \u00b7 Stage " + (j.stage + 1) + " of " + STEPS.length + ": " + STEPS[j.stage]}</div></div>
         <span style={{ fontSize: 11.5, fontWeight: 700, padding: "4px 10px", borderRadius: 999, height: "fit-content", background: j.stopped ? "rgba(208,69,59,.14)" : j.flagged ? "var(--gold-soft)" : "rgba(31,157,87,.14)", color: j.stopped ? "#D0453B" : j.flagged ? "var(--gold-2)" : "#1F9D57" }}>{j.stopped ? "Paused" : j.flagged ? "Flagged" : "Running"}</span>
       </div>
       <Stepper steps={STEPS} current={j.stage} />
+      <div style={{ display: "grid", gap: 4, margin: "10px 0 12px" }}>{SWAP_JOURNEY_STEPS.map((step, i) => { const done = swapStepDone(j, i); const current = j.stage === i && !done; return <div key={step} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
+        <span style={{ width: 18, height: 18, borderRadius: 999, display: "grid", placeItems: "center", flexShrink: 0, fontSize: 9.5, fontWeight: 800, background: done ? "#1F9D57" : current ? "var(--gold)" : "var(--cream-line)", color: done || current ? "#fff" : "var(--muted)" }}>{done ? "\u2713" : i + 1}</span>
+        <span style={{ color: "var(--ink)", flex: 1 }}>{step}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: done ? "#1F9D57" : current ? "var(--gold-2)" : "var(--muted)" }}>{done ? "Achieved" : current ? "In progress" : "Not achieved"}</span>
+      </div>; })}</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-        {j.stage === 2 && !j.verified && <PmBtn kind="gold" icon={CheckCircle2} onClick={() => { setJ({ verified: true, stage: 3 }); toast("Verified. Applicant notified by SMS.", "success"); }}>Approve verification</PmBtn>}
-        {!j.stopped ? <PmBtn kind="ghost" icon={AlertTriangle} onClick={() => { setJ({ stopped: true }); toast("Swap paused for review", "danger"); }}>Stop / manual review</PmBtn> : <PmBtn icon={CheckCircle2} onClick={() => { setJ({ stopped: false }); toast("Swap resumed", "success"); }}>Resume</PmBtn>}
-        {!j.flagged ? <PmBtn kind="ghost" icon={ShieldCheck} onClick={() => { setJ({ flagged: true }); toast("Flagged for fraud review", "danger"); }}>Flag fraud</PmBtn> : <PmBtn kind="ghost" onClick={() => setJ({ flagged: false })}>Clear flag</PmBtn>}
+        {j.stage === 2 && !j.verified && <PmBtn kind="gold" icon={CheckCircle2} onClick={() => update(r.owner, { ...j, verified: true, stage: 3 }, "Verified. Applicant notified by SMS.")}>Approve verification</PmBtn>}
+        {!j.stopped ? <PmBtn kind="ghost" icon={AlertTriangle} onClick={() => update(r.owner, { ...j, stopped: true }, "Swap paused for review", "danger")}>Stop / manual review</PmBtn> : <PmBtn icon={CheckCircle2} onClick={() => update(r.owner, { ...j, stopped: false }, "Swap resumed")}>Resume</PmBtn>}
+        {!j.flagged ? <PmBtn kind="ghost" icon={ShieldCheck} onClick={() => update(r.owner, { ...j, flagged: true }, "Flagged for fraud review", "danger")}>Flag fraud</PmBtn> : <PmBtn kind="ghost" onClick={() => update(r.owner, { ...j, flagged: false })}>Clear flag</PmBtn>}
       </div>
-      <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted)", display: "flex", gap: 8, alignItems: "flex-start" }}><Sparkles size={15} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 1 }} />AI fraud monitor watches value mismatches, document anomalies and identity signals, and auto-pauses suspicious swaps for a Girard officer to terminate or approve. Connect a fraud model to make this live.</div>
-    </PmCard>}
+    </PmCard>; })}</div>}
+    <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted)", display: "flex", gap: 8, alignItems: "flex-start" }}><Sparkles size={15} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 1 }} />AI fraud monitor watches value mismatches, document anomalies and identity signals, and auto-pauses suspicious swaps for a Girard officer to terminate or approve. Connect a fraud model to make this live.</div>
   </div>;
 }
 
@@ -3427,6 +3486,20 @@ function jobsLoad() {
   try { localStorage.setItem(JOBS_KEY, JSON.stringify(seed)); } catch (e) {} return seed;
 }
 function jobsSave(s) { try { localStorage.setItem(JOBS_KEY, JSON.stringify(s)); } catch (e) {} }
+function jobRecToRow(j) { return { id: j.id, prop_title: j.propTitle, girard_owned: j.girardOwned, category: j.category, descr: j.desc, vendor_name: j.vendorName || null, status: j.status, estimate: j.estimate, final_cost: j.finalCost, paid_by: j.paidBy, rating: j.rating || 0, rated_ok: j.ratedOk, review: j.review || null, created_on: j.createdAt }; }
+function jobRowToRec(r) { return { id: r.id, propTitle: r.prop_title, girardOwned: r.girard_owned, category: r.category, desc: r.descr, vendorName: r.vendor_name, status: r.status, estimate: r.estimate, finalCost: r.final_cost, paidBy: r.paid_by, rating: r.rating, ratedOk: r.rated_ok, review: r.review, createdAt: r.created_on }; }
+async function jobsFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("jobs").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(jobRowToRec); } catch (e) {} }
+  return jobsLoad().items;
+}
+async function jobInsert(rec) {
+  if (supabase) { try { const { error } = await supabase.from("jobs").insert([jobRecToRow(rec)]); if (!error) return true; } catch (e) {} }
+  const st = jobsLoad(); jobsSave({ items: [rec, ...st.items] }); return false;
+}
+async function jobUpdate(id, patch) {
+  if (supabase) { try { const row = {}; if (patch.status !== undefined) row.status = patch.status; if (patch.finalCost !== undefined) row.final_cost = patch.finalCost; if (patch.rating !== undefined) row.rating = patch.rating; if (patch.ratedOk !== undefined) row.rated_ok = patch.ratedOk; if (patch.review !== undefined) row.review = patch.review; await supabase.from("jobs").update(row).eq("id", id); return; } catch (e) {} }
+  const st = jobsLoad(); jobsSave({ items: st.items.map(x => x.id === id ? { ...x, ...patch } : x) });
+}
 function Stars({ n, size = 15, onPick }) {
   return <span style={{ display: "inline-flex", gap: 2 }}>{[1, 2, 3, 4, 5].map(i => <span key={i} onClick={onPick ? () => onPick(i) : undefined} style={{ color: i <= n ? "var(--gold)" : "var(--cream-line)", fontSize: size, cursor: onPick ? "pointer" : "default", lineHeight: 1 }}>★</span>)}</span>;
 }
@@ -3492,10 +3565,9 @@ function JobCard({ j, isAdmin, onComplete, onRate }) {
 
 function JobsScreen({ identity, toast }) {
   const isAdmin = identity.role === "admin";
-  const [store, setStoreRaw] = useState(jobsLoad);
-  const setStore = n => { setStoreRaw(n); jobsSave(n); };
-  const jobs = store.items;
-  const upd = (id, patch) => setStore({ items: jobs.map(j => j.id === id ? { ...j, ...patch } : j) });
+  const [jobs, setJobs] = useState([]);
+  useEffect(() => { let on = true; jobsFetch().then(x => { if (on) setJobs(x); }); return () => { on = false; }; }, []);
+  const upd = (id, patch) => { setJobs(js => js.map(j => j.id === id ? { ...j, ...patch } : j)); jobUpdate(id, patch); };
   const [tab, setTab] = useState(isAdmin ? "all" : "request");
   const [completing, setCompleting] = useState(null);
   const [rating, setRating] = useState(null);
@@ -3512,7 +3584,7 @@ function JobsScreen({ identity, toast }) {
   const submit = () => {
     if (!desc.trim()) { toast("Describe the issue", "danger"); return; }
     const j = { id: "JB-" + Date.now(), propTitle: propObj.title, girardOwned: propObj.girardOwned, category: cat, desc, vendorName: picked ? picked.business : null, status: picked ? "Assigned" : "No vendor", estimate: est, finalCost: null, paidBy: propObj.girardOwned ? paidBy : "Client", rating: 0, ratedOk: null, review: "", createdAt: new Date().toISOString().slice(0, 10) };
-    setStore({ items: [j, ...jobs] });
+    jobInsert(j); setJobs(js => [j, ...js]);
     toast(picked ? "Job requested and assigned to " + picked.business : "Job logged. Girard will source a vendor.", picked ? "success" : "danger");
     setDesc(""); setVendors(null); setPicked(null); setTab(isAdmin ? "all" : "mine");
   };
@@ -3565,5 +3637,80 @@ function JobsScreen({ identity, toast }) {
 
     {completing && <JobCompletionModal job={completing} onClose={() => setCompleting(null)} onDone={patch => { upd(completing.id, patch); toast("Completion submitted. Payment routed through Girard (25% admin charge).", "success"); }} />}
     {rating && <JobRatingModal job={rating} onClose={() => setRating(null)} onDone={patch => { upd(rating.id, patch); toast("Thank you, your rating has been recorded.", "success"); }} />}
+  </div>;
+}
+
+/* ---------- Investor overview + swap progress checklist ---------- */
+function InvestorOverview({ identity, go }) {
+  const [j, setJ] = useState(sjLoad);
+  useEffect(() => { swapLoadMine((identity && identity.email) || "guest").then(x => { if (x) setJ(x); }); }, []);
+  const [deal, setDeal] = useState(null);
+  const DEALS = [
+    { t: "Lekki Phase 1 · Buy-to-let block", tk: "₦480M", yld: "9.2%", loc: "Lekki Phase 1, Lagos", type: "Buy-to-let residential", units: "12 × 2-bed apartments", strategy: "Acquire below replacement cost, light refurbishment, then let to young professionals on annual tenancies. Girard manages letting and upkeep end to end. Hold 5 years, then refinance or sell.", risk: "Medium", returns: "9.2% gross yield · roughly 18% IRR over 5 years", note: "Title verified (C of O). Vendor motivated. Full due-diligence pack available on request." },
+    { t: "Ikoyi · Serviced apartments", tk: "₦1.2B", yld: "7.8%", loc: "Ikoyi, Lagos", type: "Serviced / short-let residential", units: "20 keys, 1 & 2-bed", strategy: "Operate as branded serviced apartments with short-let and corporate lets. Higher management intensity, premium nightly rates, strong occupancy from the diplomatic and corporate market.", risk: "Medium-high", returns: "7.8% net yield · upside from occupancy and ADR growth", note: "Prime location. Existing operator in place; assignable management agreement." },
+    { t: "Yaba · Student housing", tk: "₦260M", yld: "11.4%", loc: "Yaba, Lagos", type: "Purpose-built student accommodation", units: "48 studio beds", strategy: "Purpose-built student housing near tertiary campuses. Bulk lets per academic year give predictable, high-yield income with low void risk.", risk: "Medium", returns: "11.4% gross yield · stable, inflation-linked rents", note: "Strong demand-supply gap. Managed lettings via Girard reduce voids." },
+    { t: "Abuja · Mixed-use plot", tk: "₦640M", yld: "land bank", loc: "Central Business District, Abuja", type: "Development land / land bank", units: "0.8 hectares", strategy: "Strategic land bank in a fast-appreciating corridor. Hold for capital growth or enter a development partnership for a mixed-use scheme.", risk: "Higher / longer horizon", returns: "Capital appreciation play · development upside via JV", note: "Clean title. Suits a patient investor or a development JV with Girard." }
+  ];
+  const idx = [58, 61, 60, 64, 67, 66, 70, 73];
+  return <div>
+    <H2 title={"Good day, " + identity.firstName} sub="Your investor & developer overview" />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 18 }}>
+      <CStat icon={Briefcase} label="Deal flow" value={String(DEALS.length)} sub="Live opportunities" c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={Repeat} label="Swap status" value={j.paid ? ("Stage " + (j.stage + 1)) : "Not started"} sub="Cross-border" c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={TrendingUp} label="Lagos index" value="+4.6%" sub="Last 90 days" c="#10B981" bg="#E7F7F0" />
+      <CStat icon={Banknote} label="Avg. gross yield" value="8.7%" sub="Prime residential" c="#F59E0B" bg="#FEF3E2" />
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }} className="pm-grid2">
+      <PmCard>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Deal flow</div><PmBtn size="sm" kind="ghost" onClick={() => go("intel")}>Market intelligence</PmBtn></div>
+        {DEALS.map(d => <div key={d.t} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "11px 0", borderTop: "1px solid var(--cream-line)" }}><div><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{d.t}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>Ticket {d.tk} · yield {d.yld}</div></div><PmBtn size="sm" onClick={() => setDeal(d)}>Explore</PmBtn></div>)}
+      </PmCard>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Market snapshot</div>
+        <MiniArea data={idx} w={280} h={90} color="#3B82F6" fill="#3B82F620" />
+        <div style={{ display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" }}>{[["Prime yield", "8.7%"], ["Rental growth", "+6.1%"], ["FX (₦/$)", "~1,650"]].map(([k, v]) => <div key={k}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)" }}>{v}</div></div>)}</div>
+      </PmCard>
+    </div>
+    <PmCard style={{ marginTop: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Your cross-border swap</div><div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3 }}>{j.paid ? ("In progress · " + (j.prop.area || j.prop.market || "property submitted")) : "Swap a property here for one abroad, or the other way around."}</div></div>
+        <PmBtn kind="gold" icon={Repeat} onClick={() => go("swap")}>{j.paid ? "Continue swap" : "Start a swap"}</PmBtn>
+      </div>
+    </PmCard>
+    <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>{[["Swap marketplace", "swap"], ["Market intelligence", "intel"], ["Support services", "support"], ["Plans & pricing", "plans"]].map(([l, v]) => <PmBtn key={v} kind="ghost" onClick={() => go(v)}>{l}</PmBtn>)}</div>
+    {deal && <DealModal deal={deal} onClose={() => setDeal(null)} go={go} />}
+  </div>;
+}
+function DealModal({ deal, onClose, go }) {
+  return <PmModal title={deal.t} onClose={onClose} wide>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12, marginBottom: 16 }}>
+      {[["Location", deal.loc], ["Type", deal.type], ["Ticket", deal.tk], ["Target yield", deal.yld], ["Scale", deal.units], ["Risk", deal.risk]].map(([k, v]) => <div key={k} style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .4 }}>{k}</div><div style={{ fontSize: 13.5, color: "var(--ink)", marginTop: 3 }}>{v}</div></div>)}
+    </div>
+    <div style={{ marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Strategy</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6 }}>{deal.strategy}</div></div>
+    <div style={{ marginBottom: 16 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Projected returns</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6 }}>{deal.returns}</div></div>
+    <div style={{ background: "var(--gold-soft)", borderRadius: 8, padding: 12, fontSize: 13, color: "var(--ink)", marginBottom: 16 }}>{deal.note}</div>
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <PmBtn kind="gold" icon={ConciergeBell} onClick={() => { onClose(); go("support"); }}>Discuss with Girard</PmBtn>
+      <PmBtn kind="ghost" onClick={onClose}>Close</PmBtn>
+    </div>
+  </PmModal>;
+}
+
+const SWAP_JOURNEY_STEPS = ["Register & pay", "Submit property", "Girard verification", "Browse & match", "Negotiate", "Agreement & e-sign", "Escrow & completion"];
+function swapStepDone(j, i) { if (i === 6) return !!(j.finalMe && j.finalThem && j.revealed); return j.stage > i; }
+function SwapChecklist({ identity, onView }) {
+  const [j, setJ] = useState(sjLoad);
+  useEffect(() => { swapLoadMine((identity && identity.email) || "guest").then(x => { if (x) setJ(x); }); }, []);
+  return <div>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+      <div><div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>Swap progress</div><div style={{ fontSize: 13, color: "var(--muted)" }}>Every step of your swap, ticked as you achieve it.</div></div>
+      <PmBtn kind="gold" icon={Repeat} onClick={() => onView("journey")}>{j.paid ? "Continue swap" : "Start a swap"}</PmBtn>
+    </div>
+    {!j.paid ? <PmCard><div style={{ color: "var(--muted)" }}>You have not started a swap yet. Tap "Start a swap" to begin the guided journey.</div></PmCard>
+      : <PmCard pad={0} style={{ overflow: "hidden" }}>{SWAP_JOURNEY_STEPS.map((step, i) => { const done = swapStepDone(j, i); const current = j.stage === i && !done; return <div key={step} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 18px", borderTop: i ? "1px solid var(--cream-line)" : "none" }}>
+        <div style={{ width: 24, height: 24, borderRadius: 999, display: "grid", placeItems: "center", flexShrink: 0, fontSize: 11.5, fontWeight: 800, background: done ? "#1F9D57" : current ? "var(--gold)" : "var(--cream-line)", color: done || current ? "#fff" : "var(--muted)" }}>{done ? <Check size={14} /> : i + 1}</div>
+        <div style={{ flex: 1 }}><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{step}</div><div style={{ fontSize: 12, fontWeight: 700, color: done ? "#1F9D57" : current ? "var(--gold-2)" : "var(--muted)" }}>{done ? "Achieved" : current ? "In progress" : "Not achieved"}</div></div>
+        <PmBtn size="sm" kind="ghost" disabled={j.stage < i} onClick={() => onView("journey")}>View</PmBtn>
+      </div>; })}</PmCard>}
   </div>;
 }
