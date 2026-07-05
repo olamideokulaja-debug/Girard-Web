@@ -1,0 +1,10 @@
+{
+  "appId": "com.girardproperty.app",
+  "appName": "Girard",
+  "webDir": "dist",
+  "backgroundColor": "#0A1A38",
+  "server": {
+    "url": "https://REPLACE-WITH-YOUR-VERCEL-DOMAIN",
+    "cleartext": false
+  }
+}
