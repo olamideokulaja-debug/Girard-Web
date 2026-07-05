@@ -220,11 +220,11 @@ function ContactSection() {
         <Rule light />
         <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Get in touch</div>
         <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Contact us.</h2>
-        <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 12, lineHeight: 1.6, maxWidth: 520 }}>Speak with the Girard team about managing your property, listing with us, or investing in 1 Bourdillon Residences.</p>
+        <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 12, lineHeight: 1.6, maxWidth: 520, textAlign: "justify" }}>Speak with the Girard team about managing your property, listing with us, or investing in 1 Bourdillon Residences.</p>
       </div>
       <div className="cap-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {items.map(it => { const inner = <><div style={{ width: 44, height: 44, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", flexShrink: 0 }}><it.icon size={20} /></div><div><div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .5 }}>{it.label}</div><div style={{ color: "var(--ink)", fontSize: 14.5, marginTop: 3, lineHeight: 1.5 }}>{it.value}</div></div></>; const st = { display: "flex", gap: 14, alignItems: "flex-start", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: 18 }; return it.href ? <a key={it.label} href={it.href} style={st}>{inner}</a> : <div key={it.label} style={st}>{inner}</div>; })}
+          {items.map(it => { const inner = <><div style={{ width: 44, height: 44, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", flexShrink: 0 }}><it.icon size={20} /></div><div><div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .5 }}>{it.label}</div><div style={{ color: "var(--ink)", fontSize: 14.5, marginTop: 3, lineHeight: 1.5, textAlign: "justify" }}>{it.value}</div></div></>; const st = { display: "flex", gap: 14, alignItems: "flex-start", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: 18 }; return it.href ? <a key={it.label} href={it.href} style={st}>{inner}</a> : <div key={it.label} style={st}>{inner}</div>; })}
         </div>
         <div style={{ background: "var(--navy)", borderRadius: 14, padding: 28 }}>
           <div className="serif" style={{ color: "#fff", fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Send a message</div>
@@ -357,7 +357,7 @@ function RoiCalculator() {
           <Rule light />
           <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Buy-to-let</div>
           <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Estimate your returns.</h2>
-          <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 12, lineHeight: 1.6, maxWidth: 520 }}>Move the sliders to model a buy-to-let investment. Figures are indicative; speak with Girard for a tailored analysis.</p>
+          <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 12, lineHeight: 1.6, maxWidth: 520, textAlign: "justify" }}>Move the sliders to model a buy-to-let investment. Figures are indicative; speak with Girard for a tailored analysis.</p>
         </div>
       </Reveal>
       <div className="roi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
@@ -492,7 +492,7 @@ function Landing({ onStart, onSignIn }) {
                 Managed with <span style={{ fontStyle: "italic", color: "var(--gold)" }}>discipline.</span><br />
                 Moved without <span style={{ fontStyle: "italic", color: "var(--gold)" }}>borders.</span>
               </h1>
-              <p style={{ fontSize: 17.5, color: "rgba(255,255,255,.76)", marginTop: 24, maxWidth: 520, lineHeight: 1.65 }}>
+              <p style={{ fontSize: 17.5, color: "rgba(255,255,255,.76)", marginTop: 24, maxWidth: 520, lineHeight: 1.65, textAlign: "justify" }}>
                 Girard Property Limited is a premier real estate development and asset management company, elevating the standards of luxury, urban living and sustainable property investment across Nigeria, now on one governed platform for management, cross-border swaps, intelligence and concierge services.
               </p>
               <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap" }}>
@@ -536,26 +536,26 @@ function Landing({ onStart, onSignIn }) {
             <Rule light />
             <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>About Girard</div>
             <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Redefining excellence in real estate development.</h2>
-            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 18 }}>Girard Property Limited is a premier real estate development and asset management company dedicated to elevating the standards of luxury, urban living and sustainable property investment across Nigeria's rapidly evolving landscape.</p>
-            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 14 }}>Driven by a leadership team of seasoned professionals in real estate law, project development, finance, governance and estate management, the company upholds an unyielding commitment to quality, compliance and strategic growth.</p>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 18, textAlign: "justify" }}>Girard Property Limited is a premier real estate development and asset management company dedicated to elevating the standards of luxury, urban living and sustainable property investment across Nigeria's rapidly evolving landscape.</p>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, marginTop: 14, textAlign: "justify" }}>Driven by a leadership team of seasoned professionals in real estate law, project development, finance, governance and estate management, the company upholds an unyielding commitment to quality, compliance and strategic growth.</p>
           </div>
           <div className="glance-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0, marginTop: 34, background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, overflow: "hidden" }}>
-            {[["Sector", "Development, asset & estate management, property investment"], ["Head office", "21 Fatai Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos"], ["Portfolio", "Approximately 30 properties across various stages of development"], ["Service lines", "Six integrated services across development, management, investment and advisory"], ["Clients", "Investors, homeowners, institutions and development partners"], ["Office hours", "Monday to Saturday, 8am to 5pm"]].map(([k, v], i) => <div key={k} style={{ padding: 20, borderRight: (i % 3 !== 2) ? "1px solid var(--cream-line)" : "none", borderBottom: i < 3 ? "1px solid var(--cream-line)" : "none" }}><div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .5 }}>{k}</div><div style={{ fontSize: 14, color: "var(--ink)", marginTop: 6, lineHeight: 1.5 }}>{v}</div></div>)}
+            {[["Sector", "Development, asset & estate management, property investment"], ["Head office", "21 Fatai Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos"], ["Portfolio", "Approximately 30 properties across various stages of development"], ["Service lines", "Six integrated services across development, management, investment and advisory"], ["Clients", "Investors, homeowners, institutions and development partners"], ["Office hours", "Monday to Saturday, 8am to 5pm"]].map(([k, v], i) => <div key={k} style={{ padding: 20, borderRight: (i % 3 !== 2) ? "1px solid var(--cream-line)" : "none", borderBottom: i < 3 ? "1px solid var(--cream-line)" : "none" }}><div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .5 }}>{k}</div><div style={{ fontSize: 14, color: "var(--ink)", marginTop: 6, lineHeight: 1.5, textAlign: "justify" }}>{v}</div></div>)}
           </div>
           <div className="vm-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 34 }}>
             <div style={{ background: "var(--navy)", color: "#fff", borderRadius: 14, padding: 26 }}>
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 10 }}>Our vision</div>
-              <p style={{ fontSize: 15.5, lineHeight: 1.65, color: "rgba(255,255,255,.86)" }}>To elevate the standards of luxury, urban living and sustainable property investment across Nigeria's rapidly evolving real estate landscape.</p>
+              <p style={{ fontSize: 15.5, lineHeight: 1.65, color: "rgba(255,255,255,.86)", textAlign: "justify" }}>To elevate the standards of luxury, urban living and sustainable property investment across Nigeria's rapidly evolving real estate landscape.</p>
             </div>
             <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: 26 }}>
               <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 10 }}>Our mission</div>
-              <p style={{ fontSize: 15.5, lineHeight: 1.65, color: "var(--ink)" }}>To deliver world-class developments and professional asset management that blend architectural distinction with lifestyle functionality and long-term value creation, upheld by an unyielding commitment to quality, compliance and strategic growth.</p>
+              <p style={{ fontSize: 15.5, lineHeight: 1.65, color: "var(--ink)", textAlign: "justify" }}>To deliver world-class developments and professional asset management that blend architectural distinction with lifestyle functionality and long-term value creation, upheld by an unyielding commitment to quality, compliance and strategic growth.</p>
             </div>
           </div>
           <div style={{ marginTop: 30 }}>
             <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 16 }}>Our core values</div>
             <div className="val-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 16 }}>
-              {[["Integrity", "Anchored on transparency, sound governance and ethical practice."], ["Precision", "Disciplined planning, rigorous due diligence and strict compliance."], ["Innovation", "Technology-powered operations and advanced digital modelling."], ["Quality & Compliance", "Premium standards aligned with international best practices."], ["Strategic Growth", "Long-term value creation for clients, partners and communities."]].map(([t, d]) => <div key={t} style={{ borderTop: "2px solid var(--gold)", paddingTop: 12 }}><div className="serif" style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{t}</div><div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6, lineHeight: 1.55 }}>{d}</div></div>)}
+              {[["Integrity", "Anchored on transparency, sound governance and ethical practice."], ["Precision", "Disciplined planning, rigorous due diligence and strict compliance."], ["Innovation", "Technology-powered operations and advanced digital modelling."], ["Quality & Compliance", "Premium standards aligned with international best practices."], ["Strategic Growth", "Long-term value creation for clients, partners and communities."]].map(([t, d]) => <div key={t} style={{ borderTop: "2px solid var(--gold)", paddingTop: 12 }}><div className="serif" style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{t}</div><div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6, lineHeight: 1.55, textAlign: "justify" }}>{d}</div></div>)}
             </div>
           </div>
           <style>{`@media(max-width:820px){.vm-grid{grid-template-columns:1fr!important}.val-grid{grid-template-columns:1fr 1fr!important}.glance-grid{grid-template-columns:1fr!important}}`}</style>
@@ -569,13 +569,13 @@ function Landing({ onStart, onSignIn }) {
             <Rule light />
             <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Our services</div>
             <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>A comprehensive suite of real estate solutions.</h2>
-            <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 620 }}>Tailored to investors, homeowners, institutions and development partners seeking reliability and excellence, delivered to premium architectural and engineering standards.</p>
+            <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 620, textAlign: "justify" }}>Tailored to investors, homeowners, institutions and development partners seeking reliability and excellence, delivered to premium architectural and engineering standards.</p>
           </div>
           <div className="svc-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
             {SERVICES.map(sv => <div key={sv.t} className="lift card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: 26 }}>
               <div style={{ width: 48, height: 48, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 16 }}><sv.icon size={22} /></div>
               <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>{sv.t}</div>
-              <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{sv.d}</p>
+              <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, textAlign: "justify" }}>{sv.d}</p>
             </div>)}
           </div>
           <style>{`@media(max-width:960px){.svc-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:620px){.svc-grid{grid-template-columns:1fr!important}}`}</style>
@@ -590,7 +590,7 @@ function Landing({ onStart, onSignIn }) {
             <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Featured development</div>
             <h2 className="serif" style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>1 Bourdillon Residences</h2>
             <div style={{ color: "var(--gold-soft)", fontWeight: 600, marginTop: 8, letterSpacing: 1, fontSize: 13 }}>IKOYI, LAGOS · AN ADDRESS OF DISTINCTION</div>
-            <p style={{ color: "rgba(255,255,255,.74)", fontSize: 15.5, lineHeight: 1.7, margin: "18px 0 24px", maxWidth: 460 }}>A refined expression of vertical luxury: 40 bespoke residences with panoramic water views, floor-to-ceiling glazing, a rooftop infinity pool and round-the-clock concierge.</p>
+            <p style={{ color: "rgba(255,255,255,.74)", fontSize: 15.5, lineHeight: 1.7, margin: "18px 0 24px", maxWidth: 460, textAlign: "justify" }}>A refined expression of vertical luxury: 40 bespoke residences with panoramic water views, floor-to-ceiling glazing, a rooftop infinity pool and round-the-clock concierge.</p>
             <div style={{ display: "flex", gap: 28, marginBottom: 26, flexWrap: "wrap" }}>
               {[[40, "Bespoke units", ""], [110, "Max height", "m"], [2039, "sq.m plot", ""]].map(([to, l, suf]) => <div key={l}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--gold)" }}><CountUp to={to} suffix={suf} /></div><div style={{ fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>{l}</div></div>)}
             </div>
@@ -614,7 +614,7 @@ function Landing({ onStart, onSignIn }) {
                 <div className="serif" style={{ position: "absolute", top: 18, right: 26, fontSize: 60, color: "rgba(198,161,91,.16)", fontWeight: 600 }}>{m.n}</div>
                 <div style={{ width: 52, height: 52, borderRadius: 8, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center", marginBottom: 22 }}><m.icon size={24} /></div>
                 <h3 className="serif" style={{ fontSize: 27, fontWeight: 600, marginBottom: 12 }}>{m.name}</h3>
-                <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15, lineHeight: 1.68, marginBottom: 22 }}>{m.copy}</p>
+                <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15, lineHeight: 1.68, marginBottom: 22, textAlign: "justify" }}>{m.copy}</p>
                 <div style={{ borderTop: "1px solid var(--navy-line)", paddingTop: 18, display: "flex", flexDirection: "column", gap: 11 }}>
                   {m.points.map(p => <div key={p} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "rgba(255,255,255,.9)" }}><span style={{ width: 5, height: 5, borderRadius: 999, background: "var(--gold)" }} />{p}</div>)}
                 </div>
@@ -637,7 +637,7 @@ function Landing({ onStart, onSignIn }) {
           </div>
           <div className="adv-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "14px 40px" }}>
             {ADVANTAGES.map(a => <div key={a.t} style={{ display: "flex", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--navy-line)" }}>
-              <BadgeCheck size={20} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} /><div><div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{a.t}</div><div style={{ fontSize: 13, color: "rgba(255,255,255,.66)", marginTop: 3, lineHeight: 1.55 }}>{a.d}</div></div>
+              <BadgeCheck size={20} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} /><div><div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{a.t}</div><div style={{ fontSize: 13, color: "rgba(255,255,255,.66)", marginTop: 3, lineHeight: 1.55, textAlign: "justify" }}>{a.d}</div></div>
             </div>)}
           </div>
           <style>{`@media(max-width:760px){.adv-grid{grid-template-columns:1fr!important}}`}</style>
@@ -659,7 +659,7 @@ function Landing({ onStart, onSignIn }) {
               <div key={a.name} className="aud-card">
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 16 }}><a.icon size={20} /></div>
                 <h3 className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>{a.name}</h3>
-                <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{a.copy}</p>
+                <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, textAlign: "justify" }}>{a.copy}</p>
               </div>
             ))}
           </div>
@@ -679,7 +679,7 @@ function Landing({ onStart, onSignIn }) {
         <div className="wrap" style={{ textAlign: "center", position: "relative" }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}><div style={{ width: 54, height: 2, background: "var(--gold)" }} /></div>
           <h2 className="serif" style={{ fontSize: "clamp(34px,5vw,58px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Let's build something enduring.</h2>
-          <p style={{ color: "rgba(255,255,255,.74)", fontSize: 17, marginTop: 16, maxWidth: 600, margin: "16px auto 0", lineHeight: 1.65 }}>A comprehensive suite of real estate solutions tailored to investors, homeowners, institutions and development partners seeking reliability and excellence, delivering strong occupancy, enduring desirability and resilient capital appreciation.</p>
+          <p style={{ color: "rgba(255,255,255,.74)", fontSize: 17, marginTop: 16, maxWidth: 600, margin: "16px auto 0", lineHeight: 1.65, textAlign: "justify" }}>A comprehensive suite of real estate solutions tailored to investors, homeowners, institutions and development partners seeking reliability and excellence, delivering strong occupancy, enduring desirability and resilient capital appreciation.</p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 30, flexWrap: "wrap" }}>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
             <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Speak with Girard <ArrowRight size={16} /></a>
@@ -693,7 +693,7 @@ function Landing({ onStart, onSignIn }) {
           <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr", gap: 30 }}>
             <div>
               <div className="serif" style={{ fontSize: 23, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Girard</div>
-              <div style={{ fontSize: 13.5, lineHeight: 1.65, maxWidth: 260 }}>Girard Property Limited. Property managed with discipline, moved without borders.</div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.65, maxWidth: 260, textAlign: "justify" }}>Girard Property Limited. Property managed with discipline, moved without borders.</div>
             </div>
             {[["Services", ["Real Estate Development", "Property Management", "Buy-to-Let Solutions", "Investment & Partnerships", "Advisory & Transactions"]], ["Markets", ["Nigeria", "United Kingdom", "Middle East", "International"]], ["Company", ["About", "Why Girard", "Contact", "Sign in"]]].map(([h, items]) => (
               <div key={h}>
@@ -970,7 +970,7 @@ function RolePage({ onPick, onSignIn, onBack }) {
       <div className="wrap" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingTop: 40, paddingBottom: 60, maxWidth: 1000 }}>
         <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Welcome to Girard</div>
         <h1 className="serif" style={{ fontSize: "clamp(32px,5vw,52px)", fontWeight: 600, letterSpacing: -.5, marginBottom: 10 }}>Which best describes you?</h1>
-        <p style={{ color: "rgba(255,255,255,.7)", fontSize: 16, marginBottom: 34, maxWidth: 560, lineHeight: 1.6 }}>Choose your role and Girard tailors the platform, tools and pricing to you. You can change this later.</p>
+        <p style={{ color: "rgba(255,255,255,.7)", fontSize: 16, marginBottom: 34, maxWidth: 560, lineHeight: 1.6, textAlign: "justify" }}>Choose your role and Girard tailors the platform, tools and pricing to you. You can change this later.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 16 }}>
           {ROLES.map(r => (
             <button key={r.key} className="role-card rise" onClick={() => onPick(r.key)}>
@@ -979,7 +979,7 @@ function RolePage({ onPick, onSignIn, onBack }) {
                 <ChevronRight size={18} color="var(--gold)" />
               </div>
               <div className="serif" style={{ fontSize: 20, fontWeight: 600, marginBottom: 6 }}>{r.name}</div>
-              <div style={{ color: "rgba(255,255,255,.68)", fontSize: 13.5, lineHeight: 1.5 }}>{r.blurb}</div>
+              <div style={{ color: "rgba(255,255,255,.68)", fontSize: 13.5, lineHeight: 1.5, textAlign: "justify" }}>{r.blurb}</div>
             </button>
           ))}
           <button className="role-card rise" onClick={() => setPartner(true)}>
@@ -988,7 +988,7 @@ function RolePage({ onPick, onSignIn, onBack }) {
               <ChevronRight size={18} color="var(--gold)" />
             </div>
             <div className="serif" style={{ fontSize: 20, fontWeight: 600, marginBottom: 6 }}>Vendor / Partner</div>
-            <div style={{ color: "rgba(255,255,255,.68)", fontSize: 13.5, lineHeight: 1.5 }}>Maintenance vendors and support-service providers, apply to join our vetted network.</div>
+            <div style={{ color: "rgba(255,255,255,.68)", fontSize: 13.5, lineHeight: 1.5, textAlign: "justify" }}>Maintenance vendors and support-service providers, apply to join our vetted network.</div>
           </button>
         </div>
       </div>
@@ -1027,7 +1027,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
       {twoFA && <div style={{ position: "fixed", inset: 0, background: "rgba(4,10,24,.78)", display: "grid", placeItems: "center", zIndex: 100, padding: 16 }}>
         <div style={{ background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 14, padding: "26px 24px", width: 340, maxWidth: "90vw" }}>
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 6 }}><Lock size={18} color="var(--gold)" /><div className="serif" style={{ fontSize: 20, fontWeight: 600 }}>Two-factor code</div></div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,.65)", marginBottom: 16, lineHeight: 1.5 }}>Enter the 6-digit code from your authenticator app to finish signing in.</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,.65)", marginBottom: 16, lineHeight: 1.5, textAlign: "justify" }}>Enter the 6-digit code from your authenticator app to finish signing in.</div>
           <input className="field" inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ""))} onKeyDown={e => e.key === "Enter" && verify2FA()} style={{ textAlign: "center", letterSpacing: 6, fontSize: 20, paddingLeft: 14 }} />
           {err && <div style={{ color: "#ff9a90", fontSize: 13, marginTop: 10 }}>{err}</div>}
           <button className="btn-gold" onClick={verify2FA} style={{ width: "100%", marginTop: 14 }}>Verify <ArrowUpRight size={16} /></button>
@@ -1038,7 +1038,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
         <BrandMark />
         <div style={{ position: "relative", zIndex: 2 }}>
           <h2 className="serif" style={{ fontSize: 40, fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Managed with <span style={{ fontStyle: "italic", color: "var(--gold)" }}>discipline.</span></h2>
-          <p style={{ color: "rgba(255,255,255,.7)", marginTop: 16, fontSize: 15.5, maxWidth: 360, lineHeight: 1.6 }}>One governed platform for owners, tenants, agents and investors across Nigeria, the UK and beyond.</p>
+          <p style={{ color: "rgba(255,255,255,.7)", marginTop: 16, fontSize: 15.5, maxWidth: 360, lineHeight: 1.6, textAlign: "justify" }}>One governed platform for owners, tenants, agents and investors across Nigeria, the UK and beyond.</p>
         </div>
         <div style={{ position: "absolute", bottom: -10, left: 0, right: 0, height: 200, opacity: .5 }}><Skyline /></div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", position: "relative", zIndex: 2 }}>&copy; 2026 Girard Property Limited</div>
@@ -1048,11 +1048,11 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
           <button onClick={onBack} className="btn-line on-navy" style={{ padding: "7px 13px", marginBottom: 26 }}><ArrowLeft size={14} /> Back</button>
           <h1 className="serif" style={{ fontSize: 30, fontWeight: 600, marginBottom: 6 }}>{isSignup ? "Create your account" : "Welcome back"}</h1>
           <p style={{ color: "rgba(255,255,255,.65)", fontSize: 14, marginBottom: 22 }}>{isSignup ? <>Joining as <span style={{ color: "var(--gold)", fontWeight: 600 }}>{ROLES.find(r => r.key === role)?.name || "a member"}</span>.</> : "Sign in to your Girard account."}</p>
-          {DEMO && <div style={{ background: "rgba(198,161,91,.12)", border: "1px solid rgba(198,161,91,.35)", borderRadius: 6, padding: "10px 12px", fontSize: 12.5, color: "var(--gold)", marginBottom: 18, lineHeight: 1.5 }}>Demo mode. Accounts are saved on this device only until Supabase is connected.</div>}
+          {DEMO && <div style={{ background: "rgba(198,161,91,.12)", border: "1px solid rgba(198,161,91,.35)", borderRadius: 6, padding: "10px 12px", fontSize: 12.5, color: "var(--gold)", marginBottom: 18, lineHeight: 1.5, textAlign: "justify" }}>Demo mode. Accounts are saved on this device only until Supabase is connected.</div>}
           <div style={{ position: "relative", marginBottom: 12 }}><Mail size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} /></div>
-          {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{err}</div>}
-          {isSignup && <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "2px 0 14px", cursor: "pointer" }}><input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} style={{ marginTop: 3, accentColor: "var(--gold)" }} /><span style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", lineHeight: 1.5 }}>I agree to Girard's processing of my personal data in line with the <b style={{ color: "var(--gold)" }}>Privacy Policy</b>, under the Nigeria Data Protection Act.</span></label>}
+          {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5, textAlign: "justify" }}>{err}</div>}
+          {isSignup && <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "2px 0 14px", cursor: "pointer" }}><input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} style={{ marginTop: 3, accentColor: "var(--gold)" }} /><span style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", lineHeight: 1.5, textAlign: "justify" }}>I agree to Girard's processing of my personal data in line with the <b style={{ color: "var(--gold)" }}>Privacy Policy</b>, under the Nigeria Data Protection Act.</span></label>}
           <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", opacity: busy ? .7 : 1, marginTop: 4 }}>{busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"} <ArrowUpRight size={16} /></button>
           <div style={{ textAlign: "center", marginTop: 18, fontSize: 13.5, color: "rgba(255,255,255,.65)" }}>
             {isSignup ? "Already have an account? " : "New to Girard? "}
@@ -1121,7 +1121,7 @@ function HomeShell({ identity, onSignOut, onSwitchRole }) {
           <div>
             <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 12 }}>{identity.greeting}</div>
             <h1 className="serif" style={{ fontSize: "clamp(30px,4.4vw,48px)", fontWeight: 600, letterSpacing: -.5, color: "var(--ink)" }}>Good {part}, {identity.firstName}.</h1>
-            <p style={{ color: "var(--muted)", fontSize: 16, marginTop: 10, maxWidth: 580, lineHeight: 1.6 }}>Your {ROLES.find(r => r.key === identity.role)?.name || "member"} workspace. The tools below come online as we build out the platform.</p>
+            <p style={{ color: "var(--muted)", fontSize: 16, marginTop: 10, maxWidth: 580, lineHeight: 1.6, textAlign: "justify" }}>Your {ROLES.find(r => r.key === identity.role)?.name || "member"} workspace. The tools below come online as we build out the platform.</p>
           </div>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--navy)", color: "var(--gold)", padding: "8px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 700 }}><ShieldCheck size={14} /> {ROLE_TITLE[identity.role] || "Member"}</span>
         </div>
@@ -1131,7 +1131,7 @@ function HomeShell({ identity, onSignOut, onSwitchRole }) {
             <div key={t.label} className="tile">
               <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 16 }}><t.icon size={21} /></div>
               <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 5 }}>{t.label}</div>
-              <div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.5, marginBottom: 12 }}>{t.note}</div>
+              <div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.5, marginBottom: 12, textAlign: "justify" }}>{t.note}</div>
               <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", background: "var(--gold-soft)", padding: "3px 9px", borderRadius: 4 }}>Coming next</span>
             </div>
           ))}
@@ -1454,7 +1454,7 @@ function PropertiesScreen({ st, setSt, identity }) {
       <HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || poolPhoto(sel.id)} />
       {sel.featured && <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["Units", sel.units], ["Max height", sel.height], ["Plot", sel.plot]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 110, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 17 }}>{v}</div></div>)}</div>
-        <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12 }}>{sel.blurb}</p>
+        <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12, textAlign: "justify" }}>{sel.blurb}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
       </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}>
@@ -1500,7 +1500,7 @@ function AddPropertyScreen({ st, setSt, toast }) {
       </div></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pricing</div>
         {!ai ? <div style={{ color: "var(--muted)", fontSize: 14, padding: "20px 0", textAlign: "center" }}>Enter details, then request an AI recommendation.</div>
-          : <><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended annual</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.annual)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Monthly</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthly)}</div></div></div><div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5 }}>{ai.rationale}</div></AiPanel>
+          : <><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended annual</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.annual)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Monthly</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthly)}</div></div></div><div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5, textAlign: "justify" }}>{ai.rationale}</div></AiPanel>
             <div style={{ marginTop: 14 }}><PmField label="Your set rent (₦/yr)" value={price} onChange={setPrice} /></div>
             {price && ai.annual && Math.abs(+price - ai.annual) / ai.annual > 0.15 && <div style={{ color: "#E0A106", fontSize: 12.5, marginTop: 6, display: "flex", gap: 6 }}><AlertTriangle size={14} /> Differs from the AI recommendation by more than 15%. This may affect time-to-let.</div>}
             <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>Submit listing</PmBtn></>}
@@ -1513,7 +1513,7 @@ function AddPropertyScreen({ st, setSt, toast }) {
     <PmCard style={{ marginTop: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Photos <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 12.5 }}>({photos.length}/5)</span></div>
       <AiPanel>
-        <div style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.6, textAlign: "justify" }}>
           <b>Photo guidance for your {f.beds === "0" ? "studio" : f.beds + "-bed " + f.type.toLowerCase()}:</b> add 3 to 5 landscape (horizontal) shots. Lead with a wide living-room or exterior photo, then the kitchen, main bedroom, bathroom and any view or amenity.
           <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }} className="pm-grid3">
             {[["Type", "JPG or PNG, horizontal (landscape)"], ["Quality", "Sharp and bright, shoot in daylight, avoid flash"], ["Size", "At least 1600 x 1200 px, under 5 MB each"]].map(([k, v]) => <div key={k} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .4 }}>{k}</div><div style={{ fontSize: 12.5, color: "var(--ink)", marginTop: 3, lineHeight: 1.45 }}>{v}</div></div>)}
@@ -1558,7 +1558,7 @@ function TenantFind({ st, setSt, identity, toast }) {
       <HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || poolPhoto(sel.id)} />
       {sel.featured && <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["Units", sel.units], ["Max height", sel.height], ["Plot", sel.plot]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 110, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 17 }}>{v}</div></div>)}</div>
-        <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12 }}>{sel.blurb}</p>
+        <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12, textAlign: "justify" }}>{sel.blurb}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
       </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--navy)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
@@ -1600,7 +1600,7 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
     {step === 2 && <div style={{ textAlign: "center", padding: "10px 0" }}>{!result ? <div style={{ color: "var(--muted)" }}><Loader2 size={30} className="spin" style={{ color: "var(--gold-2)" }} /><div style={{ marginTop: 12, fontWeight: 600 }}>Running automated screening…</div><div style={{ fontSize: 12.5 }}>Credit, rent-to-income and reference checks</div></div>
       : <div><div style={{ width: 58, height: 58, borderRadius: 999, margin: "0 auto 12px", display: "grid", placeItems: "center", background: (result === "Approved" ? "#1F9D57" : result === "Rejected" ? "#D0453B" : "#E0A106") + "22" }}>{result === "Approved" ? <Check size={28} color="#1F9D57" /> : result === "Rejected" ? <X size={28} color="#D0453B" /> : <AlertTriangle size={26} color="#E0A106" />}</div>
         <div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{result}</div>
-        <div style={{ color: "var(--muted)", fontSize: 13.5, margin: "8px 0 16px", lineHeight: 1.5 }}>{result === "Approved" ? "Your profile meets Girard's criteria. The owner will issue a lease to e-sign." : result === "Rejected" ? "The rent-to-income ratio is outside the acceptable range. Try other properties." : "We need a guarantor's details before final approval."}</div>
+        <div style={{ color: "var(--muted)", fontSize: 13.5, margin: "8px 0 16px", lineHeight: 1.5, textAlign: "justify" }}>{result === "Approved" ? "Your profile meets Girard's criteria. The owner will issue a lease to e-sign." : result === "Rejected" ? "The rent-to-income ratio is outside the acceptable range. Try other properties." : "We need a guarantor's details before final approval."}</div>
         <PmBtn onClick={onClose}>Done</PmBtn></div>}</div>}
   </PmModal>;
 }
@@ -1639,7 +1639,7 @@ function docBody(type, app, p, rent) {
   </div>;
   if (type === "employment") return <div>
     <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Letter of Employment</div>
-    <p style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6 }}>This is to confirm that {app.tenant} is employed at {emp} and earns a gross monthly salary of {money(salaryM)}. Their employment is confirmed and in good standing.</p>
+    <p style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6, textAlign: "justify" }}>This is to confirm that {app.tenant} is employed at {emp} and earns a gross monthly salary of {money(salaryM)}. Their employment is confirmed and in good standing.</p>
     <div style={{ marginTop: 14, fontSize: 13, color: "var(--muted)" }}>Human Resources, {emp}</div>
   </div>;
   if (type === "guarantor") return <div>
@@ -1648,11 +1648,11 @@ function docBody(type, app, p, rent) {
     <DocRow><span style={{ color: "var(--muted)" }}>Relationship</span><b>Employer / colleague</b></DocRow>
     <DocRow><span style={{ color: "var(--muted)" }}>Occupation</span><b>Senior manager</b></DocRow>
     <DocRow><span style={{ color: "var(--muted)" }}>Address</span><b>Ikoyi, Lagos</b></DocRow>
-    <p style={{ fontSize: 13, color: "var(--ink)", marginTop: 10, lineHeight: 1.6 }}>I agree to stand as guarantor for {app.tenant} and accept liability in the event of default.</p>
+    <p style={{ fontSize: 13, color: "var(--ink)", marginTop: 10, lineHeight: 1.6, textAlign: "justify" }}>I agree to stand as guarantor for {app.tenant} and accept liability in the event of default.</p>
   </div>;
   if (type === "reference") return <div>
     <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Previous Landlord Reference</div>
-    <p style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6 }}>{app.tenant} rented from me for two years. Rent was paid promptly each cycle and the property was kept in excellent condition. I recommend them without reservation.</p>
+    <p style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6, textAlign: "justify" }}>{app.tenant} rented from me for two years. Rent was paid promptly each cycle and the property was kept in excellent condition. I recommend them without reservation.</p>
     <div style={{ marginTop: 14, fontSize: 13, color: "var(--muted)" }}>Former landlord · +234 803 000 0000</div>
   </div>;
   if (type === "kyc") return <div>
@@ -1729,7 +1729,7 @@ function ReviewModal({ st, app, onClose, onAct }) {
         <PmBtn size="sm" kind="ghost" icon={ArrowLeft} onClick={() => setDoc(null)}>Back to documents</PmBtn>
       </div>
     </div> : <div>
-      {savedView && <div style={{ marginBottom: 14, border: "1px solid var(--cream-line)", borderRadius: 10, overflow: "hidden" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "var(--ivory)" }}><b style={{ fontSize: 13, color: "var(--ink)" }}>{savedView.doc_type}</b><button onClick={() => setSavedView(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><X size={16} /></button></div><div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto", padding: 14 }}>{savedView.body}</div></div>}
+      {savedView && <div style={{ marginBottom: 14, border: "1px solid var(--cream-line)", borderRadius: 10, overflow: "hidden" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "var(--ivory)" }}><b style={{ fontSize: 13, color: "var(--ink)" }}>{savedView.doc_type}</b><button onClick={() => setSavedView(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><X size={16} /></button></div><div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto", padding: 14, textAlign: "justify" }}>{savedView.body}</div></div>}
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{app.tenant}</div><div style={{ fontSize: 13, color: "var(--muted)" }}>{p ? p.title + " · " + p.area : app.property} · Income {money(app.income)}</div></div>
         <div style={{ textAlign: "right" }}><div style={{ fontSize: 11.5, color: "var(--muted)" }}>Documents</div><div className="serif" style={{ fontSize: 22, fontWeight: 600, color: got === checks.length ? "#1F9D57" : "var(--gold-2)" }}>{got}/{checks.length}</div></div>
@@ -1763,7 +1763,7 @@ function LeaseModal({ st, setSt, app, onClose, toast }) {
     toast("Lease executed, property leased, first invoice raised", "success"); onClose();
   };
   return <PmModal title="Lease agreement" onClose={onClose} wide>
-    <AiPanel loading={ai.loading} offline={ai.offline}><div style={{ maxHeight: 240, overflow: "auto", background: "var(--ivory)", borderRadius: 9, padding: 14, color: "var(--ink)", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{ai.text}</div></AiPanel>
+    <AiPanel loading={ai.loading} offline={ai.offline}><div style={{ maxHeight: 240, overflow: "auto", background: "var(--ivory)", borderRadius: 9, padding: 14, color: "var(--ink)", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", textAlign: "justify" }}>{ai.text}</div></AiPanel>
     <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
       {[["Tenant", app.tenant, "tenant"], ["Landlord", "Girard Property Ltd", "owner"]].map(([role, who, key]) => <div key={key} style={{ flex: 1, minWidth: 200, border: "1px solid " + (signed[key] ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}>
         <div style={{ fontSize: 12, color: "var(--muted)" }}>{role}</div><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>{who}</div>
@@ -1864,7 +1864,7 @@ function ReportModal({ st, setSt, identity, onClose, toast }) {
 function WorkspaceSoon({ identity }) {
   const tiles = HOME_TILES[identity.role] || [];
   return <div><H2 title={"Good day, " + identity.firstName} sub={"Your " + (ROLES.find(r => r.key === identity.role)?.name || "member") + " workspace"} />
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 18 }}>{tiles.map(t => <PmCard key={t.label}><div style={{ width: 44, height: 44, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 14 }}><t.icon size={20} /></div><div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 5 }}>{t.label}</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.5, marginBottom: 12 }}>{t.note}</div><span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", background: "var(--gold-soft)", padding: "3px 9px", borderRadius: 4 }}>Coming next</span></PmCard>)}</div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 18 }}>{tiles.map(t => <PmCard key={t.label}><div style={{ width: 44, height: 44, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 14 }}><t.icon size={20} /></div><div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 5 }}>{t.label}</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.5, marginBottom: 12, textAlign: "justify" }}>{t.note}</div><span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold-2)", background: "var(--gold-soft)", padding: "3px 9px", borderRadius: 4 }}>Coming next</span></PmCard>)}</div>
     <div style={{ marginTop: 26, color: "var(--muted)", fontSize: 14 }}>The {identity.role === "agent" ? "agent pipeline and CRM" : "investor intelligence and swap"} tools arrive in the next stages.</div>
   </div>;
 }
@@ -2128,7 +2128,7 @@ function MatchModal({ sw, listing, onClose, toast }) {
     <div style={{ margin: "16px 0" }}><AiPanel loading={ai.loading} offline={ai.offline}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div className="serif" style={{ width: 52, height: 52, borderRadius: 999, display: "grid", placeItems: "center", background: "var(--navy)", color: "var(--gold)", fontWeight: 700, fontSize: 17, flexShrink: 0 }}>{ai.score}</div>
-        <div style={{ color: "var(--ink)", fontSize: 13.5, lineHeight: 1.5 }}>{ai.note}</div>
+        <div style={{ color: "var(--ink)", fontSize: 13.5, lineHeight: 1.5, textAlign: "justify" }}>{ai.note}</div>
       </div>
     </AiPanel></div>
     <div style={{ display: "flex", gap: 10 }}>
@@ -2162,7 +2162,7 @@ function SwapList({ sw, setSw, toast }) {
       </div></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>AI valuation</div>
         {!ai ? <div style={{ color: "var(--muted)", fontSize: 14, padding: "20px 0", textAlign: "center" }}>Enter details, then request a valuation.</div>
-          : <><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Local value</div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{money(ai.local, cur)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>USD equivalent</div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{usd(ai.usd)}</div></div></div><div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5 }}>{ai.rationale}</div></AiPanel>
+          : <><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Local value</div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{money(ai.local, cur)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>USD equivalent</div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{usd(ai.usd)}</div></div></div><div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5, textAlign: "justify" }}>{ai.rationale}</div></AiPanel>
             <div style={{ marginTop: 14, background: "var(--ivory)", borderRadius: 8, padding: 12, fontSize: 12.5, color: "var(--muted)" }}>A one-time listing fee applies: {f.country === "Nigeria" ? "paid via Paystack or Flutterwave" : "paid via Stripe"}.</div>
             <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 14 }} onClick={submit}>Pay fee &amp; submit</PmBtn></>}
       </PmCard>
@@ -2202,7 +2202,7 @@ function ThreadModal({ match, onClose }) {
   return <PmModal title={"Chat · owner of " + match.type} onClose={onClose}>
     <div style={{ display: "flex", flexDirection: "column", height: 340 }}>
       <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-        {msgs.map((m, i) => <div key={i} style={{ alignSelf: m.me ? "flex-end" : "flex-start", maxWidth: "80%", background: m.me ? "var(--navy)" : "var(--ivory)", color: m.me ? "#fff" : "var(--ink)", padding: "10px 13px", borderRadius: 12, fontSize: 13.5, lineHeight: 1.5 }}>{m.text}</div>)}
+        {msgs.map((m, i) => <div key={i} style={{ alignSelf: m.me ? "flex-end" : "flex-start", maxWidth: "80%", background: m.me ? "var(--navy)" : "var(--ivory)", color: m.me ? "#fff" : "var(--ink)", padding: "10px 13px", borderRadius: 12, fontSize: 13.5, lineHeight: 1.5, textAlign: "justify" }}>{m.text}</div>)}
         <div ref={endRef} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
@@ -2247,7 +2247,7 @@ function SwapWizard({ deal, onClose, onAdvance, onCancel }) {
     <PmCard pad={16} style={{ background: "var(--ivory)", border: "none" }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <div style={{ color: "var(--gold-2)", marginTop: 2 }}>{StageIcon && <StageIcon size={20} />}</div>
-        <div><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>{SWAP_STAGES[deal.stage]}</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.55 }}>{STAGE_DESC[deal.stage]}</div></div>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>{SWAP_STAGES[deal.stage]}</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.55, textAlign: "justify" }}>{STAGE_DESC[deal.stage]}</div></div>
       </div>
     </PmCard>
     {deal.stage === 10 && <div style={{ background: "var(--gold-soft)", borderRadius: 8, padding: 12, marginTop: 12, fontSize: 13, color: "var(--ink)" }}>Escrow will release {usd(deal.cash)} to {deal.owed} and deduct Girard's transaction fee.</div>}
@@ -2263,7 +2263,7 @@ function SwapWizard({ deal, onClose, onAdvance, onCancel }) {
 
 function IntelSoon() {
   return <div><H2 title="Market intelligence" sub="Sold prices, planning applications, local plans, auctions and yields" />
-    <PmCard><div style={{ textAlign: "center", padding: 34 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", margin: "0 auto 14px", display: "grid", placeItems: "center" }}><LineChart size={26} /></div><div className="serif" style={{ fontWeight: 600, fontSize: 20, color: "var(--ink)" }}>Arriving in the next stage</div><div style={{ color: "var(--muted)", marginTop: 8, maxWidth: 460, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>A premium, self-updating intelligence page pulling public data on sold prices, planning applications, local plans, auction results and yields, each item summarised by Girard.</div></div></PmCard>
+    <PmCard><div style={{ textAlign: "center", padding: 34 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", margin: "0 auto 14px", display: "grid", placeItems: "center" }}><LineChart size={26} /></div><div className="serif" style={{ fontWeight: 600, fontSize: 20, color: "var(--ink)" }}>Arriving in the next stage</div><div style={{ color: "var(--muted)", marginTop: 8, maxWidth: 460, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6, textAlign: "justify" }}>A premium, self-updating intelligence page pulling public data on sold prices, planning applications, local plans, auction results and yields, each item summarised by Girard.</div></div></PmCard>
   </div>;
 }
 
@@ -2500,7 +2500,7 @@ function IntelScreen() {
   useEffect(() => { brief(); }, [market]);
   return <div>
     <H2 title="Market intelligence" sub={"Sold prices, yields, planning and auctions, distilled by the AI Engine"} right={<div style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 150 }}><PmSelect value={market} onChange={setMarket} options={["Nigeria", "UK", "US"]} /></div><PmBtn kind="navy" icon={Sparkles} onClick={brief}>Refresh briefing</PmBtn></div>} />
-    <div style={{ marginBottom: 16 }}><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.6 }}>{ai.text}</div><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8 }}>Last refreshed {refreshed.toLocaleString()}</div></AiPanel></div>
+    <div style={{ marginBottom: 16 }}><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.6, textAlign: "justify" }}>{ai.text}</div><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8 }}>Last refreshed {refreshed.toLocaleString()}</div></AiPanel></div>
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
       {d.kpis.map(k => <PmStat key={k.l} icon={LineChart} label={k.l} value={k.v} tone={k.t} />)}
     </div>
@@ -2511,7 +2511,7 @@ function IntelScreen() {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }} className="pm-grid3">
       {[["Planning applications", d.planning, Building2], ["Auction results", d.auctions, Gavel], ["Local plans", d.localPlans, FileText]].map(([title, items, Icon]) => (
         <PmCard key={title}><div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}><Icon size={16} color="var(--gold-2)" />{title}</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{items.map(x => <div key={x} style={{ display: "flex", gap: 9, fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}><span style={{ width: 5, height: 5, borderRadius: 999, background: "var(--gold)", marginTop: 7, flexShrink: 0 }} />{x}</div>)}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{items.map(x => <div key={x} style={{ display: "flex", gap: 9, fontSize: 13, color: "var(--muted)", lineHeight: 1.5, textAlign: "justify" }}><span style={{ width: 5, height: 5, borderRadius: 999, background: "var(--gold)", marginTop: 7, flexShrink: 0 }} />{x}</div>)}</div>
         </PmCard>
       ))}
     </div>
@@ -2556,7 +2556,7 @@ function SupportServices({ identity, toast }) {
           <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--muted)" }}>from <span style={{ color: "var(--ink)" }}>{s.from}</span></span>
         </div>
         <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 5 }}>{s.name}</div>
-        <div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.55, marginBottom: 12 }}>{s.desc}</div>
+        <div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.55, marginBottom: 12, textAlign: "justify" }}>{s.desc}</div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}><ShieldCheck size={13} color="var(--gold-2)" /> {s.partner}</span>
           <PmBtn size="sm" icon={ConciergeBell} onClick={() => setReq(s)}>Request</PmBtn>
@@ -2880,7 +2880,7 @@ function RentRemindersScreen({ toast }) {
     <PmCard pad={16} style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <BellRing size={18} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} />
-        <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55 }}>Girard automatically emails each tenant and messages them on WhatsApp 3 months before their rent is due. To send live messages, add <b style={{ color: "var(--ink)" }}>RESEND_API_KEY</b> (email) and <b style={{ color: "var(--ink)" }}>TWILIO_ACCOUNT_SID</b>, <b style={{ color: "var(--ink)" }}>TWILIO_AUTH_TOKEN</b>, <b style={{ color: "var(--ink)" }}>TWILIO_WHATSAPP_FROM</b> (WhatsApp) in Vercel. Until then, reminders are scheduled and logged.</div>
+        <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55, textAlign: "justify" }}>Girard automatically emails each tenant and messages them on WhatsApp 3 months before their rent is due. To send live messages, add <b style={{ color: "var(--ink)" }}>RESEND_API_KEY</b> (email) and <b style={{ color: "var(--ink)" }}>TWILIO_ACCOUNT_SID</b>, <b style={{ color: "var(--ink)" }}>TWILIO_AUTH_TOKEN</b>, <b style={{ color: "var(--ink)" }}>TWILIO_WHATSAPP_FROM</b> (WhatsApp) in Vercel. Until then, reminders are scheduled and logged.</div>
       </div>
     </PmCard>
     <PmCard pad={0} style={{ overflow: "hidden" }}>
@@ -2899,7 +2899,7 @@ function RentRemindersScreen({ toast }) {
     </PmCard>
     {preview && <PmModal title={"Reminder to " + preview.tenant} onClose={() => setPreview(null)}>
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>{[["Email", preview.email], ["SMS", preview.phone], ["Rent due", fmtDate(preview.due)]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 130, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 13.5 }}>{v}</div></div>)}</div>
-      <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16, fontSize: 14, color: "var(--ink)", lineHeight: 1.6, marginBottom: 16 }}>{reminderMsg(preview)}</div>
+      <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16, fontSize: 14, color: "var(--ink)", lineHeight: 1.6, marginBottom: 16, textAlign: "justify" }}>{reminderMsg(preview)}</div>
       <PmBtn kind="gold" icon={BellRing} onClick={() => { send(preview); setPreview(null); }}>Send now</PmBtn>
     </PmModal>}
   </div>;
@@ -3162,7 +3162,7 @@ function LeadershipSection() {
         <Rule />
         <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Our people</div>
         <h2 className="serif sec-h">Our leadership.</h2>
-        <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65 }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships. Tap a profile to read more.</p>
+        <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, textAlign: "justify" }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships. Tap a profile to read more.</p>
       </div>
       <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
         {TEAM.map(t => (
@@ -3197,7 +3197,7 @@ function LeaderModal({ member, onClose }) {
         </div>
         <div style={{ padding: "40px 36px" }}>
           <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 14 }}>Profile</div>
-          <p style={{ fontSize: 16, lineHeight: 1.8, color: "var(--muted)" }}>{member.bio}</p>
+          <p style={{ fontSize: 16, lineHeight: 1.8, color: "var(--muted)", textAlign: "justify" }}>{member.bio}</p>
         </div>
       </div>
       <style>{`@media(max-width:640px){.leader-modal{grid-template-columns:1fr!important}}`}</style>
@@ -3282,14 +3282,14 @@ function PartnersSection() {
           <Rule />
           <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Partner with Girard</div>
           <h2 className="serif sec-h">Join our vetted network.</h2>
-          <p style={{ color: "rgba(255,255,255,.75)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 520 }}>We work with trusted maintenance vendors and support-service providers, legal, insurance, valuation, logistics and more. Every partner is vetted before joining, then receives job referrals across the Girard portfolio.</p>
+          <p style={{ color: "rgba(255,255,255,.75)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 520, textAlign: "justify" }}>We work with trusted maintenance vendors and support-service providers, legal, insurance, valuation, logistics and more. Every partner is vetted before joining, then receives job referrals across the Girard portfolio.</p>
           <div style={{ display: "flex", gap: 22, marginTop: 24, flexWrap: "wrap" }}>
             {[[Wrench, "Maintenance vendors"], [ConciergeBell, "Support services"], [BadgeCheck, "Vetted & verified"]].map(([Ic, t]) => <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,.85)", fontSize: 13.5 }}><Ic size={17} color="var(--gold)" />{t}</div>)}
           </div>
         </div>
         <div style={{ background: "var(--navy-3)", borderRadius: 16, padding: 30, textAlign: "center" }}>
           <div className="serif" style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>Apply to partner</div>
-          <p style={{ color: "rgba(255,255,255,.7)", fontSize: 14, lineHeight: 1.6, marginBottom: 18 }}>Vendors and support providers can register in a couple of minutes. No account needed.</p>
+          <p style={{ color: "rgba(255,255,255,.7)", fontSize: 14, lineHeight: 1.6, marginBottom: 18, textAlign: "justify" }}>Vendors and support providers can register in a couple of minutes. No account needed.</p>
           <button onClick={() => setOpen(true)} className="btn-gold" style={{ width: "100%", justifyContent: "center" }}>Become a partner <ArrowUpRight size={16} /></button>
         </div>
       </div>
@@ -3345,7 +3345,7 @@ function AgentWallet({ toast, identity }) {
     <PmCard style={{ maxWidth: 520 }}>
       <div style={{ width: 52, height: 52, borderRadius: 12, background: "var(--gold-soft)", color: "var(--gold-2)", display: "grid", placeItems: "center", marginBottom: 14 }}><BadgeCheck size={26} /></div>
       <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Activate your agent account</div>
-      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px" }}>Agents pay a one-off annual registration fee to join the Girard network. Once active you can list, close deals and earn a 5% agency fee, withdrawable to your bank.</p>
+      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px", textAlign: "justify" }}>Agents pay a one-off annual registration fee to join the Girard network. Once active you can list, close deals and earn a 5% agency fee, withdrawable to your bank.</p>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--ink)" }}>{money(AGENT_FEE)}</div><span style={{ color: "var(--muted)", fontSize: 13 }}>per year</span></div>
       <PmBtn kind="gold" icon={CreditCard} onClick={pay}>Pay registration fee &amp; activate</PmBtn>
       <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Recorded for demonstration. Connect Paystack in Vercel to take live card and transfer payments.</div>
@@ -3524,7 +3524,7 @@ function SwapJourney({ identity, toast, toAi }) {
     if (j.stage === 0) return <PmCard style={{ maxWidth: 560 }}>
       {confid}
       <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Start a property swap</div>
-      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px" }}>List your property, get verified by Girard, then browse and match with owners in the markets you choose. A one-off registration fee applies.</p>
+      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px", textAlign: "justify" }}>List your property, get verified by Girard, then browse and match with owners in the markets you choose. A one-off registration fee applies.</p>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--ink)" }}>${SWAP_FEE_USD.toLocaleString()}</div><span style={{ color: "var(--muted)", fontSize: 13 }}>≈ {money(SWAP_FEE_NGN)} · one-off</span></div>
       <PmBtn kind="gold" icon={CreditCard} onClick={() => { payWithPaystack({ email: owner, amountNaira: SWAP_FEE_NGN, label: "Swap registration fee", purpose: "swap", target: owner, onSuccess: () => { setJ({ paid: true, stage: 1 }); toast("Registration fee received", "success"); } }); }}>Pay registration fee &amp; begin</PmBtn>
       <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Recorded for demonstration. Connect Paystack to take the fee in USD or Naira.</div>
@@ -3549,7 +3549,7 @@ function SwapJourney({ identity, toast, toAi }) {
     if (j.stage === 2) return <PmCard style={{ maxWidth: 620 }}>
       <div style={{ width: 52, height: 52, borderRadius: 12, background: "var(--gold-soft)", color: "var(--gold-2)", display: "grid", placeItems: "center", marginBottom: 14 }}><ShieldCheck size={26} /></div>
       <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Girard is verifying you</div>
-      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px" }}>Before you can browse swaps, Girard verifies your identity, your property and your title documents. You will receive an SMS the moment browsing is enabled.</p>
+      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px", textAlign: "justify" }}>Before you can browse swaps, Girard verifies your identity, your property and your title documents. You will receive an SMS the moment browsing is enabled.</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>{["Identity / KYC", "Property ownership", "Title documents"].map(c => <div key={c} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5 }}><Clock size={16} color="var(--gold-2)" /><b style={{ color: "var(--ink)" }}>{c}</b><span style={{ color: "var(--muted)", marginLeft: "auto", fontSize: 12.5 }}>In review</span></div>)}</div>
       <PmBtn kind="navy" icon={CheckCircle2} onClick={() => { setJ({ verified: true, stage: 3 }); toast("Verified. SMS sent: you can now browse swaps.", "success"); }}>Girard has verified me (demo)</PmBtn>
       <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>In production a Girard officer approves this from the oversight desk and Twilio sends the SMS.</div>
@@ -3576,7 +3576,7 @@ function SwapJourney({ identity, toast, toAi }) {
     if (j.stage === 5) return <PmCard style={{ maxWidth: 720 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Swap agreement</div>{toAi && <PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => toAi(swapSeed("agreement"))}>Open in AI studio</PmBtn>}</div>
       {!j.agreementText ? <PmBtn kind="navy" icon={Sparkles} onClick={genAgreement}>{gen ? "Generating…" : "Generate agreement (AI)"}</PmBtn>
-        : <><div style={{ position: "relative", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto" }}>{j.agreementText}<div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--muted)" }}><Lock size={12} /> Locked</div></div>
+        : <><div style={{ position: "relative", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto", textAlign: "justify" }}>{j.agreementText}<div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--muted)" }}><Lock size={12} /> Locked</div></div>
           <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.signedMe ? "#1F9D57" : "var(--ink)" }}>{j.signedMe ? "Signed ✓" : "Awaiting signature"}</div>{!j.signedMe && <PmBtn size="sm" style={{ marginTop: 8 }} onClick={() => { setJ({ signedMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, signedThem: true }; swapSaveMine(owner, n); return n; }), 800); toast("You e-signed. Counterparty notified."); }}>E-sign</PmBtn>}</div>
             <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedThem ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>Counterparty</div><div style={{ fontWeight: 700, color: j.signedThem ? "#1F9D57" : "var(--ink)" }}>{j.signedThem ? "Signed ✓" : "Awaiting signature"}</div></div>
@@ -3614,7 +3614,7 @@ function SwapJourney({ identity, toast, toAi }) {
       {!locked && <PmCard>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 10 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Contract of sale & concierge</div>{toAi && <PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => toAi(swapSeed("contract"))}>Open in AI studio</PmBtn>}</div>
         {!j.contractText ? <PmBtn kind="navy" icon={Sparkles} onClick={genContract}>{gen ? "Drafting…" : "Draft contract of sale (AI)"}</PmBtn>
-          : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 220, overflow: "auto" }}>{j.contractText}</div>}
+          : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 220, overflow: "auto", textAlign: "justify" }}>{j.contractText}</div>}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 14, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
           <div style={{ fontSize: 13, color: "var(--muted)" }}>Girard concierge to perfect documents · <b style={{ color: "var(--ink)" }}>10% of sales value</b></div>
           <PmBtn kind="gold" icon={CheckCircle2} onClick={async () => { const bal = Math.round(+String(j.balanceValue || "").replace(/,/g, "")) || 0; if (j.escrowFunded && bal > 0) { const code = (NG_BANKS.find(x => x[0] === j.payoutBank) || [])[1] || ""; const r = await paystackTransfer({ amount: bal, account_number: j.payoutNum, bank_code: code, name: j.payoutName || "Swap counterparty", reason: "Escrow release " + owner }); toast(r && r.configured && r.ok ? "Swap completed and filed. Escrow released via Paystack." : "Swap completed and filed. Escrow release recorded (add counterparty bank for a live transfer).", "success"); } else { toast("Swap completed and filed. You can start another swap now.", "success"); } const rec = swapFileCompleted(owner, j); setFiled(prev => [rec, ...prev]); swapSaveMine(owner, sjDefault()); setJraw(sjDefault()); }}>Complete swap</PmBtn>
@@ -3897,8 +3897,8 @@ function DealModal({ deal, onClose, go }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12, marginBottom: 16 }}>
       {[["Location", deal.loc], ["Type", deal.type], ["Ticket", deal.tk], ["Target yield", deal.yld], ["Scale", deal.units], ["Risk", deal.risk]].map(([k, v]) => <div key={k} style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .4 }}>{k}</div><div style={{ fontSize: 13.5, color: "var(--ink)", marginTop: 3 }}>{v}</div></div>)}
     </div>
-    <div style={{ marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Strategy</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6 }}>{deal.strategy}</div></div>
-    <div style={{ marginBottom: 16 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Projected returns</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6 }}>{deal.returns}</div></div>
+    <div style={{ marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Strategy</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, textAlign: "justify" }}>{deal.strategy}</div></div>
+    <div style={{ marginBottom: 16 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Projected returns</div><div style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, textAlign: "justify" }}>{deal.returns}</div></div>
     <div style={{ background: "var(--gold-soft)", borderRadius: 8, padding: 12, fontSize: 13, color: "var(--ink)", marginBottom: 16 }}>{deal.note}</div>
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
       <PmBtn kind="gold" icon={ConciergeBell} onClick={() => { onClose(); go("support"); }}>Discuss with Girard</PmBtn>
@@ -3981,7 +3981,7 @@ function AIStudio({ identity, toast, seed }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Draft</div>{out && <div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind="ghost" icon={ClipboardCheck} onClick={copy}>Copy</PmBtn><PmBtn size="sm" kind="ghost" icon={FileText} onClick={download}>Download</PmBtn><PmBtn size="sm" kind="gold" icon={Check} onClick={saveDoc}>Save</PmBtn></div>}</div>
         {offline && <div style={{ background: "rgba(224,161,6,.1)", border: "1px solid rgba(224,161,6,.3)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", marginBottom: 10 }}>AI is not connected yet. Add <b>ANTHROPIC_API_KEY</b> in Vercel and redeploy for full, tailored drafting. Showing a basic skeleton for now.</div>}
         {loading ? <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Drafting your document…</div>
-          : out ? <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16 }}>{out}</div>
+          : out ? <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16, textAlign: "justify" }}>{out}</div>
           : <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Your AI-drafted document will appear here.</div>}
         {out && <div style={{ display: "flex", gap: 8, marginTop: 12 }}><input value={refine} onChange={e => setRefine(e.target.value)} placeholder="Refine, e.g. add a penalty clause" style={{ ...inp, flex: 1 }} onKeyDown={e => e.key === "Enter" && refine.trim() && run(refine)} /><PmBtn kind="navy" onClick={() => refine.trim() && run(refine)}>Refine</PmBtn></div>}
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 12 }}>AI drafts are a starting point. Have important documents reviewed by a qualified lawyer before signing.</div>
@@ -4050,7 +4050,7 @@ function PaymentsScreen({ toast }) {
     </PmCard>
     <PmCard pad={0} style={{ overflow: "hidden" }}>
       {loading ? <div style={{ padding: 24, color: "var(--muted)" }}>Loading…</div>
-        : rows.length === 0 ? <div style={{ padding: 24, color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>No payments yet. Every agent and swap fee is logged here. In demo mode they read "Recorded (demo)"; once Paystack is live they read "Confirmed" and appear the moment Paystack notifies Girard, even if the payer closes their tab.</div>
+        : rows.length === 0 ? <div style={{ padding: 24, color: "var(--muted)", fontSize: 14, lineHeight: 1.6, textAlign: "justify" }}>No payments yet. Every agent and swap fee is logged here. In demo mode they read "Recorded (demo)"; once Paystack is live they read "Confirmed" and appear the moment Paystack notifies Girard, even if the payer closes their tab.</div>
         : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
           <thead><tr style={{ background: "var(--ivory)" }}>{["Reference", "Purpose", "Paid by", "Amount", "Status", "When"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
           <tbody>{rows.map(r => <tr key={r.reference} style={{ borderTop: "1px solid var(--cream-line)" }}>
@@ -4130,7 +4130,7 @@ function DocumentsScreen({ identity, toast }) {
     <H2 title="Documents" sub="Every agreement, MOU and letter saved from the AI studio" />
     <div style={{ marginBottom: 16, maxWidth: 400 }}><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search type, subject, party or deal…" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit" }} /></div>
     {loading ? <PmCard><div style={{ color: "var(--muted)" }}>Loading…</div></PmCard>
-      : filtered.length === 0 ? <PmCard><div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{docs.length === 0 ? "No saved documents yet. Generate an agreement or MOU in AI documents and tap Save, and it will appear here." : "No documents match your search."}</div></PmCard>
+      : filtered.length === 0 ? <PmCard><div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, textAlign: "justify" }}>{docs.length === 0 ? "No saved documents yet. Generate an agreement or MOU in AI documents and tap Save, and it will appear here." : "No documents match your search."}</div></PmCard>
       : <div style={{ display: "grid", gap: 10 }}>{filtered.map(d => <PmCard key={d.id} className="lift" style={{ marginBottom: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
             <div style={{ minWidth: 0 }}>
@@ -4143,7 +4143,7 @@ function DocumentsScreen({ identity, toast }) {
         </PmCard>)}</div>}
     {view && <PmModal title={view.doc_type} onClose={() => setView(null)} wide>
       <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 10 }}>{view.subject || ""}{view.deal_label ? " · " + view.deal_label : ""}</div>
-      <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16 }}>{view.body}</div>
+      <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16, textAlign: "justify" }}>{view.body}</div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}><PmBtn kind="gold" onClick={() => { setSign(view); setView(null); }}>Sign</PmBtn><PmBtn kind="ghost" icon={FileText} onClick={() => download(view)}>Download</PmBtn></div>
     </PmModal>}
     {sign && <EsignModal doc={sign} onClose={() => setSign(null)} toast={toast} />}
@@ -4263,7 +4263,7 @@ function TenantPortal({ identity, toast, section, go }) {
         </div>
       </div>
     </PmCard>)}</div>
-    <PmCard style={{ marginTop: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Bank transfer details</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.7 }}>Account name: Girard Property Limited<br />Bank: Zenith Bank · Account: 1010101010<br />Use your name as the reference, then tap "I paid by transfer" above. Girard confirms within 24 hours.</div></PmCard>
+    <PmCard style={{ marginTop: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Bank transfer details</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.7, textAlign: "justify" }}>Account name: Girard Property Limited<br />Bank: Zenith Bank · Account: 1010101010<br />Use your name as the reference, then tap "I paid by transfer" above. Girard confirms within 24 hours.</div></PmCard>
     <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Online payments are recorded now and go live once Paystack is connected.</div>
   </div>;
 
@@ -4292,7 +4292,7 @@ function TenantPortal({ identity, toast, section, go }) {
     <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Documents</div>
     {docs.length === 0 ? <PmCard><div style={{ color: "var(--muted)", fontSize: 13.5 }}>No documents shared with you yet. Your tenancy agreement will appear here once Girard issues it.</div></PmCard>
       : <div style={{ display: "grid", gap: 10 }}>{docs.map(d => <PmCard key={d.id} style={{ marginBottom: 0 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}><div style={{ display: "flex", alignItems: "center", gap: 8 }}><FileText size={15} color="var(--gold-2)" /><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{d.doc_type}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{d.subject || ""}</div></div></div><PmBtn size="sm" onClick={() => setDocView(d)}>View</PmBtn></div></PmCard>)}</div>}
-    {docView && <PmModal title={docView.doc_type} onClose={() => setDocView(null)} wide><div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16 }}>{docView.body}</div></PmModal>}
+    {docView && <PmModal title={docView.doc_type} onClose={() => setDocView(null)} wide><div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16, textAlign: "justify" }}>{docView.body}</div></PmModal>}
   </div>;
 
   if (section === "tmsg") return <div>
@@ -4375,7 +4375,7 @@ function AskAI({ st, identity, toast }) {
     <PmCard>
       <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, minHeight: 260, maxHeight: 420, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
         {msgs.length === 0 ? <div style={{ margin: "auto", textAlign: "center" }}><div style={{ color: "var(--muted)", fontSize: 13.5, marginBottom: 12 }}>Ask about occupancy, rent, applications, areas and more.</div><div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>{sugg.map(x => <button key={x} onClick={() => setQ(x)} style={{ border: "1px solid var(--cream-line)", background: "var(--white)", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, color: "var(--ink)", cursor: "pointer" }}>{x}</button>)}</div></div>
-          : msgs.map((m, i) => <div key={i} style={{ alignSelf: m.me ? "flex-end" : "flex-start", maxWidth: "82%", background: m.me ? "var(--navy)" : "var(--white)", color: m.me ? "#fff" : "var(--ink)", border: m.me ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "10px 13px", fontSize: 13.5, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{m.text}</div>)}
+          : msgs.map((m, i) => <div key={i} style={{ alignSelf: m.me ? "flex-end" : "flex-start", maxWidth: "82%", background: m.me ? "var(--navy)" : "var(--white)", color: m.me ? "#fff" : "var(--ink)", border: m.me ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "10px 13px", fontSize: 13.5, whiteSpace: "pre-wrap", lineHeight: 1.5, textAlign: "justify" }}>{m.text}</div>)}
         {loading && <div style={{ alignSelf: "flex-start", color: "var(--muted)", fontSize: 13 }}>Thinking…</div>}
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && ask()} placeholder="e.g. Which units are vacant?" style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)" }} /><PmBtn kind="gold" onClick={ask}>Ask</PmBtn></div>
@@ -4469,7 +4469,7 @@ function EsignModal({ doc, onClose, toast }) {
   };
   return <PmModal title="Sign document" onClose={onClose} wide>
     <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>{doc.doc_type}{doc.subject ? " · " + doc.subject : ""}</div>
-    <div style={{ whiteSpace: "pre-wrap", fontSize: 12.5, lineHeight: 1.55, color: "var(--ink)", maxHeight: 220, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, marginBottom: 14 }}>{doc.body}</div>
+    <div style={{ whiteSpace: "pre-wrap", fontSize: 12.5, lineHeight: 1.55, color: "var(--ink)", maxHeight: 220, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, marginBottom: 14, textAlign: "justify" }}>{doc.body}</div>
     <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Type your full name to sign</label>
     <input value={sig} onChange={e => setSig(e.target.value)} placeholder="Full legal name" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)", marginBottom: 8 }} />
     {sig && <div className="serif" style={{ fontSize: 26, color: "var(--ink)", fontStyle: "italic", padding: "6px 2px 14px" }}>{sig}</div>}
@@ -4491,7 +4491,7 @@ function PrivacyScreen({ identity, toast }) {
     try { notify({ title: "Data deletion request", body: ((identity && identity.email) || "A user") + " requested erasure of their data", audience: "admin" }); } catch (e) {}
     toast("Your local data has been cleared", "success");
   };
-  const Section = ({ h, children }) => <div style={{ marginBottom: 16 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 5 }}>{h}</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.65 }}>{children}</div></div>;
+  const Section = ({ h, children }) => <div style={{ marginBottom: 16 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 5 }}>{h}</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.65, textAlign: "justify" }}>{children}</div></div>;
   return <div>
     <H2 title="Data & privacy" sub="How Girard handles your data, and your rights under the NDPA" />
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
@@ -4540,7 +4540,7 @@ function ConsentBanner() {
   if (!show) return null;
   const ok = () => { try { localStorage.setItem("girard_consent", "1"); } catch (e) {} setShow(false); };
   return <div style={{ position: "fixed", left: 16, right: 16, bottom: 16, zIndex: 9999, maxWidth: 640, margin: "0 auto", background: "var(--navy)", color: "#fff", borderRadius: 12, padding: "14px 16px", boxShadow: "0 18px 50px rgba(0,0,0,.4)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-    <div style={{ flex: 1, minWidth: 220, fontSize: 12.5, color: "rgba(255,255,255,.85)", lineHeight: 1.5 }}>We use essential cookies and local storage to run Girard and remember your preferences, in line with the Nigeria Data Protection Act. See Data & privacy for details.</div>
+    <div style={{ flex: 1, minWidth: 220, fontSize: 12.5, color: "rgba(255,255,255,.85)", lineHeight: 1.5, textAlign: "justify" }}>We use essential cookies and local storage to run Girard and remember your preferences, in line with the Nigeria Data Protection Act. See Data & privacy for details.</div>
     <button onClick={ok} style={{ background: "var(--gold)", color: "#201601", border: "none", borderRadius: 8, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Got it</button>
   </div>;
 }
@@ -4573,13 +4573,13 @@ function SecurityScreen({ identity, toast }) {
       </PmCard> : <PmCard>
         {!secret ? <>
           <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Set up two-factor authentication</div>
-          <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, marginBottom: 14 }}>Use an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy. You will scan a QR code, then enter the 6-digit code it shows to confirm.</div>
+          <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, marginBottom: 14, textAlign: "justify" }}>Use an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy. You will scan a QR code, then enter the 6-digit code it shows to confirm.</div>
           <PmBtn kind="navy" icon={Lock} onClick={begin}>{busy ? "Preparing\u2026" : "Begin setup"}</PmBtn>
         </> : <>
           <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 20, alignItems: "start" }} className="pm-grid2">
             <div style={{ background: "#fff", borderRadius: 10, padding: 10, display: "grid", placeItems: "center", minHeight: 190 }}>{qr ? <img src={qr} alt="2FA QR code" style={{ width: 180, height: 180 }} /> : <div style={{ color: "var(--muted)", fontSize: 12 }}>Preparing QR\u2026</div>}</div>
             <div>
-              <div style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6, marginBottom: 10 }}>1. Scan this QR code with your authenticator app.</div>
+              <div style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6, marginBottom: 10, textAlign: "justify" }}>1. Scan this QR code with your authenticator app.</div>
               <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 4 }}>Or enter this key manually:</div>
               <div style={{ fontFamily: "monospace", fontSize: 13, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "8px 10px", wordBreak: "break-all", color: "var(--ink)", marginBottom: 16 }}>{secret}</div>
               <div style={{ fontSize: 13.5, color: "var(--ink)", marginBottom: 6 }}>2. Enter the 6-digit code to confirm:</div>
