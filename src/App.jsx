@@ -1939,7 +1939,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   };
   return <div style={{ display: "flex", minHeight: "100vh", background: "var(--ivory)" }}>
     <style>{`
-      .pm-side{width:240px;background:var(--navy);color:#fff;flex-shrink:0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:18px 14px;z-index:40}
+      .pm-side{width:240px;background:var(--navy);color:#fff;flex-shrink:0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:18px 14px;z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch}
       .pm-nav{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:rgba(255,255,255,.72);font-weight:500;font-size:13.5px;text-align:left;width:100%;transition:all .15s}
       .pm-nav:hover{color:#fff}
       .pm-nav.on{background:var(--gold);color:var(--navy);font-weight:700}
