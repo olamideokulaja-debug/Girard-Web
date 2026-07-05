@@ -1945,6 +1945,9 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       .pm-nav.on{background:var(--gold);color:var(--navy);font-weight:700}
       .pm-burger{display:none}
       @media(max-width:860px){.pm-side{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s}.pm-side.open{transform:translateX(0)}.pm-burger{display:inline-flex!important}.pm-grid2{grid-template-columns:1fr!important}.pm-kanban{grid-template-columns:1fr!important}}
+      .pm-show-mobile{display:none}
+      .pm-topbar-title-sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      @media(max-width:860px){.pm-topbar{padding:10px 14px!important}.pm-topbar-right{gap:10px!important}.pm-hide-mobile{display:none!important}.pm-show-mobile{display:flex!important}}
       .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
     `}</style>
     <aside className={"pm-side" + (nav2Open ? " open" : "")}>
@@ -1953,24 +1956,32 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
         {nav.map(([k, label, Icon]) => <button key={k} className={"pm-nav" + (view === k ? " on" : "")} onClick={() => { setView(k); setNav2Open(false); }}><Icon size={17} />{label}</button>)}
       </nav>
       <button className="pm-nav" onClick={onSwitchRole}><LayoutGrid size={17} />Change role</button>
+      <div className="pm-show-mobile" style={{ display: "none", flexDirection: "column", gap: 3, borderTop: "1px solid var(--navy-line)", marginTop: 6, paddingTop: 6 }}>
+        <button className="pm-nav" onClick={() => { setView("settings"); setNav2Open(false); }}><Settings size={17} />Settings</button>
+        <button className="pm-nav" onClick={onSignOut}><LogOut size={17} />Sign out</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px" }}>
+          <span style={{ fontSize: 13.5, color: "rgba(255,255,255,.72)" }}>Currency</span>
+          <select value={cur} onChange={e => setCur(e.target.value)} style={{ background: "rgba(255,255,255,.08)", border: "1px solid var(--navy-line)", borderRadius: 8, padding: "6px 8px", color: "#fff", fontSize: 13, fontFamily: "inherit", cursor: "pointer", marginLeft: "auto" }}>{["\u20a6", "$", "\u00a3", "\u20ac"].map(x => <option key={x} value={x} style={{ color: "#000" }}>{x}</option>)}</select>
+        </div>
+      </div>
       <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", padding: "10px 8px 0" }}>Girard Property Limited</div>
     </aside>
     {nav2Open && <div onClick={() => setNav2Open(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", zIndex: 30 }} />}
     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-      <header style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <header className="pm-topbar" style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20, gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "1 Bourdillon · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : view === "ai" ? "AI document studio" : view === "payments" ? "Confirmed payments" : "Digital Property Management · Lagos"}</div></div>
+          <div style={{ minWidth: 0 }}><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }} className="pm-topbar-title-sub">{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div className="pm-topbar-title-sub" style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "1 Bourdillon · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : view === "ai" ? "AI document studio" : view === "payments" ? "Confirmed payments" : "Digital Property Management · Lagos"}</div></div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <select value={cur} onChange={e => setCur(e.target.value)} title="Display currency" style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "6px 8px", color: "var(--ink)", fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>{["\u20a6", "$", "\u00a3", "\u20ac"].map(x => <option key={x} value={x}>{x}</option>)}</select>
+        <div className="pm-topbar-right" style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+          <select value={cur} onChange={e => setCur(e.target.value)} title="Display currency" className="pm-hide-mobile" style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "6px 8px", color: "var(--ink)", fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>{["\u20a6", "$", "\u00a3", "\u20ac"].map(x => <option key={x} value={x}>{x}</option>)}</select>
           <button onClick={() => setTheme(t => t === "dark" ? "light" : "dark")} title="Toggle theme" style={{ background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, cursor: "pointer", color: "var(--ink)", width: 34, height: 34, display: "grid", placeItems: "center" }}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
           <NotifBell identity={identity} />
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div className="serif" style={{ width: 34, height: 34, borderRadius: 999, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 13 }}>{identity.initials}</div>
-            <div style={{ lineHeight: 1.2 }}><div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{identity.firstName}</div><div style={{ fontSize: 11, color: "var(--gold-2)" }}>{identity.title}</div></div>
+            <div className="pm-hide-mobile" style={{ lineHeight: 1.2 }}><div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{identity.firstName}</div><div style={{ fontSize: 11, color: "var(--gold-2)" }}>{identity.title}</div></div>
           </div>
-          {canSwitch && <div style={{ position: "relative" }}>
+          {canSwitch && <div className="pm-hide-mobile" style={{ position: "relative" }}>
             <button onClick={() => setRoleMenu(o => !o)} style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--navy)", color: "#fff", border: "1px solid var(--navy-line)", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
               <span style={{ color: "var(--gold)", fontSize: 10, fontWeight: 800, letterSpacing: .5 }}>WORKSPACE</span>
               {ROLES.find(r => r.key === activeRole)?.name || "Workspace"}
@@ -1983,7 +1994,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
               </button>)}
             </div>}
           </div>}
-          <div style={{ position: "relative" }}>
+          <div className="pm-hide-mobile" style={{ position: "relative" }}>
             <button onClick={() => setNotifOpen(o => !o)} title="Notifications" style={{ position: "relative", background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, width: 36, height: 36, display: "grid", placeItems: "center", cursor: "pointer", color: "var(--ink)" }}>
               <Bell size={17} /><span style={{ position: "absolute", top: 7, right: 8, width: 7, height: 7, borderRadius: 999, background: "var(--gold)" }} />
             </button>
@@ -1995,8 +2006,8 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
               </div>)}
             </div>}
           </div>
-          <button onClick={() => { setView("settings"); setNav2Open(false); }} title="Settings" style={{ background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, width: 36, height: 36, display: "grid", placeItems: "center", cursor: "pointer", color: "var(--ink)" }}><Settings size={17} /></button>
-          <PmBtn kind="ghost" size="sm" icon={LogOut} onClick={onSignOut}>Sign out</PmBtn>
+          <button onClick={() => { setView("settings"); setNav2Open(false); }} title="Settings" className="pm-hide-mobile" style={{ background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, width: 36, height: 36, display: "grid", placeItems: "center", cursor: "pointer", color: "var(--ink)" }}><Settings size={17} /></button>
+          <span className="pm-hide-mobile"><PmBtn kind="ghost" size="sm" icon={LogOut} onClick={onSignOut}>Sign out</PmBtn></span>
         </div>
       </header>
       <main style={{ padding: 24, flex: 1 }}><div key={view} className="view-enter">{screen()}</div></main>
