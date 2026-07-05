@@ -157,3 +157,12 @@ create table if not exists public.messages (
 alter table public.messages enable row level security;
 drop policy if exists "msg all" on public.messages;
 create policy "msg all" on public.messages for all to anon, authenticated using (true) with check (true);
+
+-- Memberships: one row per user, tracks paid annual access
+create table if not exists subscriptions (
+  email      text primary key,
+  role       text,
+  paid_at    timestamptz,
+  expires_at timestamptz,
+  updated_at timestamptz default now()
+);

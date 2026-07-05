@@ -806,6 +806,21 @@ async function auditFetch() {
 async function sendComms({ channels, to, subject, message }) {
   try { const r = await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channels, to, subject, message }) }); return await r.json(); } catch (e) { return { configured: false }; }
 }
+// Annual membership pricing (Naira/year). Admin is exempt.
+const SUB_PRICES = { owner: 50000, tenant: 10000, agent: 80000, investor: 120000 };
+function subKey(email) { return "girard_sub_" + (email || "").toLowerCase(); }
+async function subActive(email) {
+  const e = (email || "").toLowerCase();
+  try { if (supabase) { const { data } = await supabase.from("subscriptions").select("expires_at").eq("email", e).maybeSingle(); if (data && data.expires_at && new Date(data.expires_at) > new Date()) return true; } } catch (err) {}
+  try { const raw = localStorage.getItem(subKey(e)); if (raw) { const sObj = JSON.parse(raw); if (sObj.expires_at && new Date(sObj.expires_at) > new Date()) return true; } } catch (err) {}
+  return false;
+}
+async function subSet(email, role) {
+  const e = (email || "").toLowerCase(); const now = new Date(); const exp = new Date(now.getTime() + 365 * 24 * 3600 * 1000);
+  const rec = { email: e, role, paid_at: now.toISOString(), expires_at: exp.toISOString() };
+  try { localStorage.setItem(subKey(e), JSON.stringify(rec)); } catch (err) {}
+  try { if (supabase) await supabase.from("subscriptions").upsert([rec], { onConflict: "email" }); } catch (err) {}
+}
 async function paymentExists(target, purpose) {
   if (supabase && target) { try { const { data, error } = await supabase.from("payments").select("reference").eq("target", target).eq("purpose", purpose).eq("status", "success").limit(1); if (!error && data && data.length) return true; } catch (e) {} }
   return false;
@@ -1005,7 +1020,19 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
   const isSignup = mode === "signup";
   const [agree, setAgree] = useState(false);
   const [twoFA, setTwoFA] = useState(null); const [code, setCode] = useState("");
-  const verify2FA = async () => { setErr(""); const ok = await totpCheck(twoFA.secret, code.trim()); if (!ok) { setErr("Incorrect code. Check your authenticator app and try again."); return; } onAuthed(resolveIdentity(twoFA.email, twoFA.role)); };
+  const [paywall, setPaywall] = useState(null); const [payBusy, setPayBusy] = useState(false);
+  const finishAuth = async (email, r) => {
+    if (r === "admin") { onAuthed(resolveIdentity(email, r)); return; }
+    if (await subActive(email)) { onAuthed(resolveIdentity(email, r)); return; }
+    setBusy(false); setPaywall({ email, role: r });
+  };
+  const payAndEnter = () => {
+    const price = SUB_PRICES[paywall.role] || 0; setPayBusy(true);
+    payWithPaystack({ email: paywall.email, amountNaira: price, label: "Girard annual membership", purpose: "subscription", target: paywall.email,
+      onSuccess: async () => { await subSet(paywall.email, paywall.role); setPayBusy(false); onAuthed(resolveIdentity(paywall.email, paywall.role)); },
+      onCancel: () => setPayBusy(false) });
+  };
+  const verify2FA = async () => { setErr(""); const ok = await totpCheck(twoFA.secret, code.trim()); if (!ok) { setErr("Incorrect code. Check your authenticator app and try again."); return; } finishAuth(twoFA.email, twoFA.role); };
   const submit = async () => {
     setErr("");
     if (isSignup && !agree) { setErr("Please accept the Privacy Policy to continue."); return; }
@@ -1018,7 +1045,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
       if (!isSignup && !res.role) { onNeedRole(res.email); return; }
       const sec = !isSignup ? twoFAGet(res.email) : "";
       if (sec) { setTwoFA({ email: res.email, role: res.role || role, secret: sec }); setBusy(false); return; }
-      onAuthed(resolveIdentity(res.email, res.role || role));
+      await finishAuth(res.email, res.role || role);
     } catch (e) { setErr(e.message || "Something went wrong. Please try again."); }
     finally { setBusy(false); }
   };
@@ -1032,6 +1059,17 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
           {err && <div style={{ color: "#ff9a90", fontSize: 13, marginTop: 10 }}>{err}</div>}
           <button className="btn-gold" onClick={verify2FA} style={{ width: "100%", marginTop: 14 }}>Verify <ArrowUpRight size={16} /></button>
           <button onClick={() => { setTwoFA(null); setCode(""); setErr(""); }} className="btn-line on-navy" style={{ width: "100%", marginTop: 10, padding: "9px" }}>Cancel</button>
+        </div>
+      </div>}
+      {paywall && <div style={{ position: "fixed", inset: 0, background: "rgba(4,10,24,.8)", display: "grid", placeItems: "center", zIndex: 100, padding: 16, overflowY: "auto" }}>
+        <div style={{ background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 16, padding: "28px 26px", width: 380, maxWidth: "92vw" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .6, color: "var(--gold)", textTransform: "uppercase" }}>Annual membership</div>
+          <div className="serif" style={{ fontSize: 23, fontWeight: 600, margin: "6px 0 4px" }}>{ROLES.find(r => r.key === paywall.role)?.name || "Membership"}</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,.65)", lineHeight: 1.55, marginBottom: 16 }}>Girard is a membership platform. Your access runs for 12 months from today.</div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 18 }}><div className="serif" style={{ fontSize: 40, fontWeight: 600 }}>{"\u20a6" + (SUB_PRICES[paywall.role] || 0).toLocaleString()}</div><div style={{ color: "rgba(255,255,255,.55)", fontSize: 14, marginBottom: 8 }}>/ year</div></div>
+          <button className="btn-gold" onClick={payAndEnter} disabled={payBusy} style={{ width: "100%", opacity: payBusy ? .7 : 1 }}>{payBusy ? "Opening payment\u2026" : "Pay & continue"} <ArrowUpRight size={16} /></button>
+          <button onClick={() => { setPaywall(null); }} className="btn-line on-navy" style={{ width: "100%", marginTop: 10, padding: "9px" }}>Cancel</button>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.4)", marginTop: 12, textAlign: "center" }}>Secure payment by Paystack</div>
         </div>
       </div>}
       <div className="auth-brand" style={{ background: "var(--navy-2)", padding: "48px 56px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", borderRight: "1px solid var(--navy-line)" }}>
@@ -2622,27 +2660,25 @@ const CUR_CODE = { Nigeria: "ngn", UK: "gbp", US: "usd" };
 const CUR_SYM = { Nigeria: "₦", UK: "£", US: "$" };
 const PLANS = {
   owner: [
-    { name: "Single", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["1 property", "AI rent guidance", "Rent collection", "Maintenance requests"], cta: "Current plan" },
-    { name: "Portfolio", tag: "Popular", price: { Nigeria: "₦25,000", UK: "£29", US: "$35" }, amount: { Nigeria: 2500000, UK: 2900, US: 3500 }, feats: ["Up to 25 properties", "Full analytics dashboard", "Priority support", "Automated invoicing"], cta: "Choose Portfolio" },
-    { name: "Institutional", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Unlimited portfolio", "Dedicated account manager", "API & integrations", "Custom reporting"], cta: "Contact sales" }
+    { name: "Membership", tag: "Your plan", price: { Nigeria: "₦50,000", UK: "£58", US: "$70" }, per: "/yr", feats: ["Up to 25 properties", "Full analytics dashboard", "AI documents & rent guidance", "Priority support"], cta: "Current membership" },
+    { name: "Institutional", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, feats: ["Unlimited portfolio", "Dedicated account manager", "API & integrations", "Custom reporting"], cta: "Contact sales" }
   ],
   agent: [
-    { name: "Starter", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Up to 10 listings", "Shared pipeline", "Basic analytics"], cta: "Current plan" },
-    { name: "Professional", tag: "Popular", price: { Nigeria: "₦40,000", UK: "£49", US: "$59" }, amount: { Nigeria: 4000000, UK: 4900, US: 5900 }, feats: ["Unlimited listings", "Full CRM & pipeline", "Live feed & intelligence", "Performance analytics"], cta: "Choose Professional" },
-    { name: "Brokerage", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Team seats", "Brokerage dashboard", "Lead routing", "Priority partner access"], cta: "Contact sales" }
+    { name: "Membership", tag: "Your plan", price: { Nigeria: "₦80,000", UK: "£98", US: "$118" }, per: "/yr", feats: ["Unlimited listings", "Full CRM & pipeline", "Live feed & intelligence", "Performance analytics"], cta: "Current membership" },
+    { name: "Brokerage", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, feats: ["Team seats", "Brokerage dashboard", "Lead routing", "Priority partner access"], cta: "Contact sales" }
   ],
   investor: [
-    { name: "Access", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Browse swaps", "Basic market intelligence", "Live feed"], cta: "Current plan" },
-    { name: "Pro", tag: "Popular", price: { Nigeria: "₦60,000", UK: "£75", US: "$89" }, amount: { Nigeria: 6000000, UK: 7500, US: 8900 }, feats: ["Full market intelligence", "Priority swap matching", "Deal-flow alerts", "Concierge access"], cta: "Choose Pro" },
-    { name: "Institutional", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, amount: null, feats: ["Portfolio tooling", "Dedicated analyst", "Off-market deal flow", "Custom mandates"], cta: "Contact sales" }
+    { name: "Membership", tag: "Your plan", price: { Nigeria: "₦120,000", UK: "£150", US: "$178" }, per: "/yr", feats: ["Full market intelligence", "Priority swap matching", "Deal-flow alerts", "Concierge access"], cta: "Current membership" },
+    { name: "Institutional", price: { Nigeria: "Custom", UK: "Custom", US: "Custom" }, feats: ["Portfolio tooling", "Dedicated analyst", "Off-market deal flow", "Custom mandates"], cta: "Contact sales" }
   ],
   tenant: [
-    { name: "Free", tag: "Free", price: { Nigeria: "₦0", UK: "£0", US: "$0" }, amount: null, feats: ["Search & apply", "Pay rent online", "Report repairs"], cta: "Current plan" },
-    { name: "Premium", tag: "Popular", price: { Nigeria: "₦5,000", UK: "£6", US: "$7" }, amount: { Nigeria: 500000, UK: 600, US: 700 }, feats: ["Early access to listings", "Priority applications", "Rent-reporting for credit", "Concierge move-in"], cta: "Go Premium" }
+    { name: "Membership", tag: "Your plan", price: { Nigeria: "₦10,000", UK: "£12", US: "$14" }, per: "/yr", feats: ["Search & apply", "Pay rent online", "Report repairs", "Early access & priority applications"], cta: "Current membership" }
   ]
 };
 async function startCheckout(tier, market, role, toast) {
-  if (!tier.amount) { toast(tier.cta === "Contact sales" ? "Our team will reach out about the " + tier.name + " plan" : "You are on the " + tier.name + " plan"); return; }
+  if (!tier.per) { toast("Our team will reach out about the " + tier.name + " plan"); return; }
+  toast("This is your active membership. It renews yearly.");
+  return;
   try {
     const r = await fetch("/api/create-checkout-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: role + " · " + tier.name, amount: tier.amount[market], currency: CUR_CODE[market] }) });
     const d = await r.json();
@@ -2654,14 +2690,14 @@ function PricingScreen({ identity, toast }) {
   const [market, setMarket] = useState("Nigeria");
   const tiers = PLANS[identity.role] || PLANS.owner;
   return <div>
-    <H2 title="Plans & pricing" sub={"Tailored to " + (ROLES.find(r => r.key === identity.role)?.name || "you") + ", billed monthly"} right={<div style={{ width: 150 }}><PmSelect value={market} onChange={setMarket} options={["Nigeria", "UK", "US"]} /></div>} />
+    <H2 title="Plans & pricing" sub={"Tailored to " + (ROLES.find(r => r.key === identity.role)?.name || "you") + ", billed annually"} right={<div style={{ width: 150 }}><PmSelect value={market} onChange={setMarket} options={["Nigeria", "UK", "US"]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 18 }}>
-      {tiers.map(t => { const pop = t.tag === "Popular"; return <div key={t.name} style={{ background: pop ? "var(--navy)" : "var(--white)", color: pop ? "#fff" : "var(--ink)", border: "1px solid " + (pop ? "var(--navy)" : "var(--cream-line)"), borderRadius: 14, padding: 26, position: "relative", boxShadow: pop ? "0 24px 60px rgba(10,31,60,.22)" : "none" }}>
+      {tiers.map(t => { const pop = t.tag === "Popular" || t.tag === "Your plan"; return <div key={t.name} style={{ background: pop ? "var(--navy)" : "var(--white)", color: pop ? "#fff" : "var(--ink)", border: "1px solid " + (pop ? "var(--navy)" : "var(--cream-line)"), borderRadius: 14, padding: 26, position: "relative", boxShadow: pop ? "0 24px 60px rgba(10,31,60,.22)" : "none" }}>
         {t.tag && <span style={{ position: "absolute", top: 18, right: 20, background: pop ? "var(--gold)" : "var(--gold-soft)", color: pop ? "#201601" : "var(--gold-2)", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>{t.tag}</span>}
         <div className="serif" style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>{t.name}</div>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 16 }}><div className="serif" style={{ fontSize: 34, fontWeight: 600 }}>{t.price[market]}</div>{t.amount && <div style={{ color: pop ? "rgba(255,255,255,.6)" : "var(--muted)", fontSize: 13, marginBottom: 6 }}>/mo</div>}</div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 16 }}><div className="serif" style={{ fontSize: 34, fontWeight: 600 }}>{t.price[market]}</div>{t.per && <div style={{ color: pop ? "rgba(255,255,255,.6)" : "var(--muted)", fontSize: 13, marginBottom: 6 }}>{t.per}</div>}</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>{t.feats.map(f => <div key={f} style={{ display: "flex", gap: 9, alignItems: "center", fontSize: 13.5, color: pop ? "rgba(255,255,255,.88)" : "var(--ink)" }}><BadgeCheck size={16} color="var(--gold)" style={{ flexShrink: 0 }} />{f}</div>)}</div>
-        <button onClick={() => startCheckout(t, market, identity.role, toast)} style={{ width: "100%", padding: "12px 0", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: "pointer", border: "none", background: pop ? "var(--gold)" : t.amount ? "var(--navy)" : "transparent", color: pop ? "#201601" : t.amount ? "#fff" : "var(--muted)", borderStyle: t.amount ? "none" : "solid", borderWidth: t.amount ? 0 : 1, borderColor: "var(--cream-line)" }}>{t.cta}</button>
+        <button onClick={() => startCheckout(t, market, identity.role, toast)} style={{ width: "100%", padding: "12px 0", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: "pointer", border: "none", background: pop ? "var(--gold)" : t.per ? "var(--navy)" : "transparent", color: pop ? "#201601" : t.per ? "#fff" : "var(--muted)", borderStyle: t.per ? "none" : "solid", borderWidth: t.per ? 0 : 1, borderColor: "var(--cream-line)" }}>{t.cta}</button>
       </div>; })}
     </div>
     <div style={{ marginTop: 22, color: "var(--muted)", fontSize: 13, display: "flex", gap: 8, alignItems: "center" }}><ShieldCheck size={14} color="var(--gold-2)" /> Transaction fees apply per service: management from 5% of collected rent, swaps at a flat completion fee. Prices shown in {CUR_SYM[market]}.</div>
