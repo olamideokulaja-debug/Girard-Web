@@ -1957,6 +1957,11 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       </nav>
       <button className="pm-nav" onClick={onSwitchRole}><LayoutGrid size={17} />Change role</button>
       <div className="pm-show-mobile" style={{ display: "none", flexDirection: "column", gap: 3, borderTop: "1px solid var(--navy-line)", marginTop: 6, paddingTop: 6 }}>
+        {canSwitch && <>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: .5, padding: "4px 12px 3px" }}>Switch workspace</div>
+          {ROLES.map(r => <button key={r.key} className="pm-nav" onClick={() => { switchWorkspace(r.key); setNav2Open(false); }} style={activeRole === r.key ? { background: "rgba(230,160,32,.16)", color: "#fff" } : undefined}><r.icon size={17} />{r.name}{activeRole === r.key && <Check size={14} style={{ marginLeft: "auto", color: "var(--gold)" }} />}</button>)}
+          <div style={{ borderTop: "1px solid var(--navy-line)", margin: "6px 0" }} />
+        </>}
         <button className="pm-nav" onClick={() => { setView("settings"); setNav2Open(false); }}><Settings size={17} />Settings</button>
         <button className="pm-nav" onClick={onSignOut}><LogOut size={17} />Sign out</button>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px" }}>
