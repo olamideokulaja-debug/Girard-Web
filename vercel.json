@@ -4,6 +4,7 @@
     { "path": "/api/rent-reminders", "schedule": "0 7 * * *" }
   ],
   "rewrites": [
-    { "source": "/privacy", "destination": "/privacy.html" }
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/delete-account", "destination": "/delete-account.html" }
   ]
 }
