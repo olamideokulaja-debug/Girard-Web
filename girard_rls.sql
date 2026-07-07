@@ -118,6 +118,25 @@ begin
   end if;
 end $$;
 
+-- Memberships: each user manages only their own membership row.
+-- Admins can see and manage all. This locks the table safely.
+do $$
+begin
+  if to_regclass('subscriptions') is not null then
+    alter table subscriptions enable row level security;
+    drop policy if exists subscriptions_self_read on subscriptions;
+    drop policy if exists subscriptions_self_ins on subscriptions;
+    drop policy if exists subscriptions_self_upd on subscriptions;
+    create policy subscriptions_self_read on subscriptions
+      for select using (email = auth.email() or public.is_admin());
+    create policy subscriptions_self_ins on subscriptions
+      for insert with check (email = auth.email() or public.is_admin());
+    create policy subscriptions_self_upd on subscriptions
+      for update using (email = auth.email() or public.is_admin())
+      with check (email = auth.email() or public.is_admin());
+  end if;
+end $$;
+
 -- ============================================================
 -- ADMINS: any @girardproperty.com account becomes an admin
 -- automatically the first time it signs in (the app writes its

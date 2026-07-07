@@ -381,6 +381,9 @@ function RoiCalculator() {
 }
 
 function Landing({ onStart, onSignIn }) {
+  const [tab, setTab] = useState("home");
+  const go = (t) => { setTab(t); try { window.scrollTo({ top: 0 }); } catch (e) {} };
+  const show = (id) => tab === "home" || tab === id;
   const [region, setRegion] = useState("International");
   const [menu, setMenu] = useState(false);
   const [tick, setTick] = useState(0);
@@ -419,7 +422,7 @@ function Landing({ onStart, onSignIn }) {
         .rpill{border:1px solid var(--navy-line);background:transparent;color:rgba(255,255,255,.7);padding:7px 15px;border-radius:2px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .18s;letter-spacing:.2px}
         .rpill:hover{border-color:var(--gold);color:var(--gold)}
         .rpill.on{background:var(--gold);border-color:var(--gold);color:#201601}
-        .nav-link{color:rgba(255,255,255,.72);font-size:13.5px;font-weight:500;letter-spacing:.3px;transition:color .18s}
+        .nav-link{color:rgba(255,255,255,.72);font-size:13.5px;font-weight:500;letter-spacing:.3px;transition:color .18s;background:none;border:none;cursor:pointer;font-family:inherit;padding:0}
         .nav-link:hover{color:#fff}
         .cap-card{border:1px solid var(--navy-line);border-radius:6px;padding:26px;transition:border-color .2s,background .2s}
         .cap-card:hover{border-color:var(--gold);background:rgba(198,161,91,.05)}
@@ -453,13 +456,11 @@ function Landing({ onStart, onSignIn }) {
             </div>
           </div>
           <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
-            <a className="nav-link" href="#about">About</a>
-            <a className="nav-link" href="#listings">Listings</a>
-            <a className="nav-link" href="#leadership">Leadership</a>
-            <a className="nav-link" href="#services">Services</a>
-            <a className="nav-link" href="#who">Who we serve</a>
-            <a className="nav-link" href="#partners">Partners</a>
-            <a className="nav-link" href="#contact">Contact</a>
+            <button className="nav-link" onClick={() => go("home")} style={tab === "home" ? { color: "var(--gold)" } : undefined}>Home</button>
+            <button className="nav-link" onClick={() => go("about")} style={tab === "about" ? { color: "var(--gold)" } : undefined}>About</button>
+            <button className="nav-link" onClick={() => go("services")} style={tab === "services" ? { color: "var(--gold)" } : undefined}>Services</button>
+            <button className="nav-link" onClick={() => go("platform")} style={tab === "platform" ? { color: "var(--gold)" } : undefined}>Platform</button>
+            <button className="nav-link" onClick={() => go("who")} style={tab === "who" ? { color: "var(--gold)" } : undefined}>Who we serve</button>
             <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 16px" }}>Sign in</a>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
           </nav>
@@ -467,21 +468,18 @@ function Landing({ onStart, onSignIn }) {
         </div>
         {menu && (
           <div className="wrap" style={{ paddingBottom: 18, display: "flex", flexDirection: "column", gap: 14 }}>
-            <a className="nav-link" href="#about">About</a>
-            <a className="nav-link" href="#listings">Listings</a>
-            <a className="nav-link" href="#leadership">Leadership</a>
-            <a className="nav-link" href="#services">Services</a>
-            <a className="nav-link" href="#platform">Platform</a>
-            <a className="nav-link" href="#who">Who we serve</a>
-            <a className="nav-link" href="#partners">Partners</a>
-            <a className="nav-link" href="#contact">Contact</a>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("home"); setMenu(false); }}>Home</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("about"); setMenu(false); }}>About</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("services"); setMenu(false); }}>Services</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("platform"); setMenu(false); }}>Platform</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("who"); setMenu(false); }}>Who we serve</button>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
           </div>
         )}
       </header>
 
       {/* HERO */}
-      <section style={{ background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
+      <section style={{ display: tab === "home" ? undefined : "none", background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
         <div className="float-orb" style={{ position: "absolute", top: -90, right: -50, width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle, rgba(198,161,91,.20), transparent 70%)", pointerEvents: "none" }} />
         <div className="float-orb" style={{ position: "absolute", bottom: -110, left: -90, width: 380, height: 380, borderRadius: "50%", background: "radial-gradient(circle, rgba(22,53,100,.55), transparent 70%)", pointerEvents: "none", animationDelay: "2.5s" }} />
         <div className="wrap" style={{ paddingTop: 72, paddingBottom: 78, position: "relative" }}>
@@ -497,7 +495,7 @@ function Landing({ onStart, onSignIn }) {
               </p>
               <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap" }}>
                 <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
-                <a className="btn-line on-navy" href="#services">Explore services</a>
+                <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); go("services"); }}>Explore services</a>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 28, color: "rgba(255,255,255,.6)", fontSize: 13 }}>
                 <ShieldCheck size={16} color="var(--gold)" /> Governance-led and compliance-first, with human oversight at every critical step.
@@ -517,7 +515,7 @@ function Landing({ onStart, onSignIn }) {
       </section>
 
       {/* LIVE STRIP + REGION LENS */}
-      <section style={{ background: "var(--navy-2)", color: "#fff", borderTop: "1px solid var(--navy-line)" }}>
+      <section style={{ display: tab === "home" ? undefined : "none", background: "var(--navy-2)", color: "#fff", borderTop: "1px solid var(--navy-line)" }}>
         <div className="wrap" style={{ padding: "22px 28px", display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold)", fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap" }}><span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--gold)" }} /> Live</span>
@@ -530,7 +528,7 @@ function Landing({ onStart, onSignIn }) {
       </section>
 
       {/* ABOUT */}
-      <section id="about" style={{ background: "var(--ivory-2)", padding: "84px 0" }}>
+      <section id="about" style={{ display: show("about") ? undefined : "none", background: "var(--ivory-2)", padding: "84px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 820 }}>
             <Rule light />
@@ -563,7 +561,7 @@ function Landing({ onStart, onSignIn }) {
       </section>
 
       {/* SERVICES DEEP-DIVE (real copy) */}
-      <section id="services" style={{ background: "var(--ivory)", padding: "88px 0" }}>
+      <section id="services" style={{ display: show("services") ? undefined : "none", background: "var(--ivory)", padding: "88px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 660, marginBottom: 46 }}>
             <Rule light />
@@ -601,7 +599,7 @@ function Landing({ onStart, onSignIn }) {
       </section>
 
       {/* FLAGSHIP PLATFORM MODULES */}
-      <section id="platform" style={{ background: "var(--navy-2)", color: "#fff", padding: "92px 0" }}>
+      <section id="platform" style={{ display: show("platform") ? undefined : "none", background: "var(--navy-2)", color: "#fff", padding: "92px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 640, marginBottom: 48 }}>
             <Rule />
@@ -647,7 +645,7 @@ function Landing({ onStart, onSignIn }) {
       <RoiCalculator />
 
       {/* WHO WE SERVE */}
-      <section id="who" style={{ background: "var(--ivory)", padding: "88px 0" }}>
+      <section id="who" style={{ display: show("who") ? undefined : "none", background: "var(--ivory)", padding: "88px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 640, marginBottom: 46 }}>
             <Rule light />
