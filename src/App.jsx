@@ -455,13 +455,14 @@ function Landing({ onStart, onSignIn }) {
               <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -1 }}>PROPERTY LIMITED</div>
             </div>
           </div>
-          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
+          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
             <button className="nav-link" onClick={() => go("home")} style={tab === "home" ? { color: "var(--gold)" } : undefined}>Home</button>
             <button className="nav-link" onClick={() => go("about")} style={tab === "about" ? { color: "var(--gold)" } : undefined}>About</button>
             <button className="nav-link" onClick={() => go("services")} style={tab === "services" ? { color: "var(--gold)" } : undefined}>Services</button>
             <button className="nav-link" onClick={() => go("platform")} style={tab === "platform" ? { color: "var(--gold)" } : undefined}>Platform</button>
             <button className="nav-link" onClick={() => go("who")} style={tab === "who" ? { color: "var(--gold)" } : undefined}>Who we serve</button>
             <button className="nav-link" onClick={() => go("listings")} style={tab === "listings" ? { color: "var(--gold)" } : undefined}>Listings</button>
+            <button className="nav-link" onClick={() => go("bourdillon")} style={tab === "bourdillon" ? { color: "var(--gold)" } : undefined}>1 Bourdillon</button>
             <button className="nav-link" onClick={() => go("leadership")} style={tab === "leadership" ? { color: "var(--gold)" } : undefined}>Leadership</button>
             <button className="nav-link" onClick={() => go("partners")} style={tab === "partners" ? { color: "var(--gold)" } : undefined}>Partners</button>
             <button className="nav-link" onClick={() => go("contact")} style={tab === "contact" ? { color: "var(--gold)" } : undefined}>Contact</button>
@@ -478,6 +479,7 @@ function Landing({ onStart, onSignIn }) {
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("platform"); setMenu(false); }}>Platform</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("who"); setMenu(false); }}>Who we serve</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("listings"); setMenu(false); }}>Listings</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("bourdillon"); setMenu(false); }}>1 Bourdillon</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("leadership"); setMenu(false); }}>Leadership</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("partners"); setMenu(false); }}>Partners</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("contact"); setMenu(false); }}>Contact</button>
@@ -589,7 +591,7 @@ function Landing({ onStart, onSignIn }) {
       </section>
 
       {/* FEATURED DEVELOPMENT */}
-      <section style={{ background: "var(--navy)", color: "#fff" }}>
+      <section style={{ display: tab === "bourdillon" ? undefined : "none", background: "var(--navy)", color: "#fff", padding: "20px 0 4px" }}>
         <div className="feat-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
           <BourdillonGallery />
           <div style={{ padding: "72px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -634,7 +636,7 @@ function Landing({ onStart, onSignIn }) {
       <PublicListings onSignIn={onSignIn} />
 
       {/* WHY CHOOSE GIRARD */}
-      <section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
+      <section style={{ display: tab === "about" ? undefined : "none", background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 640, marginBottom: 40 }}>
             <Rule />
@@ -680,7 +682,7 @@ function Landing({ onStart, onSignIn }) {
       <ContactSection />
 
       {/* CTA */}
-      <section style={{ background: "var(--navy-2)", color: "#fff", padding: "92px 0", position: "relative", overflow: "hidden" }}>
+      <section style={{ display: tab === "contact" ? undefined : "none", background: "var(--navy-2)", color: "#fff", padding: "92px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, opacity: .5 }}><Skyline /></div>
         <div className="wrap" style={{ textAlign: "center", position: "relative" }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}><div style={{ width: 54, height: 2, background: "var(--gold)" }} /></div>
@@ -739,7 +741,7 @@ function Landing({ onStart, onSignIn }) {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 30 }}><a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Become a partner <ArrowUpRight size={16} /></a></div>
+          <div style={{ marginTop: 30 }}><a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Sign up to become a partner <ArrowUpRight size={16} /></a></div>
         </div>
         <style>{`@media(max-width:900px){.grid-4{grid-template-columns:1fr 1fr!important}}@media(max-width:560px){.grid-4{grid-template-columns:1fr!important}}`}</style>
       </section>
@@ -784,7 +786,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 2.1</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 3.0</span></div>
             <div style={{ display: "flex", gap: 16 }}>{["Facebook", "Twitter", "YouTube"].map(soc => <span key={soc} style={{ color: "rgba(255,255,255,.55)" }}>{soc}</span>)}</div>
           </div>
         </div>

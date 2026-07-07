@@ -1,19 +1,21 @@
 import { chromium } from 'playwright';
 const b=await chromium.launch(); const p=await (await b.newContext({viewport:{width:1300,height:900}})).newPage();
 const log=[]; p.on('pageerror',e=>log.push(e.message));
-const shown=async(sel)=>await p.evaluate(s=>{const el=document.querySelector(s);return !!el && el.offsetParent!==null;},sel);
-const heroShown=async()=>await p.evaluate(()=>{const el=document.querySelector('.hero-h');return !!el && el.offsetParent!==null;});
-const txt=async(t)=>await p.getByText(t,{exact:false}).first().isVisible().catch(()=>false);
-const tab=async(name)=>{ await p.getByRole('button',{name, exact:true}).first().click(); await p.waitForTimeout(350); };
+const vis=async(t)=>await p.getByText(t,{exact:false}).first().isVisible().catch(()=>false);
+const heroVis=async()=>await p.evaluate(()=>{const el=document.querySelector('.hero-h');return !!el && el.offsetParent!==null;});
+const tab=async(name)=>{ await p.getByRole('button',{name, exact:true}).first().click(); await p.waitForTimeout(300); };
 await p.goto('http://localhost:5199/',{waitUntil:'networkidle'}); await p.waitForTimeout(500);
 try{await p.getByText('Got it').first().click();}catch(e){}
-console.log('tabs:', (await p.getByRole('button',{name:'Listings',exact:true}).count())>0, (await p.getByRole('button',{name:'Leadership',exact:true}).count())>0, (await p.getByRole('button',{name:'Partners',exact:true}).count())>0, (await p.getByRole('button',{name:'Contact',exact:true}).count())>0);
-console.log('HOME: hero shown:', await heroShown(), '| about hidden:', !(await shown('section#about')), '| footer shown:', await shown('footer'));
-await tab('About');   console.log('ABOUT: about shown:', await shown('section#about'), '| hero hidden:', !(await heroShown()));
-await tab('Listings');console.log('LISTINGS: content shown:', await txt('Homes worth moving for'), '| hero hidden:', !(await heroShown()));
-await tab('Leadership');console.log('LEADERSHIP: content shown:', await txt('Our leadership'));
-await tab('Partners');console.log('PARTNERS: content shown:', await txt('trusted partnerships'));
-await tab('Contact'); console.log('CONTACT: content shown:', await txt('Speak with Girard'), '| footer still shown:', await shown('footer'));
-await tab('Home');    console.log('HOME again: hero shown:', await heroShown());
+const bourd=async()=>await vis('Featured development'); // the 1 Bourdillon marker
+console.log('HOME       : hero',await heroVis(),'| bourdillon hidden',!(await bourd()));
+await tab('About');       console.log('ABOUT      : own',await vis('Redefining excellence'),'| why-choose',await vis('Strategic advantages'),'| bourdillon hidden',!(await bourd()));
+await tab('Services');    console.log('SERVICES   : own',await vis('comprehensive suite'),'| bourdillon hidden',!(await bourd()));
+await tab('Platform');    console.log('PLATFORM   : own',await vis('Two flagship modules'),'| bourdillon hidden',!(await bourd()));
+await tab('Who we serve');console.log('WHO        : own',await vis('role-aware platform'),'| bourdillon hidden',!(await bourd()));
+await tab('1 Bourdillon');console.log('BOURDILLON : shows featured',await bourd(),'| hero hidden',!(await heroVis()));
+await tab('Listings');    console.log('LISTINGS   : own',await vis('Homes worth moving for'),'| bourdillon hidden',!(await bourd()));
+await tab('Leadership');  console.log('LEADERSHIP : own',await vis('Our leadership'),'| bourdillon hidden',!(await bourd()));
+await tab('Partners');    console.log('PARTNERS   : own',await vis('trusted partnerships'),'| cta',await vis('Sign up to become a partner'),'| bourdillon hidden',!(await bourd()));
+await tab('Contact');     console.log('CONTACT    : own',await vis('Speak with Girard'),'| lets-build',await vis('build something enduring'),'| bourdillon hidden',!(await bourd()));
 console.log('ERR:', log.length?log.join('|'):'none');
 await b.close();
