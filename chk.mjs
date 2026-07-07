@@ -1,21 +1,17 @@
 import { chromium } from 'playwright';
 const b=await chromium.launch(); const p=await (await b.newContext({viewport:{width:1300,height:900}})).newPage();
 const log=[]; p.on('pageerror',e=>log.push(e.message));
-const vis=async(t)=>await p.getByText(t,{exact:false}).first().isVisible().catch(()=>false);
-const heroVis=async()=>await p.evaluate(()=>{const el=document.querySelector('.hero-h');return !!el && el.offsetParent!==null;});
-const tab=async(name)=>{ await p.getByRole('button',{name, exact:true}).first().click(); await p.waitForTimeout(300); };
+const heads=async()=>await p.evaluate(()=>[...document.querySelectorAll('section h1, section h2')].filter(h=>h.offsetParent!==null).map(h=>h.textContent.trim().replace(/\s+/g,' ').slice(0,34)));
+const pick=async(drop,item)=>{ await p.getByText(drop,{exact:false}).first().hover(); await p.waitForTimeout(250); await p.locator('.navdrop-item',{hasText:item}).first().click(); await p.waitForTimeout(300); };
 await p.goto('http://localhost:5199/',{waitUntil:'networkidle'}); await p.waitForTimeout(500);
 try{await p.getByText('Got it').first().click();}catch(e){}
-const bourd=async()=>await vis('Featured development'); // the 1 Bourdillon marker
-console.log('HOME       : hero',await heroVis(),'| bourdillon hidden',!(await bourd()));
-await tab('About');       console.log('ABOUT      : own',await vis('Redefining excellence'),'| why-choose',await vis('Strategic advantages'),'| bourdillon hidden',!(await bourd()));
-await tab('Services');    console.log('SERVICES   : own',await vis('comprehensive suite'),'| bourdillon hidden',!(await bourd()));
-await tab('Platform');    console.log('PLATFORM   : own',await vis('Two flagship modules'),'| bourdillon hidden',!(await bourd()));
-await tab('Who we serve');console.log('WHO        : own',await vis('role-aware platform'),'| bourdillon hidden',!(await bourd()));
-await tab('1 Bourdillon');console.log('BOURDILLON : shows featured',await bourd(),'| hero hidden',!(await heroVis()));
-await tab('Listings');    console.log('LISTINGS   : own',await vis('Homes worth moving for'),'| bourdillon hidden',!(await bourd()));
-await tab('Leadership');  console.log('LEADERSHIP : own',await vis('Our leadership'),'| bourdillon hidden',!(await bourd()));
-await tab('Partners');    console.log('PARTNERS   : own',await vis('trusted partnerships'),'| cta',await vis('Sign up to become a partner'),'| bourdillon hidden',!(await bourd()));
-await tab('Contact');     console.log('CONTACT    : own',await vis('Speak with Girard'),'| lets-build',await vis('build something enduring'),'| bourdillon hidden',!(await bourd()));
+console.log('About dropdown present:', (await p.getByText('About ▾',{exact:false}).count())>0);
+console.log('Listings dropdown present:', (await p.getByText('Listings ▾',{exact:false}).count())>0);
+console.log('Leadership NOT a top-level nav button:', (await p.locator('nav.nav-links > .nav-link', {hasText:'Leadership'}).count())===0);
+await pick('About','Leadership');       console.log('About>Leadership   :', JSON.stringify(await heads()));
+await pick('About','Redefining');       console.log('About>Excellence   :', JSON.stringify(await heads()));
+await pick('About','Strategic');        console.log('About>Advantages   :', JSON.stringify(await heads()));
+await pick('Listings','Browse');        console.log('Listings>Browse    :', JSON.stringify(await heads()));
+await pick('Listings','Estimate');      console.log('Listings>Returns   :', JSON.stringify(await heads()));
 console.log('ERR:', log.length?log.join('|'):'none');
 await b.close();
