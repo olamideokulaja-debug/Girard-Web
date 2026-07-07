@@ -383,7 +383,7 @@ function RoiCalculator() {
 function Landing({ onStart, onSignIn }) {
   const [tab, setTab] = useState("home");
   const go = (t) => { setTab(t); try { window.scrollTo({ top: 0 }); } catch (e) {} };
-  const show = (id) => tab === "home" || tab === id;
+  const show = (id) => tab === id;
   const [region, setRegion] = useState("International");
   const [menu, setMenu] = useState(false);
   const [tick, setTick] = useState(0);
@@ -455,12 +455,16 @@ function Landing({ onStart, onSignIn }) {
               <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -1 }}>PROPERTY LIMITED</div>
             </div>
           </div>
-          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
+          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
             <button className="nav-link" onClick={() => go("home")} style={tab === "home" ? { color: "var(--gold)" } : undefined}>Home</button>
             <button className="nav-link" onClick={() => go("about")} style={tab === "about" ? { color: "var(--gold)" } : undefined}>About</button>
             <button className="nav-link" onClick={() => go("services")} style={tab === "services" ? { color: "var(--gold)" } : undefined}>Services</button>
             <button className="nav-link" onClick={() => go("platform")} style={tab === "platform" ? { color: "var(--gold)" } : undefined}>Platform</button>
             <button className="nav-link" onClick={() => go("who")} style={tab === "who" ? { color: "var(--gold)" } : undefined}>Who we serve</button>
+            <button className="nav-link" onClick={() => go("listings")} style={tab === "listings" ? { color: "var(--gold)" } : undefined}>Listings</button>
+            <button className="nav-link" onClick={() => go("leadership")} style={tab === "leadership" ? { color: "var(--gold)" } : undefined}>Leadership</button>
+            <button className="nav-link" onClick={() => go("partners")} style={tab === "partners" ? { color: "var(--gold)" } : undefined}>Partners</button>
+            <button className="nav-link" onClick={() => go("contact")} style={tab === "contact" ? { color: "var(--gold)" } : undefined}>Contact</button>
             <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 16px" }}>Sign in</a>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
           </nav>
@@ -473,6 +477,10 @@ function Landing({ onStart, onSignIn }) {
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("services"); setMenu(false); }}>Services</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("platform"); setMenu(false); }}>Platform</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("who"); setMenu(false); }}>Who we serve</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("listings"); setMenu(false); }}>Listings</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("leadership"); setMenu(false); }}>Leadership</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("partners"); setMenu(false); }}>Partners</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("contact"); setMenu(false); }}>Contact</button>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
           </div>
         )}
@@ -686,6 +694,81 @@ function Landing({ onStart, onSignIn }) {
       </section>
 
       {/* FOOTER */}
+      {/* LISTINGS */}
+      <section style={{ display: tab === "listings" ? undefined : "none", background: "var(--ivory)", padding: "88px 0" }}>
+        <div className="wrap">
+          <div style={{ maxWidth: 780, marginBottom: 36 }}>
+            <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 12 }}>Featured listings</div>
+            <h2 className="serif sec-h">Homes worth moving for.</h2>
+            <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 620, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>A curated selection from the Girard portfolio across Lagos and beyond. Create a free account to view full details, book viewings and apply.</p>
+          </div>
+          <div className="grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22 }}>
+            {[{ t: "1 Bourdillon Residences", a: "Ikoyi, Lagos", p: "From \u20a6450,000,000", img: IMG.hero, tag: "Signature" }, { t: "Lekki Phase 1 Duplex", a: "Lekki, Lagos", p: "\u20a612,000,000 / yr", img: IMG.tower, tag: "To let" }, { t: "Victoria Island Apartment", a: "Victoria Island, Lagos", p: "\u20a69,500,000 / yr", img: IMG.brand, tag: "To let" }].map(x => (
+              <div key={x.t} className="lift" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, overflow: "hidden" }}>
+                <div style={{ height: 210, position: "relative" }}><Photo src={x.img} hue={210} alt={x.t} style={{ height: 210 }} /><span style={{ position: "absolute", top: 12, left: 12, background: "var(--gold)", color: "#201601", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 999 }}>{x.tag}</span></div>
+                <div style={{ padding: 18 }}>
+                  <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>{x.t}</div>
+                  <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>{x.a}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginTop: 10 }}>{x.p}</div>
+                  <button className="btn-line on-ivory" onClick={onStart} style={{ marginTop: 14, width: "100%", justifyContent: "center" }}>View details</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 30 }}><a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Browse all listings <ArrowUpRight size={16} /></a></div>
+        </div>
+        <style>{`@media(max-width:900px){.grid-3{grid-template-columns:1fr!important}}`}</style>
+      </section>
+
+      {/* LEADERSHIP */}
+      {tab === "leadership" && <LeadershipSection />}
+
+      {/* PARTNERS */}
+      <section style={{ display: tab === "partners" ? undefined : "none", background: "var(--navy-2)", color: "#fff", padding: "88px 0" }}>
+        <div className="wrap">
+          <div style={{ maxWidth: 780, marginBottom: 36 }}>
+            <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 12 }}>Partners</div>
+            <h2 className="serif sec-h">Built on trusted partnerships.</h2>
+            <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 640, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Girard works with a vetted network of developers, financiers, agents and service providers to deliver quality and trust at every step.</p>
+          </div>
+          <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}>
+            {[["Developers", "Vetted construction and development partners"], ["Financiers", "Banks and mortgage partners for buyers"], ["Agents & brokers", "Registered, verified property professionals"], ["Service vendors", "Approved maintenance and repair providers"]].map(([h, d]) => (
+              <div key={h} className="cap-card">
+                <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "#fff" }}>{h}</div>
+                <div style={{ fontSize: 13.5, color: "rgba(255,255,255,.7)", marginTop: 8, lineHeight: 1.55 }}>{d}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 30 }}><a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Become a partner <ArrowUpRight size={16} /></a></div>
+        </div>
+        <style>{`@media(max-width:900px){.grid-4{grid-template-columns:1fr 1fr!important}}@media(max-width:560px){.grid-4{grid-template-columns:1fr!important}}`}</style>
+      </section>
+
+      {/* CONTACT */}
+      <section style={{ display: tab === "contact" ? undefined : "none", background: "var(--ivory-2)", padding: "88px 0" }}>
+        <div className="wrap">
+          <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
+            <div>
+              <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 12 }}>Contact</div>
+              <h2 className="serif sec-h">Speak with Girard.</h2>
+              <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 520, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Whether you want to manage a property, list with us, or invest in 1 Bourdillon Residences, our advisers are ready to help.</p>
+              <div style={{ marginTop: 24, display: "grid", gap: 14 }}>
+                {[[Mail, "Email", "hello@girardpropertylimited.com"], [MapPin, "Office", "Ikoyi, Lagos, Nigeria"]].map(([Icon, l, v]) => (
+                  <div key={l} style={{ display: "flex", gap: 12, alignItems: "center" }}><div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--white)", border: "1px solid var(--cream-line)", display: "grid", placeItems: "center" }}><Icon size={18} color="var(--gold-2)" /></div><div><div style={{ fontSize: 12, color: "var(--muted)" }}>{l}</div><div style={{ fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>{v}</div></div></div>
+                ))}
+              </div>
+            </div>
+            <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: 26 }}>
+              <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>Get in touch</div>
+              <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16, lineHeight: 1.55 }}>Create an account and our team will be in touch, or sign in if you already have one.</div>
+              <button className="btn-gold" onClick={onStart} style={{ width: "100%", justifyContent: "center" }}>Get started <ArrowUpRight size={16} /></button>
+              <button className="btn-line on-ivory" onClick={onSignIn} style={{ width: "100%", justifyContent: "center", marginTop: 12 }}>Sign in</button>
+            </div>
+          </div>
+        </div>
+        <style>{`@media(max-width:900px){.grid-2{grid-template-columns:1fr!important}}`}</style>
+      </section>
+
       <footer style={{ background: "var(--navy)", color: "rgba(255,255,255,.7)", padding: "56px 0 30px", borderTop: "1px solid var(--navy-line)" }}>
         <div className="wrap">
           <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr", gap: 30 }}>
