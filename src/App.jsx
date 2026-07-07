@@ -784,7 +784,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved.</div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 2.1</span></div>
             <div style={{ display: "flex", gap: 16 }}>{["Facebook", "Twitter", "YouTube"].map(soc => <span key={soc} style={{ color: "rgba(255,255,255,.55)" }}>{soc}</span>)}</div>
           </div>
         </div>
