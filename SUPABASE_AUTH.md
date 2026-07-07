@@ -45,7 +45,7 @@ That is it. From now on:
 
 - Every new user automatically gets a profile with their chosen role
   the first time they sign in.
-- Any `@girardproperty.com` account automatically becomes an admin on
+- Any `@girardpropertylimited.com` account automatically becomes an admin on
   first sign-in. No manual step for your team.
 - Two-factor authentication (Security screen) now protects the real account.
 
@@ -62,6 +62,6 @@ Create a test account, sign in, and confirm you land in the right workspace.
   before Step 1. Make sure the two environment variables are set and the
   app has redeployed, then try again.
 - A teammate is not an admin: check their email is exactly on the
-  `@girardproperty.com` domain, and that they have signed in at least once.
+  `@girardpropertylimited.com` domain, and that they have signed in at least once.
 - You want to make an outside email an admin: see the note at the bottom
   of `girard_rls.sql`.

@@ -39,7 +39,7 @@ async function sendEmail(RESEND, to, text) {
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "Authorization": "Bearer " + RESEND, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.MAIL_FROM || "Girard Property <reminders@girardproperty.com>", to: [to], subject: "Rent reminder — Girard Property", text })
+    body: JSON.stringify({ from: process.env.MAIL_FROM || "Girard Property <reminders@girardpropertylimited.com>", to: [to], subject: "Rent reminder — Girard Property", text })
   });
   return r.ok;
 }

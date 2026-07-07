@@ -741,7 +741,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 3.3</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 3.4</span></div>
             <div style={{ display: "flex", gap: 16 }}>{["Facebook", "Twitter", "YouTube"].map(soc => <span key={soc} style={{ color: "rgba(255,255,255,.55)" }}>{soc}</span>)}</div>
           </div>
         </div>
@@ -882,12 +882,12 @@ const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate
 
 /* Per-account identity, resolved by sign-in email.
    Edit this map with your real team so each person is greeted by name and title. */
-const ADMIN_DOMAIN = "girardproperty.com";
+const ADMIN_DOMAIN = "girardpropertylimited.com";
 function isApprovedAdmin(email) { const e = (email || "").toLowerCase().trim(); return e.endsWith("@" + ADMIN_DOMAIN) || !!FOUNDERS[e]; }
 const FOUNDERS = {
-  "olamideokulaja@girardproperty.com": { name: "Olamide Okulaja", title: "Co-Founder & Administrator", greeting: "Welcome back", allAccess: true },
-  "founder@girardproperty.com": { name: "Girard Founder", title: "Founder & Administrator", greeting: "Welcome back", allAccess: true },
-  "admin@girardproperty.com": { name: "Girard Admin", title: "Platform Administration", greeting: "Welcome back", allAccess: true }
+  "olamideokulaja@girardpropertylimited.com": { name: "Olamide Okulaja", title: "Co-Founder & Administrator", greeting: "Welcome back", allAccess: true },
+  "founder@girardpropertylimited.com": { name: "Girard Founder", title: "Founder & Administrator", greeting: "Welcome back", allAccess: true },
+  "admin@girardpropertylimited.com": { name: "Girard Admin", title: "Platform Administration", greeting: "Welcome back", allAccess: true }
 };
 function initialsOf(name) { return (name || "G").split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0, 2).toUpperCase(); }
 function resolveIdentity(email, role) {
@@ -1076,7 +1076,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
     if (isSignup && !agree) { setErr("Please accept the Privacy Policy to continue."); return; }
     if (!email || !password) { setErr("Please enter your email and password."); return; }
     if (isSignup && password.length < 6) { setErr("Password must be at least 6 characters."); return; }
-    if (isSignup && role === "admin" && !isApprovedAdmin(email)) { setErr("Admin access is limited to approved @girardproperty.com accounts."); return; }
+    if (isSignup && role === "admin" && !isApprovedAdmin(email)) { setErr("Admin access is limited to approved @girardpropertylimited.com accounts."); return; }
     setBusy(true);
     try {
       const res = isSignup ? await authSignUp(email, password, role) : await authSignIn(email, password);
@@ -4589,7 +4589,7 @@ function PrivacyScreen({ identity, toast }) {
       <PmCard><div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#FDECEC", display: "grid", placeItems: "center" }}><Trash2 size={18} color="#D0453B" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Delete my data</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Erase your data from this device</div></div></div><PmBtn kind="ghost" icon={Trash2} onClick={deleteData}>Request erasure</PmBtn></PmCard>
     </div>
     <PmCard>
-      <Section h="Who we are">Girard Property Limited ("Girard") is the data controller for personal data processed through this platform. For any privacy matter, contact privacy@girardproperty.com.</Section>
+      <Section h="Who we are">Girard Property Limited ("Girard") is the data controller for personal data processed through this platform. For any privacy matter, contact privacy@girardpropertylimited.com.</Section>
       <Section h="What we collect">Account details such as name and email, the listings and applications you create, your messages and enquiries, payment records handled by our payment partner, and basic usage data needed to run the service.</Section>
       <Section h="Why we process it">To provide the platform, manage tenancies and applications, process payments, prevent fraud, comply with legal obligations, and, where you have consented, send you service updates and match alerts.</Section>
       <Section h="Lawful basis">We rely on your consent, the performance of our contract with you, our legitimate interest in operating and securing the platform, and compliance with our legal obligations under the Nigeria Data Protection Act 2023.</Section>

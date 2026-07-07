@@ -52,17 +52,17 @@ drop policy if exists profiles_update on profiles;
 create policy profiles_read on profiles for select
   using (auth.uid() = id or public.is_admin());
 -- Users may create/keep their own profile with any NON-admin role.
--- The 'admin' role can only be self-set by approved @girardproperty.com
+-- The 'admin' role can only be self-set by approved @girardpropertylimited.com
 -- emails, or granted by an existing admin. This blocks self-escalation.
 create policy profiles_insert on profiles for insert
   with check (
-    ((auth.uid() = id) and (role <> 'admin' or auth.email() like '%@girardproperty.com'))
+    ((auth.uid() = id) and (role <> 'admin' or auth.email() like '%@girardpropertylimited.com'))
     or public.is_admin()
   );
 create policy profiles_update on profiles for update
   using (auth.uid() = id or public.is_admin())
   with check (
-    ((auth.uid() = id) and (role <> 'admin' or auth.email() like '%@girardproperty.com'))
+    ((auth.uid() = id) and (role <> 'admin' or auth.email() like '%@girardpropertylimited.com'))
     or public.is_admin()
   );
 
@@ -138,7 +138,7 @@ begin
 end $$;
 
 -- ============================================================
--- ADMINS: any @girardproperty.com account becomes an admin
+-- ADMINS: any @girardpropertylimited.com account becomes an admin
 -- automatically the first time it signs in (the app writes its
 -- own profile row, and the policy above permits admin for that
 -- domain). No manual step needed for your team.
