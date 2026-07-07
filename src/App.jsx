@@ -741,7 +741,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 3.4</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 3.6</span></div>
             <div style={{ display: "flex", gap: 16 }}>{["Facebook", "Twitter", "YouTube"].map(soc => <span key={soc} style={{ color: "rgba(255,255,255,.55)" }}>{soc}</span>)}</div>
           </div>
         </div>
@@ -1949,7 +1949,7 @@ function WorkspaceSoon({ identity }) {
 const NAV = {
   owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask AI", Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["calc", "Mortgage calc", Banknote], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask AI", Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask AI", Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "1 Bourdillon sales", Building2], ["wallet", "Earnings", Wallet], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   investor: [["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["calc", "Mortgage calc", Banknote], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck], ["work", "Overview", LayoutGrid]]
 };
@@ -2001,6 +2001,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "payments") return <PaymentsScreen toast={toast} />;
     if (view === "ai") return <AIStudio identity={identity} toast={toast} seed={aiSeed} />;
     if (view === "docs") return <DocumentsScreen identity={identity} toast={toast} />;
+    if (view === "moderation") return <ModerationScreen toast={toast} />;
     if (view === "audit") return <AuditScreen />;
     if (view === "inbox") return <MessagesInbox identity={identity} toast={toast} />;
     if (view === "askai") return <AskAI {...P} />;
@@ -3086,6 +3087,61 @@ function LeadModal({ mode, property, onClose }) {
   </div>;
 }
 
+/* ---------- Moderation: report content/users, block users (UGC safety) ---------- */
+const BLOCK_KEY = "girard_blocks_v1";
+const REPORTS_KEY = "girard_reports_v1";
+function blockList() { try { return JSON.parse(localStorage.getItem(BLOCK_KEY) || "[]"); } catch (e) { return []; } }
+function isBlocked(who) { if (!who) return false; const w = String(who).toLowerCase(); return blockList().some(x => String(x).toLowerCase() === w); }
+function blockAdd(who) { if (!who) return; const l = blockList(); if (!l.includes(who)) { l.push(who); try { localStorage.setItem(BLOCK_KEY, JSON.stringify(l)); } catch (e) {} } try { if (supabase) supabase.from("blocks").upsert([{ who: String(who).toLowerCase(), created_at: new Date().toISOString() }]); } catch (e) {} }
+function blockRemove(who) { try { localStorage.setItem(BLOCK_KEY, JSON.stringify(blockList().filter(x => x !== who))); } catch (e) {} try { if (supabase) supabase.from("blocks").delete().eq("who", String(who).toLowerCase()); } catch (e) {} }
+async function reportSubmit({ targetType, targetId, targetLabel, reason, note, reporter }) {
+  const row = { target_type: targetType || "content", target_id: String(targetId || ""), target_label: String(targetLabel || "").slice(0, 200), reason: reason || "Other", note: String(note || "").slice(0, 1000), reporter: reporter || null, status: "open", created_at: new Date().toISOString() };
+  try { const arr = JSON.parse(localStorage.getItem(REPORTS_KEY) || "[]"); arr.unshift(row); localStorage.setItem(REPORTS_KEY, JSON.stringify(arr)); } catch (e) {}
+  try { if (supabase) await supabase.from("reports").insert([row]); } catch (e) {}
+}
+function ReportBlock({ targetType, targetId, targetLabel, userRef, reporter, toast, onBlocked, dark }) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState(null);
+  const [reason, setReason] = useState("Spam or scam");
+  const [note, setNote] = useState("");
+  const REASONS = ["Spam or scam", "Inappropriate content", "Harassment or abuse", "Fraudulent listing", "Other"];
+  const submit = async () => { await reportSubmit({ targetType, targetId, targetLabel, reason, note, reporter }); setOpen(false); setMode(null); setNote(""); if (toast) toast("Report submitted. Our team will review it."); };
+  const doBlock = () => { blockAdd(userRef); setOpen(false); setMode(null); if (toast) toast("User blocked. You will not see their content."); onBlocked && onBlocked(); };
+  const link = { background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: dark ? "rgba(255,255,255,.6)" : "var(--muted)", padding: 0, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 };
+  return <>
+    <button onClick={() => { setOpen(true); setMode(null); }} style={link} title="Report or block"><AlertTriangle size={12} /> Report</button>
+    {open && <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(4,10,24,.6)", display: "grid", placeItems: "center", zIndex: 130, padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 14, padding: 22, width: 400, maxWidth: "92vw", border: "1px solid var(--cream-line)" }}>
+        {!mode && <>
+          <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 4 }}>Report or block</div>
+          <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>{targetLabel}</div>
+          <button className="btn-line on-ivory" onClick={() => setMode("report")} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>Report this {targetType || "content"}</button>
+          {userRef ? <button className="btn-line on-ivory" onClick={() => setMode("block")} style={{ width: "100%", justifyContent: "center" }}>Block this user</button> : null}
+        </>}
+        {mode === "report" && <>
+          <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 12 }}>Report {targetType || "content"}</div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Reason</label>
+          <select value={reason} onChange={e => setReason(e.target.value)} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid var(--cream-line)", fontSize: 14, marginBottom: 12, fontFamily: "inherit" }}>{REASONS.map(r => <option key={r}>{r}</option>)}</select>
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} placeholder="Add any details (optional)" style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid var(--cream-line)", fontSize: 14, fontFamily: "inherit", resize: "vertical", marginBottom: 14, boxSizing: "border-box" }} />
+          <button className="btn-gold" onClick={submit} style={{ width: "100%", justifyContent: "center" }}>Submit report</button>
+        </>}
+        {mode === "block" && <>
+          <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>Block this user?</div>
+          <div style={{ fontSize: 13.5, color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>You will no longer see messages, enquiries or listings from this user. You can unblock them in Data and privacy.</div>
+          <button className="btn-gold" onClick={doBlock} style={{ width: "100%", justifyContent: "center" }}>Block user</button>
+        </>}
+        <button onClick={() => setOpen(false)} style={{ ...link, color: "var(--muted)", margin: "12px auto 0", display: "flex" }}>Cancel</button>
+      </div>
+    </div>}
+  </>;
+}
+function BlockedUsersCard({ toast }) {
+  const [list, setList] = useState(blockList());
+  return <PmCard>
+    <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#FDECEC", display: "grid", placeItems: "center" }}><AlertTriangle size={18} color="#D0453B" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Blocked users</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>People you have blocked</div></div></div>
+    {list.length === 0 ? <div style={{ fontSize: 13, color: "var(--muted)" }}>You have not blocked anyone.</div> : list.map(w => <div key={w} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: "1px solid var(--cream-line)" }}><span style={{ fontSize: 13.5, color: "var(--ink)" }}>{w}</span><button onClick={() => { blockRemove(w); setList(blockList()); if (toast) toast("Unblocked"); }} style={{ background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "5px 12px", fontSize: 12.5, fontWeight: 600, color: "var(--ink)", cursor: "pointer" }}>Unblock</button></div>)}
+  </PmCard>;
+}
 function PublicListings({ onSignIn }) {
   const all = (() => { try { return pmLoad().properties || []; } catch (e) { return []; } })();
   const avail = all.filter(p => p.status === "Available" || p.featured).slice(0, 9);
@@ -3115,6 +3171,7 @@ function PublicListings({ onSignIn }) {
               <button onClick={() => setLead({ mode: "viewing", property: p })} className="btn-gold" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Book viewing</button>
               <button onClick={() => setLead({ mode: "enquire", property: p })} className="btn-line on-ivory" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Enquire</button>
             </div>
+            <div style={{ marginTop: 10, textAlign: "right" }}><ReportBlock targetType="listing" targetId={p.id} targetLabel={p.title + (p.area ? " \u00b7 " + p.area : "")} /></div>
           </div>
         </div>)}
       </div>
@@ -3125,8 +3182,44 @@ function PublicListings({ onSignIn }) {
 }
 
 const ENQ_STATUS = ["New", "Contacted", "Viewing booked", "Closed"];
+async function reportsFetch() {
+  if (supabase) { try { const { data, error } = await supabase.from("reports").select("*").order("created_at", { ascending: false }); if (!error && data) return data; } catch (e) {} }
+  try { return JSON.parse(localStorage.getItem(REPORTS_KEY) || "[]"); } catch (e) { return []; }
+}
+async function reportSetStatus(rep, status) {
+  try { const arr = JSON.parse(localStorage.getItem(REPORTS_KEY) || "[]"); const i = arr.findIndex(r => r.created_at === rep.created_at && r.target_id === rep.target_id && r.reason === rep.reason); if (i >= 0) { arr[i].status = status; localStorage.setItem(REPORTS_KEY, JSON.stringify(arr)); } } catch (e) {}
+  try { if (supabase && rep.id) await supabase.from("reports").update({ status }).eq("id", rep.id); } catch (e) {}
+}
+function ModerationScreen({ toast }) {
+  const [items, setItems] = useState([]); const [loading, setLoading] = useState(true); const [tick, setTick] = useState(0);
+  useEffect(() => { let on = true; reportsFetch().then(d => { if (on) { setItems(d || []); setLoading(false); } }); return () => { on = false; }; }, [tick]);
+  const openCount = items.filter(r => r.status !== "resolved" && r.status !== "dismissed").length;
+  const setStatus = async (r, st) => { await reportSetStatus(r, st); if (toast) toast(st === "resolved" ? "Marked resolved" : "Dismissed"); setTick(t => t + 1); };
+  return <div>
+    <H2 title="Flagged reports" sub="Content and users reported by members" />
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      {loading ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading reports\u2026</div>
+        : items.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>No reports yet. Anything members flag will appear here.</div>
+        : items.map((r, i) => <div key={i} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap", opacity: (r.status === "resolved" || r.status === "dismissed") ? .55 : 1 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 9, background: "rgba(208,69,59,.12)", color: "#D0453B", display: "grid", placeItems: "center", flexShrink: 0 }}><AlertTriangle size={18} /></div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontWeight: 700, color: "var(--ink)" }}>{r.reason} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 12.5 }}>\u00b7 {r.target_type}</span></div>
+              <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{r.target_label}{r.reporter ? " \u00b7 by " + r.reporter : ""}{r.created_at ? " \u00b7 " + new Date(r.created_at).toLocaleDateString() : ""}</div>
+              {r.note ? <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, fontStyle: "italic" }}>\u201c{r.note}\u201d</div> : null}
+              {r.status && r.status !== "open" ? <div style={{ fontSize: 11, fontWeight: 700, color: "#1F9D57", marginTop: 4, textTransform: "uppercase" }}>{r.status}</div> : null}
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <PmBtn size="sm" kind="navy" onClick={() => setStatus(r, "resolved")}>Resolve</PmBtn>
+              <PmBtn size="sm" kind="ghost" onClick={() => setStatus(r, "dismissed")}>Dismiss</PmBtn>
+            </div>
+          </div>)}
+    </PmCard>
+    <div style={{ marginTop: 14, fontSize: 12.5, color: "var(--muted)" }}>{openCount} open report{openCount === 1 ? "" : "s"}. Members can block users directly from an enquiry or conversation.</div>
+  </div>;
+}
 function EnquiriesScreen({ toast }) {
   const [items, setItems] = useState([]);
+  const [bTick, setBTick] = useState(0);
   const [loading, setLoading] = useState(true);
   useEffect(() => { let on = true; enqFetch().then(x => { if (on) { setItems(x); setLoading(false); } }); return () => { on = false; }; }, []);
   const setStatus = (id, status) => { setItems(items.map(x => x.id === id ? { ...x, status } : x)); enqSetStatusRemote(id, status); toast("Marked " + status.toLowerCase()); };
@@ -3140,7 +3233,7 @@ function EnquiriesScreen({ toast }) {
       <PmStat icon={Users} label="Total leads" value={String(items.length)} tone="var(--muted)" />
     </div>
     <PmCard pad={0} style={{ overflow: "hidden" }}>
-      {loading ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading enquiries…</div> : items.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>No enquiries yet.</div> : items.map((x, i) => <div key={x.id} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+      {loading ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading enquiries…</div> : items.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>No enquiries yet.</div> : items.filter(x => (bTick, !isBlocked(x.email || x.phone))).map((x, i) => <div key={x.id} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ width: 40, height: 40, borderRadius: 9, background: x.type === "Viewing" ? "rgba(139,92,246,.14)" : "rgba(59,130,246,.14)", color: x.type === "Viewing" ? "#8B5CF6" : "#3B82F6", display: "grid", placeItems: "center", flexShrink: 0 }}>{x.type === "Viewing" ? <Calendar size={18} /> : <Mail size={18} />}</div>
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontWeight: 700, color: "var(--ink)" }}>{x.name} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 12.5 }}>· {x.type}</span></div>
@@ -3151,6 +3244,7 @@ function EnquiriesScreen({ toast }) {
           <a href={waLink(x.phone, "Hello " + x.name + ", thank you for your interest in " + x.propTitle + " with Girard Property.")} target="_blank" rel="noreferrer" title="WhatsApp" style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 8, background: "rgba(37,211,102,.16)", color: "#1FA855" }}><MessageSquare size={16} /></a>
           <a href={"tel:" + String(x.phone).replace(/[^0-9+]/g, "")} title="Call" style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 8, border: "1px solid var(--cream-line)", color: "var(--ink)" }}><Phone size={15} /></a>
           <select value={x.status} onChange={e => setStatus(x.id, e.target.value)} style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "7px 10px", color: "var(--ink)", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{ENQ_STATUS.map(st => <option key={st} value={st}>{st}</option>)}</select>
+          <ReportBlock targetType="enquiry" targetId={x.id} targetLabel={x.name + " \u00b7 " + x.propTitle} userRef={x.email || x.phone} reporter="admin" toast={toast} onBlocked={() => setBTick(t => t + 1)} />
         </div>
       </div>)}
     </PmCard>
@@ -4424,7 +4518,7 @@ function InviteTenantModal({ onClose, toast }) {
   </PmModal>;
 }
 function MessagesInbox({ identity, toast }) {
-  const [all, setAll] = useState([]); const [active, setActive] = useState(null); const [text, setText] = useState(""); const [invite, setInvite] = useState(false);
+  const [all, setAll] = useState([]); const [active, setActive] = useState(null); const [text, setText] = useState(""); const [invite, setInvite] = useState(false); const [bTick, setBTick] = useState(0);
   const load = () => msgFetchAll().then(setAll).catch(() => {});
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
   const threads = [...new Set(all.map(m => m.tenant))].map(email => { const ms = all.filter(m => m.tenant === email); return { email, last: ms[ms.length - 1], count: ms.length }; });
@@ -4435,14 +4529,14 @@ function MessagesInbox({ identity, toast }) {
     <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16 }} className="pm-grid2">
       <PmCard pad={0} style={{ overflow: "hidden" }}>
         {threads.length === 0 ? <div style={{ padding: 18, color: "var(--muted)", fontSize: 13.5 }}>No messages yet.</div>
-          : threads.map(t => <button key={t.email} onClick={() => setActive(t.email)} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 14px", border: "none", borderBottom: "1px solid var(--cream-line)", background: active === t.email ? "var(--gold-soft)" : "transparent", cursor: "pointer" }}>
+          : threads.filter(t => (bTick, !isBlocked(t.email))).map(t => <button key={t.email} onClick={() => setActive(t.email)} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 14px", border: "none", borderBottom: "1px solid var(--cream-line)", background: active === t.email ? "var(--gold-soft)" : "transparent", cursor: "pointer" }}>
             <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.email}</div>
             <div style={{ fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.last ? (t.last.sender === "girard" ? "You: " : "") + t.last.body : ""}</div>
           </button>)}
       </PmCard>
       <PmCard>
         {!active ? <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Select a conversation to reply.</div> : <>
-          <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>{active}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 10 }}><span style={{ fontWeight: 700, color: "var(--ink)" }}>{active}</span><ReportBlock targetType="conversation" targetId={active} targetLabel={"Conversation with " + active} userRef={active} reporter="girard" toast={toast} onBlocked={() => { setActive(null); setBTick(t => t + 1); }} /></div>
           <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, height: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
             {thread.map(m => <div key={m.id} style={{ alignSelf: m.sender === "girard" ? "flex-end" : "flex-start", maxWidth: "78%", background: m.sender === "girard" ? "var(--navy)" : "var(--white)", color: m.sender === "girard" ? "#fff" : "var(--ink)", border: m.sender === "girard" ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "9px 13px", fontSize: 13.5 }}>{m.body}</div>)}
           </div>
@@ -4584,6 +4678,7 @@ function PrivacyScreen({ identity, toast }) {
   const Section = ({ h, children }) => <div style={{ marginBottom: 16 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 5 }}>{h}</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.65, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{children}</div></div>;
   return <div>
     <H2 title="Data & privacy" sub="How Girard handles your data, and your rights under the NDPA" />
+    <div style={{ marginBottom: 16 }}><BlockedUsersCard toast={toast} /></div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
       <PmCard><div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#EAF2FE", display: "grid", placeItems: "center" }}><Download size={18} color="#3B82F6" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Export my data</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Download a copy of your data</div></div></div><PmBtn kind="navy" icon={Download} onClick={exportData}>Download my data</PmBtn></PmCard>
       <PmCard><div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#FDECEC", display: "grid", placeItems: "center" }}><Trash2 size={18} color="#D0453B" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Delete my data</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Erase your data from this device</div></div></div><PmBtn kind="ghost" icon={Trash2} onClick={deleteData}>Request erasure</PmBtn></PmCard>

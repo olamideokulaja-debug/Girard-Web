@@ -166,3 +166,15 @@ create table if not exists subscriptions (
   expires_at timestamptz,
   updated_at timestamptz default now()
 );
+
+-- Moderation: user reports and blocks (UGC safety)
+create table if not exists reports (
+  id bigint generated always as identity primary key,
+  target_type text, target_id text, target_label text,
+  reason text, note text, reporter text, status text default 'open',
+  created_at timestamptz default now()
+);
+create table if not exists blocks (
+  who text primary key,
+  created_at timestamptz default now()
+);
