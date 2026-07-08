@@ -6,7 +6,7 @@ import {
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
   CreditCard, PenLine, Filter, LayoutDashboard, Bell, ScrollText, CalendarDays, Moon, Sun, Download, Trash2, Send, Loader2, MoreHorizontal,
   Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
-  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Image as ImageIcon
+  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Info, Image as ImageIcon
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -2168,12 +2168,12 @@ function swSeed() {
       { id: "SW-02", owner: "H. Whitmore", city: "London", country: "UK", currency: "£", value: 720000, type: "3-Bed Flat, Zone 2", seeking: "Lagos, Nigeria", verified: true, hue: 218 },
       { id: "SW-03", owner: "M. Adeleke", city: "Abuja", country: "Nigeria", currency: "₦", value: 350000000, type: "4-Bed Terrace", seeking: "New York or Atlanta, US", verified: true, hue: 198 },
       { id: "SW-04", owner: "J. Carter", city: "New York", country: "US", currency: "$", value: 610000, type: "2-Bed Condo, Brooklyn", seeking: "Lagos or Abuja, Nigeria", verified: true, hue: 210 },
-      { id: "SW-05", owner: "R. Okafor", city: "Lagos", country: "Nigeria", currency: "₦", value: 260000000, type: "3-Bed Apartment, Ikoyi", seeking: "Bristol or Birmingham, UK", verified: false, hue: 190 },
+      { id: "SW-05", owner: "R. Okafor", city: "Lagos", country: "Nigeria", currency: "₦", value: 260000000, type: "3-Bed Apartment, Ikoyi", seeking: "Bristol or Birmingham, UK", verified: false, hue: 190, swapType: "Temporary" },
       { id: "SW-06", owner: "S. Patel", city: "Manchester", country: "UK", currency: "£", value: 340000, type: "4-Bed Semi", seeking: "Lagos, Nigeria", verified: true, hue: 222 },
       { id: "SW-07", owner: "D. Thompson", city: "Austin", country: "US", currency: "$", value: 540000, type: "3-Bed House", seeking: "Abuja, Nigeria", verified: true, hue: 206 },
       { id: "SW-08", owner: "K. Ibrahim", city: "Lagos", country: "Nigeria", currency: "₦", value: 520000000, type: "Penthouse, Victoria Island", seeking: "Miami or New York, US", verified: true, hue: 200 },
       { id: "SW-09", owner: "L. Bennett", city: "Bristol", country: "UK", currency: "£", value: 410000, type: "Georgian Townhouse", seeking: "Lagos, Nigeria", verified: true, hue: 224 },
-      { id: "SW-10", owner: "G. Alvarez", city: "Miami", country: "US", currency: "$", value: 690000, type: "Waterfront Condo", seeking: "Lagos, Nigeria", verified: false, hue: 208 },
+      { id: "SW-10", owner: "G. Alvarez", city: "Miami", country: "US", currency: "$", value: 690000, type: "Waterfront Condo", seeking: "Lagos, Nigeria", verified: false, hue: 208, swapType: "Temporary" },
       { id: "SW-11", owner: "T. Balogun", city: "Abuja", country: "Nigeria", currency: "₦", value: 300000000, type: "4-Bed Duplex, Maitama", seeking: "Birmingham, UK", verified: true, hue: 192 }
     ],
     deals: [
@@ -2241,7 +2241,8 @@ function SwapBrowse({ sw, setSw, toast }) {
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{l.city}, {l.country}</div>
           <div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(l.value, l.currency)}</div>
           <div style={{ color: "var(--muted)", fontSize: 12 }}>≈ {usd(toUSD(l.value, l.currency))}</div>
-          <div style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0", display: "flex", gap: 5, alignItems: "center" }}><Repeat size={13} color="var(--gold-2)" /> Seeking: {l.seeking}</div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 8, fontSize: 10.5, fontWeight: 800, letterSpacing: .4, textTransform: "uppercase", padding: "3px 8px", borderRadius: 999, background: (l.swapType || "Permanent") === "Temporary" ? "rgba(198,161,91,.14)" : "var(--gold-soft)", color: "var(--gold-2)" }}>{(l.swapType || "Permanent") === "Temporary" ? <><CalendarDays size={11} /> Temporary</> : <><Repeat size={11} /> Permanent</>}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0", display: "flex", gap: 5, alignItems: "center" }}><ArrowRightLeft size={13} color="var(--gold-2)" /> Seeking: {l.seeking}</div>
           <PmBtn size="sm" style={{ width: "100%", justifyContent: "center" }} onClick={() => setSel(l)}>View &amp; match</PmBtn>
         </div>
       </PmCard>)}
@@ -2280,14 +2281,14 @@ function MatchModal({ sw, listing, onClose, toast }) {
 }
 
 function SwapList({ sw, setSw, toast }) {
-  const [f, setF] = useState({ type: "", city: "", country: "Nigeria", value: "", seeking: "" });
+  const [f, setF] = useState({ type: "", city: "", country: "Nigeria", value: "", seeking: "", swapType: "Permanent" });
   const [ai, setAi] = useState(null);
   const [done, setDone] = useState(false);
   const cur = CUR_OF[f.country];
   const valuate = async () => { setAi({ loading: true }); const r = await aiValue(f); setAi({ loading: false, ...r }); };
   const submit = () => {
     const id = "SW-" + (50 + sw.listings.length);
-    const l = { id, owner: "You", city: f.city || "Lagos", country: f.country, currency: cur, value: (ai ? ai.local : +String(f.value).replace(/\D/g, "")) || 300000000, type: f.type || "Property", seeking: f.seeking || "Cross-border", verified: false, hue: 195 + sw.listings.length % 30 };
+    const l = { id, owner: "You", city: f.city || "Lagos", country: f.country, currency: cur, value: (ai ? ai.local : +String(f.value).replace(/\D/g, "")) || 300000000, type: f.type || "Property", seeking: f.seeking || "Cross-border", swapType: f.swapType, verified: false, hue: 195 + sw.listings.length % 30 };
     setSw({ ...sw, listings: [l, ...sw.listings] }); toast("Swap listing submitted for verification"); setDone(true);
   };
   if (done) return <div><H2 title="List for swap" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "var(--gold-soft)", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><ShieldCheck size={26} color="var(--gold-2)" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Listing submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>Once your title document is verified it earns a Verified badge and enters the matching engine.</div><PmBtn onClick={() => { setDone(false); setAi(null); }}>List another</PmBtn></div></PmCard></div>;
@@ -2299,6 +2300,8 @@ function SwapList({ sw, setSw, toast }) {
         <div style={{ display: "flex", gap: 10 }}><div style={{ flex: 1 }}><PmField label="City" value={f.city} onChange={v => setF({ ...f, city: v })} placeholder="Lagos" /></div><div style={{ flex: 1 }}><PmSelect label="Country" value={f.country} onChange={v => setF({ ...f, country: v })} options={["Nigeria", "UK", "US"]} /></div></div>
         <PmField label={"Your estimated value (" + cur + ")"} value={f.value} onChange={v => setF({ ...f, value: v })} placeholder="e.g. 350,000,000" />
         <PmField label="What you're seeking" value={f.seeking} onChange={v => setF({ ...f, seeking: v })} placeholder="e.g. London or Manchester, UK" />
+        <PmSelect label="Swap type" value={f.swapType} onChange={v => setF({ ...f, swapType: v })} options={["Permanent", "Temporary"]} />
+        <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>{f.swapType === "Temporary" ? "Temporary: a time-limited exchange of use, such as a holiday. No ownership or title documents change hands." : "Permanent: a full exchange of ownership, including title transfer. Any value difference settles through escrow."}</div>
         <PmBtn kind="navy" icon={Sparkles} onClick={valuate}>Get AI valuation</PmBtn>
       </div></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>AI valuation</div>
@@ -2409,17 +2412,40 @@ function IntelSoon() {
 }
 
 const SWAP_TABS = [["browse", "Browse", Search], ["list", "List for swap", Plus], ["matches", "My matches", ArrowRightLeft], ["deals", "Deals", Handshake]];
+function SwapIntro({ onClose }) {
+  return <PmModal title="How the Swap Marketplace works" onClose={onClose} wide>
+    <div style={{ fontSize: 14, lineHeight: 1.6, color: "var(--ink)" }}>
+      <p style={{ marginTop: 0 }}>A property swap lets two owners exchange homes across borders, a Lagos duplex for a London flat, for example, without a traditional sale. Girard values both properties, finds reciprocal matches in a common currency, and guides the exchange through verification, legal checks and secure completion.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "16px 0" }} className="pm-grid2">
+        <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}><Repeat size={16} color="var(--gold-2)" /><span style={{ fontWeight: 700 }}>Permanent swap</span></div>
+          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>A full exchange of ownership, including the transfer of title documents. Any difference in value is balanced with a cash adjustment held in escrow.</div>
+        </div>
+        <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}><CalendarDays size={16} color="var(--gold-2)" /><span style={{ fontWeight: 700 }}>Temporary swap</span></div>
+          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>A time-limited exchange of use only, a summer holiday, for example. No ownership or documents change hands; you simply agree the dates and terms.</div>
+        </div>
+      </div>
+      <p style={{ marginBottom: 18, color: "var(--muted)", fontSize: 13.5 }}>Browse listings, list your own property, review AI-matched reciprocal partners, and track each deal through to completion.</p>
+      <PmBtn onClick={onClose} style={{ width: "100%", justifyContent: "center" }}>Got it, let\u2019s start</PmBtn>
+    </div>
+  </PmModal>;
+}
 function SwapHub({ identity, toast, initial, toAi }) {
   const isAdmin = identity.role === "admin";
   const [tab, setTab] = useState(isAdmin ? "oversight" : "journey");
   const [sw, setSwRaw] = useState(swLoad);
   const setSw = (n) => { setSwRaw(n); swSave(n); };
+  const [intro, setIntro] = useState(() => { try { return !localStorage.getItem("girard_swap_intro_v1"); } catch (e) { return true; } });
+  const closeIntro = () => { try { localStorage.setItem("girard_swap_intro_v1", "1"); } catch (e) {} setIntro(false); };
   const tabs = isAdmin
     ? [["oversight", "Girard oversight", ShieldCheck], ["browse", "Browse", Search], ["deals", "Deals", Handshake]]
     : [["journey", "Start a swap", Repeat], ...SWAP_TABS];
   return <div>
+    {intro && <SwapIntro onClose={closeIntro} />}
     <div style={{ display: "flex", gap: 6, marginBottom: 22, borderBottom: "1px solid var(--cream-line)", flexWrap: "wrap" }}>
       {tabs.map(([k, label, Icon]) => <button key={k} onClick={() => setTab(k)} style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", borderBottom: "2px solid " + (tab === k ? "var(--gold)" : "transparent"), color: tab === k ? "var(--ink)" : "var(--muted)", fontWeight: tab === k ? 700 : 500, fontSize: 14, padding: "10px 6px", cursor: "pointer", marginBottom: -1 }}><Icon size={15} />{label}</button>)}
+      <button onClick={() => setIntro(true)} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--gold-2)", fontWeight: 600, fontSize: 13, padding: "10px 6px", cursor: "pointer" }}><Info size={14} /> How it works</button>
     </div>
     {tab === "journey" && <SwapJourney identity={identity} toast={toast} toAi={toAi} />}
     {tab === "oversight" && <SwapOversight toast={toast} />}
