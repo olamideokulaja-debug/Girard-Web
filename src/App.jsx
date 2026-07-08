@@ -3708,22 +3708,22 @@ const SWAP_LOCATIONS = ["Lagos, Nigeria", "Abuja, Nigeria", "London, UK", "Manch
 const OWNERSHIP_DOCS = ["Certificate of Occupancy (C of O)", "Deed of Assignment", "Registered Survey Plan", "Governor's Consent"];
 const SWAP_CUR = ["₦", "£", "$", "CAD", "AED"];
 const SWAP_POOL = [
-  { id: "SM-1", title: "3-Bed Condo, waterfront", place: "Ontario, Canada", value: "CAD 720,000", by: "K. Mensah" },
-  { id: "SM-2", title: "2-Bed Riverside Flat", place: "London, UK", value: "£640,000", by: "A. Whitmore" },
-  { id: "SM-3", title: "4-Bed Villa, Palm", place: "Dubai, UAE", value: "AED 3.2M", by: "R. Haddad" },
-  { id: "SM-4", title: "Detached Townhouse", place: "Toronto, Canada", value: "CAD 910,000", by: "L. Okafor" },
-  { id: "SM-5", title: "Brownstone Apartment", place: "New York, USA", value: "$1.1M", by: "J. Rivera" }
+  { id: "SM-1", title: "3-Bed Condo, waterfront", place: "Ontario, Canada", value: "CAD 720,000", by: "K. Mensah", types: ["Permanent", "Temporary"] },
+  { id: "SM-2", title: "2-Bed Riverside Flat", place: "London, UK", value: "£640,000", by: "A. Whitmore", types: ["Permanent"] },
+  { id: "SM-3", title: "4-Bed Villa, Palm", place: "Dubai, UAE", value: "AED 3.2M", by: "R. Haddad", types: ["Temporary"] },
+  { id: "SM-4", title: "Detached Townhouse", place: "Toronto, Canada", value: "CAD 910,000", by: "L. Okafor", types: ["Permanent"] },
+  { id: "SM-5", title: "Brownstone Apartment", place: "New York, USA", value: "$1.1M", by: "J. Rivera", types: ["Permanent", "Temporary"] }
 ];
 const SJ_KEY = "girard_swapjourney_v1";
-function sjDefault() { return { stage: 0, paid: false, prop: { market: "Nigeria", area: "", value: "", currency: "₦", photos: [], docs: [] }, verified: false, targets: [], match: null, chat: [], agreementText: "", signedMe: false, signedThem: false, escrowFunded: false, balanceValue: "", finalMe: false, finalThem: false, revealed: false, contractText: "", payoutName: "", payoutNum: "", payoutBank: NG_BANKS[0][0], stopped: false, flagged: false }; }
-function sjLoad() { try { const r = localStorage.getItem(SJ_KEY); if (r) return { ...sjDefault(), ...JSON.parse(r) }; } catch (e) {} return sjDefault(); }
+function sjDefault() { return { stage: 0, paid: false, prop: { market: "Nigeria", area: "", value: "", currency: "₦", photos: [], docs: [] }, verified: false, targets: [], match: null, chat: [], agreementText: "", signedMe: false, signedThem: false, escrowFunded: false, balanceValue: "", finalMe: false, finalThem: false, revealed: false, swapType: "Permanent", contractText: "", payoutName: "", payoutNum: "", payoutBank: NG_BANKS[0][0], stopped: false, flagged: false }; }
+function sjLoad() { try { const r = localStorage.getItem(SJ_KEY); if (r) { const x = JSON.parse(r); return { ...sjDefault(), ...x, prop: { ...sjDefault().prop, ...(x && x.prop || {}) } }; } } catch (e) {} return sjDefault(); }
 function sjSave(s) { try { localStorage.setItem(SJ_KEY, JSON.stringify(s)); } catch (e) {} }
 async function swapSaveMine(owner, j) {
   try { localStorage.setItem(SJ_KEY, JSON.stringify(j)); } catch (e) {}
   if (supabase && owner) { try { await supabase.from("swaps").upsert([{ id: owner, owner, stage: j.stage, value: (j.prop.currency + (j.prop.value || "")), flagged: !!j.flagged, stopped: !!j.stopped, data: j, updated_at: new Date().toISOString() }]); } catch (e) {} }
 }
 async function swapLoadMine(owner) {
-  if (supabase && owner) { try { const { data, error } = await supabase.from("swaps").select("data").eq("id", owner).maybeSingle(); if (!error && data && data.data) return { ...sjDefault(), ...data.data }; } catch (e) {} }
+  if (supabase && owner) { try { const { data, error } = await supabase.from("swaps").select("data").eq("id", owner).maybeSingle(); if (!error && data && data.data) return { ...sjDefault(), ...data.data, prop: { ...sjDefault().prop, ...(data.data.prop || {}) } }; } catch (e) {} }
   return null;
 }
 async function swapFetchAll() {
@@ -3734,7 +3734,7 @@ function swapFiledKey(owner) { return "girard_swaps_filed_" + (owner || "guest")
 function swapFiledLoad(owner) { try { return JSON.parse(localStorage.getItem(swapFiledKey(owner)) || "[]"); } catch (e) { return []; } }
 function swapFileCompleted(owner, j) {
   const cur = (j.prop && j.prop.currency) || "";
-  const rec = { id: "SWAP-" + Date.now(), owner, area: (j.prop && (j.prop.area || j.prop.market)) || "Property", place: (j.match && j.match.place) || "Counterparty", value: (j.prop ? (cur + (j.prop.value || "")) : ""), balance: j.balanceValue ? (cur + j.balanceValue) : "", completed_at: new Date().toISOString() };
+  const rec = { id: "SWAP-" + Date.now(), owner, area: (j.prop && (j.prop.area || j.prop.market)) || "Property", place: (j.match && j.match.place) || "Counterparty", value: (j.prop ? (cur + (j.prop.value || "")) : ""), balance: j.balanceValue ? (cur + j.balanceValue) : "", swapType: j.swapType || "Permanent", completed_at: new Date().toISOString() };
   try { const list = swapFiledLoad(owner); list.unshift(rec); localStorage.setItem(swapFiledKey(owner), JSON.stringify(list.slice(0, 100))); } catch (e) {}
   try { if (supabase) supabase.from("swaps").upsert([{ id: rec.id, owner, stage: 11, value: rec.value, flagged: false, stopped: false, data: { ...j, filed: true, completedAt: rec.completed_at }, updated_at: rec.completed_at }]); } catch (e) {}
   try { notify({ title: "Swap completed", body: rec.area + " to " + rec.place, audience: "admin" }); } catch (e) {}
@@ -3766,7 +3766,10 @@ function SwapJourney({ identity, toast, toAi }) {
   const [msg, setMsg] = useState("");
   const [gen, setGen] = useState(false);
   const [filed, setFiled] = useState(() => swapFiledLoad(owner));
-  const STEPS = ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
+  const isTemp = (j.swapType || "Permanent") === "Temporary";
+  const STEPS = isTemp
+    ? ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agree dates & terms", "Exchange & complete"]
+    : ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
   const blocked = j.stopped;
   const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1100; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); setJ({ prop: { ...j.prop, photos: [...j.prop.photos, cv.toDataURL("image/jpeg", 0.72)].slice(0, 5) } }); }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
   const toggleDoc = d => setJ({ prop: { ...j.prop, docs: j.prop.docs.includes(d) ? j.prop.docs.filter(x => x !== d) : [...j.prop.docs, d] } });
@@ -3792,6 +3795,8 @@ function SwapJourney({ identity, toast, toAi }) {
         <PmSelect label="Property market" value={j.prop.market} onChange={v => setJ({ prop: { ...j.prop, market: v } })} options={SWAP_MARKETS} />
         <PmField label="Location / city" value={j.prop.area} onChange={v => setJ({ prop: { ...j.prop, area: v } })} placeholder="e.g. Ikeja, Lagos" />
         <div style={{ display: "flex", gap: 10 }}><div style={{ flex: 1 }}><PmField label="Estimated value" value={j.prop.value} onChange={v => setJ({ prop: { ...j.prop, value: v } })} placeholder="e.g. 250,000,000" /></div><div style={{ width: 96 }}><PmSelect label="Currency" value={j.prop.currency} onChange={v => setJ({ prop: { ...j.prop, currency: v } })} options={SWAP_CUR} /></div></div>
+        <PmSelect label="Swap type" value={j.swapType || "Permanent"} onChange={v => setJ({ swapType: v })} options={["Permanent", "Temporary"]} />
+        <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>{(j.swapType || "Permanent") === "Temporary" ? "Temporary: a time-limited exchange of use, such as a holiday. No ownership or title documents change hands." : "Permanent: a full exchange of ownership, including title transfer, with any value difference settled through escrow."}</div>
         <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Ownership documents you can provide</label><div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{OWNERSHIP_DOCS.map(d => <button key={d} onClick={() => toggleDoc(d)} style={{ border: "1px solid " + (j.prop.docs.includes(d) ? "var(--gold)" : "var(--cream-line)"), background: j.prop.docs.includes(d) ? "var(--gold-soft)" : "transparent", color: j.prop.docs.includes(d) ? "var(--gold-2)" : "var(--muted)", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d}</button>)}</div></div>
       </div></PmCard>
       <PmCard>
@@ -3812,14 +3817,15 @@ function SwapJourney({ identity, toast, toAi }) {
       <PmBtn kind="navy" icon={CheckCircle2} onClick={() => { setJ({ verified: true, stage: 3 }); toast("Verified. SMS sent: you can now browse swaps.", "success"); }}>Girard has verified me (demo)</PmBtn>
       <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>In production a Girard officer approves this from the oversight desk and Twilio sends the SMS.</div>
     </PmCard>;
-    if (j.stage === 3) { const matches = SWAP_POOL.filter(m => j.targets.length === 0 || j.targets.includes(m.place)); return <div>
+    if (j.stage === 3) { const matches = SWAP_POOL.filter(m => (j.targets.length === 0 || j.targets.includes(m.place)) && (m.types || ["Permanent"]).includes(j.swapType || "Permanent")); return <div>
       <PmCard style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Where would you accept a swap?</div>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Where would you accept a swap?</div>
+        <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 10 }}>Showing properties available for {isTemp ? "temporary" : "permanent"} swaps only.</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{SWAP_LOCATIONS.map(t => <button key={t} onClick={() => toggleTarget(t)} style={{ border: "1px solid " + (j.targets.includes(t) ? "var(--gold)" : "var(--cream-line)"), background: j.targets.includes(t) ? "var(--gold-soft)" : "transparent", color: j.targets.includes(t) ? "var(--gold-2)" : "var(--muted)", borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{t}</button>)}</div>
       </PmCard>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
         {matches.map(m => <PmCard key={m.id} className="lift"><div style={{ fontWeight: 700, color: "var(--ink)" }}>{m.title}</div><div style={{ fontSize: 12.5, color: "var(--muted)", margin: "3px 0" }}>{m.place}</div><div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--navy)", marginBottom: 12 }}>{m.value}</div><PmBtn size="sm" kind="gold" icon={ArrowRightLeft} onClick={() => { setJ({ match: m, stage: 4, chat: [{ me: false, text: "Hello, I saw your property is a potential match. Happy to discuss a swap." }] }); toast("Match requested. Counterparty notified.", "success"); }}>Request swap</PmBtn></PmCard>)}
-        {matches.length === 0 && <div style={{ color: "var(--muted)" }}>No matches in the selected locations yet.</div>}
+        {matches.length === 0 && <div style={{ color: "var(--muted)" }}>No {isTemp ? "temporary" : "permanent"} swaps in the selected locations yet.</div>}
       </div>
     </div>; }
     if (j.stage === 4) return <PmCard style={{ maxWidth: 640 }}>
@@ -3831,6 +3837,17 @@ function SwapJourney({ identity, toast, toAi }) {
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder="Type a message" style={{ flex: 1, border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit" }} /><PmBtn onClick={sendMsg}>Send</PmBtn></div>
       <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 14 }} onClick={() => { setJ({ stage: 5 }); toast("Terms agreed. Generating agreement."); }}>Agree terms &amp; continue</PmBtn>
     </PmCard>;
+    if (j.stage === 5 && isTemp) return <PmCard style={{ maxWidth: 640 }}>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Agree the exchange dates &amp; terms</div>
+      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 14 }}>A temporary swap is an exchange of use only. No title or ownership documents change hands.</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2"><PmField label="From" value={j.tempFrom || ""} onChange={v => setJ({ tempFrom: v })} placeholder="e.g. 1 July 2026" /><PmField label="To" value={j.tempTo || ""} onChange={v => setJ({ tempTo: v })} placeholder="e.g. 21 July 2026" /></div>
+      <div style={{ marginTop: 10 }}><PmField label="Terms (optional)" value={j.tempTerms || ""} onChange={v => setJ({ tempTerms: v })} placeholder="e.g. no pets, cleaning on handover" /></div>
+      <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.signedMe ? "#1F9D57" : "var(--ink)" }}>{j.signedMe ? "Agreed \u2713" : "Not yet agreed"}</div>{!j.signedMe && <PmBtn size="sm" style={{ marginTop: 8 }} onClick={() => { if (!j.tempFrom || !j.tempTo) { toast("Add the dates", "danger"); return; } setJ({ signedMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, signedThem: true }; swapSaveMine(owner, n); return n; }), 800); toast("You agreed the dates. Counterparty notified."); }}>Agree dates</PmBtn>}</div>
+        <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedThem ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>Counterparty</div><div style={{ fontWeight: 700, color: j.signedThem ? "#1F9D57" : "var(--ink)" }}>{j.signedThem ? "Agreed \u2713" : "Awaiting agreement"}</div></div>
+      </div>
+      {j.signedMe && j.signedThem && <PmBtn kind="gold" icon={ArrowRightLeft} style={{ marginTop: 14 }} onClick={() => setJ({ stage: 6 })}>Continue to exchange</PmBtn>}
+    </PmCard>;
     if (j.stage === 5) return <PmCard style={{ maxWidth: 720 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Swap agreement</div>{toAi && <PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => toAi(swapSeed("agreement"))}>Open in AI studio</PmBtn>}</div>
       {!j.agreementText ? <PmBtn kind="navy" icon={Sparkles} onClick={genAgreement}>{gen ? "Generating…" : "Generate agreement (AI)"}</PmBtn>
@@ -3841,6 +3858,17 @@ function SwapJourney({ identity, toast, toAi }) {
           </div>
           {j.signedMe && j.signedThem && <PmBtn kind="gold" icon={ArrowRightLeft} style={{ marginTop: 14 }} onClick={() => setJ({ stage: 6 })}>Continue to escrow &amp; completion</PmBtn>}</>}
     </PmCard>;
+    if (j.stage === 6 && isTemp) return <div style={{ display: "grid", gap: 16 }}>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Exchange &amp; complete</div>
+        <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55, marginBottom: 12, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Your temporary swap{j.tempFrom ? " runs " + j.tempFrom + (j.tempTo ? " to " + j.tempTo : "") : ""}. No documents or ownership change hands. Exchange access details with the counterparty, then mark the swap complete.</div>
+        {!j.escrowFunded ? <PmBtn kind="gold" icon={KeyRound} onClick={() => { setJ({ escrowFunded: true }); toast("Access details exchanged with the counterparty.", "success"); }}>Exchange access details</PmBtn> : <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#1F9D57", fontWeight: 700, fontSize: 13.5 }}><CheckCircle2 size={18} /> Access exchanged</div>}
+      </PmCard>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Complete</div>
+        <PmBtn kind="gold" icon={CheckCircle2} disabled={!j.escrowFunded} onClick={() => { toast("Temporary swap completed and filed.", "success"); const rec = swapFileCompleted(owner, j); setFiled(prev => [rec, ...prev]); swapSaveMine(owner, sjDefault()); setJraw(sjDefault()); }}>Complete temporary swap</PmBtn>
+      </PmCard>
+    </div>;
     if (j.stage === 6) return <div style={{ display: "grid", gap: 16 }}>
       <PmCard>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Balancing payment & escrow</div>
@@ -3889,7 +3917,7 @@ function SwapJourney({ identity, toast, toAi }) {
     {filed.length > 0 && <PmCard style={{ marginTop: 18 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><FileText size={16} color="var(--gold-2)" /><div style={{ fontWeight: 700, color: "var(--ink)" }}>Completed swaps ({filed.length})</div></div>
       <div style={{ display: "grid", gap: 8 }}>{filed.map(fx => <div key={fx.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, border: "1px solid var(--cream-line)", borderRadius: 9, padding: "10px 13px" }}>
-        <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>{fx.area} → {fx.place}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{fx.id} · {new Date(fx.completed_at).toLocaleDateString()}{fx.balance ? " · balance " + fx.balance : ""}</div></div>
+        <div><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>{fx.area} → {fx.place}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{fx.id} · {new Date(fx.completed_at).toLocaleDateString()}{fx.swapType ? " · " + fx.swapType : ""}{fx.balance ? " · balance " + fx.balance : ""}</div></div>
         <span style={{ fontSize: 11.5, fontWeight: 700, padding: "4px 10px", borderRadius: 999, background: "rgba(31,157,87,.14)", color: "#1F9D57", display: "flex", alignItems: "center", gap: 5 }}><CheckCircle2 size={13} /> Filed</span>
       </div>)}</div>
     </PmCard>}
