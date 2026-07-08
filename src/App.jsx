@@ -741,7 +741,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 3.7</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 3.6</span></div>
             <div style={{ display: "flex", gap: 16 }}>{["Facebook", "Twitter", "YouTube"].map(soc => <span key={soc} style={{ color: "rgba(255,255,255,.55)" }}>{soc}</span>)}</div>
           </div>
         </div>
@@ -796,7 +796,7 @@ async function payRecord(rec) {
   const st = payLoadLocal(); if (!st.items.find(x => x.reference === row.reference)) paySaveLocal({ items: [row, ...st.items] });
 }
 async function paymentsFetch() {
-  if (supabase) { try { const { data, error } = await supabase.from("payments").select("*").order("paid_at", { ascending: false }); if (!error && data && data.length) return data; } catch (e) {} }
+  if (supabase) { try { const { data, error } = await supabase.from("payments").select("*").order("paid_at", { ascending: false }); if (!error && data) return data; } catch (e) {} }
   return payLoadLocal().items;
 }
 const DOCS_KEY = "girard_documents_v1";
@@ -812,7 +812,7 @@ async function docDelete(id) {
   const st = docsLoadLocal(); docsSaveLocal({ items: st.items.filter(x => x.id !== id) });
 }
 async function docsFetch() {
-  if (supabase) { try { const { data, error } = await supabase.from("documents").select("*").order("created_at", { ascending: false }).limit(50); if (!error && data && data.length) return data; } catch (e) {} }
+  if (supabase) { try { const { data, error } = await supabase.from("documents").select("*").order("created_at", { ascending: false }).limit(50); if (!error && data) return data; } catch (e) {} }
   return docsLoadLocal().items;
 }
 /* notifications + audit + comms */
@@ -828,7 +828,7 @@ async function notify(rec) {
 }
 async function notifsFetch(role, email) {
   let items = [];
-  if (supabase) { try { const { data, error } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(60); if (!error && data && data.length) items = data; } catch (e) {} }
+  if (supabase) { try { const { data, error } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(60); if (!error && data) items = data; } catch (e) {} }
   if (!items.length) items = notifLoadLocal().items;
   return items.filter(n => n.audience === "all" || n.audience === role || n.audience === email);
 }
@@ -838,7 +838,7 @@ async function auditLog(action, detail, actor) {
   try { const st = JSON.parse(localStorage.getItem(AUDIT_KEY) || '{"items":[]}'); localStorage.setItem(AUDIT_KEY, JSON.stringify({ items: [row, ...st.items].slice(0, 300) })); } catch (e) {}
 }
 async function auditFetch() {
-  if (supabase) { try { const { data, error } = await supabase.from("audit").select("*").order("created_at", { ascending: false }).limit(120); if (!error && data && data.length) return data; } catch (e) {} }
+  if (supabase) { try { const { data, error } = await supabase.from("audit").select("*").order("created_at", { ascending: false }).limit(120); if (!error && data) return data; } catch (e) {} }
   try { return JSON.parse(localStorage.getItem(AUDIT_KEY) || '{"items":[]}').items; } catch (e) { return []; }
 }
 async function sendComms({ channels, to, subject, message }) {
@@ -963,6 +963,43 @@ async function authSignIn(email, password) {
   localStorage.setItem("girard_session", key);
   return { email: key, role: a.role || null };
 }
+async function authReset(email) {
+  const e = (email || "").toLowerCase().trim();
+  if (!e) return { ok: false, msg: "Enter your email address first, then tap Forgot password." };
+  if (!supabase) return { ok: false, msg: "Password reset works on the live site. On this demo, accounts are only on this device." };
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(e, { redirectTo: window.location.origin });
+    if (error) return { ok: false, msg: error.message };
+    return { ok: true, msg: "Reset link sent to " + e + ". Check your email, including the spam folder." };
+  } catch (x) { return { ok: false, msg: "Could not send the reset email. Please try again shortly." }; }
+}
+function ResetPassword({ onDone }) {
+  const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false);
+  const submit = async () => {
+    setErr("");
+    if (pw.length < 6) { setErr("Use at least 6 characters."); return; }
+    if (pw !== pw2) { setErr("The two passwords do not match."); return; }
+    setBusy(true);
+    try { const { error } = await supabase.auth.updateUser({ password: pw }); if (error) { setErr(error.message); setBusy(false); return; } setDone(true); }
+    catch (x) { setErr("Could not update your password. Please open the reset link again."); }
+    setBusy(false);
+  };
+  return <div style={{ position: "fixed", inset: 0, background: "var(--navy)", display: "grid", placeItems: "center", zIndex: 200, padding: 18 }}>
+    <div style={{ width: 380, maxWidth: "92vw", background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 16, padding: "30px 28px" }}>
+      <div className="serif" style={{ fontSize: 26, fontWeight: 600, color: "#fff", marginBottom: 8 }}>Set a new password</div>
+      {done ? <>
+        <p style={{ color: "rgba(255,255,255,.7)", fontSize: 14, lineHeight: 1.55, marginBottom: 20 }}>Your password has been updated. You can now sign in with it.</p>
+        <button className="btn-gold" onClick={onDone} style={{ width: "100%", justifyContent: "center" }}>Continue</button>
+      </> : <>
+        <p style={{ color: "rgba(255,255,255,.65)", fontSize: 14, marginBottom: 18 }}>Choose a new password for your Girard account.</p>
+        <input className="field" type="password" placeholder="New password" value={pw} onChange={e => setPw(e.target.value)} style={{ marginBottom: 12 }} />
+        <input className="field" type="password" placeholder="Confirm new password" value={pw2} onChange={e => setPw2(e.target.value)} style={{ marginBottom: 12 }} />
+        {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{err}</div>}
+        <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", justifyContent: "center", opacity: busy ? .7 : 1 }}>{busy ? "Saving\u2026" : "Update password"}</button>
+      </>}
+    </div>
+  </div>;
+}
 async function authSetRole(role) {
   if (!DEMO) { await supabase.auth.updateUser({ data: { role } }); await ensureProfile(role, true); return; }
   const email = localStorage.getItem("girard_session");
@@ -1059,8 +1096,9 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
   const [agree, setAgree] = useState(false);
   const [twoFA, setTwoFA] = useState(null); const [code, setCode] = useState("");
   const [paywall, setPaywall] = useState(null); const [payBusy, setPayBusy] = useState(false);
+  const [resetMsg, setResetMsg] = useState(""); const [resetBusy, setResetBusy] = useState(false);
   const finishAuth = async (email, r) => {
-    if (r === "admin" || isApprovedAdmin(email)) { onAuthed(resolveIdentity(email, r)); return; }
+    if (r === "admin") { onAuthed(resolveIdentity(email, r)); return; }
     if (await subActive(email)) { onAuthed(resolveIdentity(email, r)); return; }
     setBusy(false); setPaywall({ email, role: r });
   };
@@ -1127,6 +1165,8 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
           {DEMO && <div style={{ background: "rgba(198,161,91,.12)", border: "1px solid rgba(198,161,91,.35)", borderRadius: 6, padding: "10px 12px", fontSize: 12.5, color: "var(--gold)", marginBottom: 18, lineHeight: 1.5, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Demo mode. Accounts are saved on this device only until Supabase is connected.</div>}
           <div style={{ position: "relative", marginBottom: 12 }}><Mail size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} /></div>
+          {!isSignup && <div style={{ textAlign: "right", marginTop: -4, marginBottom: 12 }}><a href="#" onClick={async e => { e.preventDefault(); setErr(""); setResetMsg(""); setResetBusy(true); const r = await authReset(email); setResetBusy(false); if (r.ok) setResetMsg(r.msg); else setErr(r.msg); }} style={{ color: "var(--gold)", fontSize: 12.5, fontWeight: 600 }}>{resetBusy ? "Sending\u2026" : "Forgot password?"}</a></div>}
+          {resetMsg && <div style={{ color: "#7CD9A0", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{resetMsg}</div>}
           {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{err}</div>}
           {isSignup && <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "2px 0 14px", cursor: "pointer" }}><input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} style={{ marginTop: 3, accentColor: "var(--gold)" }} /><span style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", lineHeight: 1.5, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>I agree to Girard's processing of my personal data in line with the <b style={{ color: "var(--gold)" }}>Privacy Policy</b>, under the Nigeria Data Protection Act.</span></label>}
           <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", opacity: busy ? .7 : 1, marginTop: 4 }}>{busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"} <ArrowUpRight size={16} /></button>
@@ -1228,6 +1268,7 @@ export default function App() {
   const [role, setRole] = useState(null);
   const [identity, setIdentity] = useState(null);
   const [pendingEmail, setPendingEmail] = useState(null);
+  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -1238,6 +1279,12 @@ export default function App() {
       else setView("landing");
     }).catch(() => { if (live) setView("landing"); });
     return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const { data } = supabase.auth.onAuthStateChange((event) => { if (event === "PASSWORD_RECOVERY") setRecovery(true); });
+    return () => { try { data.subscription.unsubscribe(); } catch (e) {} };
   }, []);
 
   const goHome = (id) => { setIdentity(id); setView("home"); };
@@ -1265,6 +1312,7 @@ export default function App() {
       {view === "home" && identity && <AppShell identity={identity}
         onSignOut={async () => { await authSignOut(); setIdentity(null); setRole(null); setPendingEmail(null); setView("landing"); }}
         onSwitchRole={() => { setPendingEmail(identity.email); setView("role"); }} />}
+      {recovery && <ResetPassword onDone={() => { try { window.location.hash = ""; } catch (e) {} window.location.reload(); }} />}
       <ConsentBanner />
     </>
   );
@@ -1547,7 +1595,6 @@ function PropertiesScreen({ st, setSt, identity }) {
 /* ---------- ADD PROPERTY ---------- */
 function AddPropertyScreen({ st, setSt, toast }) {
   const [f, setF] = useState({ type: PM_TYPES[0], area: PM_AREAS[0], beds: "3", amenities: [], letType: "Long let", term: "1 year" });
-  const TERM_OPTS = { "Long let": ["1 year", "2 years", "3 years", "5 years"], "Short let": ["Per day", "Per week", "Per month"] };
   const [ai, setAi] = useState(null);
   const [price, setPrice] = useState("");
   const [done, setDone] = useState(false);
@@ -1559,7 +1606,7 @@ function AddPropertyScreen({ st, setSt, toast }) {
   const rec = async () => { setAi({ loading: true }); const r = await aiRent(f); setAi({ loading: false, ...r }); setPrice(String(r.annual)); };
   const submit = () => {
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, description: desc };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.letType === "Short let" ? null : f.term, img: photos[0], photos, amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -1570,8 +1617,8 @@ function AddPropertyScreen({ st, setSt, toast }) {
         <PmSelect label="Property type" value={f.type} onChange={v => setF({ ...f, type: v })} options={PM_TYPES} />
         <PmSelect label="Area (Lagos)" value={f.area} onChange={v => setF({ ...f, area: v })} options={PM_AREAS} />
         <PmSelect label="Bedrooms" value={f.beds} onChange={v => setF({ ...f, beds: v })} options={["0", "1", "2", "3", "4", "5"]} />
-        <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v, term: TERM_OPTS[v][0] })} options={["Long let", "Short let"]} />
-        <PmSelect label={f.letType === "Short let" ? "Lease period" : "Acceptable length of stay"} value={f.term} onChange={v => setF({ ...f, term: v })} options={TERM_OPTS[f.letType]} />
+        <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v })} options={["Long let", "Short let"]} />
+        {f.letType === "Long let" ? <PmSelect label="Acceptable length of stay" value={f.term} onChange={v => setF({ ...f, term: v })} options={["1 year", "2 years", "3 years", "5 years"]} /> : <div style={{ fontSize: 12.5, color: "var(--muted)", background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px" }}>Short let: guests choose their stay in days, weeks or months.</div>}
         <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Amenities</label><div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{PM_AMEN.map(a => <button key={a} onClick={() => toggle(a)} style={{ border: "1px solid " + (f.amenities.includes(a) ? "var(--gold)" : "var(--cream-line)"), background: f.amenities.includes(a) ? "var(--gold-soft)" : "transparent", color: f.amenities.includes(a) ? "var(--gold-2)" : "var(--muted)", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{a}</button>)}</div></div>
         <PmBtn kind="navy" icon={Sparkles} onClick={rec}>Get AI rent recommendation</PmBtn>
       </div></PmCard>
@@ -3028,7 +3075,7 @@ async function enqInsert(rec) {
   return false;
 }
 async function enqFetch() {
-  if (supabase) { try { const { data, error } = await supabase.from("enquiries").select("*").order("created_at", { ascending: false }); if (!error && data && data.length) return data.map(enqRowToRec); } catch (e) {} }
+  if (supabase) { try { const { data, error } = await supabase.from("enquiries").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(enqRowToRec); } catch (e) {} }
   return enqLoad().items;
 }
 async function enqSetStatusRemote(id, status) {
