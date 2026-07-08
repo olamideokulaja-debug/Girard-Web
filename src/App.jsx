@@ -2427,7 +2427,7 @@ function SwapIntro({ onClose }) {
         </div>
       </div>
       <p style={{ marginBottom: 18, color: "var(--muted)", fontSize: 13.5 }}>Browse listings, list your own property, review AI-matched reciprocal partners, and track each deal through to completion.</p>
-      <PmBtn onClick={onClose} style={{ width: "100%", justifyContent: "center" }}>Got it, let\u2019s start</PmBtn>
+      <PmBtn onClick={onClose} style={{ width: "100%", justifyContent: "center" }}>Got it, let's start</PmBtn>
     </div>
   </PmModal>;
 }
@@ -2595,7 +2595,7 @@ function ReportsScreen({ identity, toast }) {
       <CStat icon={Handshake} label="Active swaps" value={String(sw.deals.length)} sub="Cross-border" c="#F59E0B" bg="#FEF3E2" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Rental income trend (\u20a6M)</div><MiniArea data={income} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Rental income trend (â¦M)</div><MiniArea data={income} /></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Applications</div>{appData.length ? <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}><MiniDonut data={appData} size={130} /><Legend items={appData} /></div> : <div style={{ color: "var(--muted)", fontSize: 13, padding: "20px 0" }}>No applications yet.</div>}</PmCard>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
@@ -3272,14 +3272,14 @@ function ModerationScreen({ toast }) {
   return <div>
     <H2 title="Flagged reports" sub="Content and users reported by members" />
     <PmCard pad={0} style={{ overflow: "hidden" }}>
-      {loading ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading reports\u2026</div>
+      {loading ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading reportsâ¦</div>
         : items.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>No reports yet. Anything members flag will appear here.</div>
         : items.map((r, i) => <div key={i} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap", opacity: (r.status === "resolved" || r.status === "dismissed") ? .55 : 1 }}>
             <div style={{ width: 38, height: 38, borderRadius: 9, background: "rgba(208,69,59,.12)", color: "#D0453B", display: "grid", placeItems: "center", flexShrink: 0 }}><AlertTriangle size={18} /></div>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontWeight: 700, color: "var(--ink)" }}>{r.reason} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 12.5 }}>\u00b7 {r.target_type}</span></div>
+              <div style={{ fontWeight: 700, color: "var(--ink)" }}>{r.reason} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 12.5 }}>Â· {r.target_type}</span></div>
               <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{r.target_label}{r.reporter ? " \u00b7 by " + r.reporter : ""}{r.created_at ? " \u00b7 " + new Date(r.created_at).toLocaleDateString() : ""}</div>
-              {r.note ? <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, fontStyle: "italic" }}>\u201c{r.note}\u201d</div> : null}
+              {r.note ? <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, fontStyle: "italic" }}>â{r.note}â</div> : null}
               {r.status && r.status !== "open" ? <div style={{ fontSize: 11, fontWeight: 700, color: "#1F9D57", marginTop: 4, textTransform: "uppercase" }}>{r.status}</div> : null}
             </div>
             <div style={{ display: "flex", gap: 6 }}>
@@ -4864,7 +4864,7 @@ function SecurityScreen({ identity, toast }) {
           <PmBtn kind="navy" icon={Lock} onClick={begin}>{busy ? "Preparing\u2026" : "Begin setup"}</PmBtn>
         </> : <>
           <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 20, alignItems: "start" }} className="pm-grid2">
-            <div style={{ background: "#fff", borderRadius: 10, padding: 10, display: "grid", placeItems: "center", minHeight: 190 }}>{qr ? <img src={qr} alt="2FA QR code" style={{ width: 180, height: 180 }} /> : <div style={{ color: "var(--muted)", fontSize: 12 }}>Preparing QR\u2026</div>}</div>
+            <div style={{ background: "#fff", borderRadius: 10, padding: 10, display: "grid", placeItems: "center", minHeight: 190 }}>{qr ? <img src={qr} alt="2FA QR code" style={{ width: 180, height: 180 }} /> : <div style={{ color: "var(--muted)", fontSize: 12 }}>Preparing QRâ¦</div>}</div>
             <div>
               <div style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6, marginBottom: 10, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>1. Scan this QR code with your authenticator app.</div>
               <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 4 }}>Or enter this key manually:</div>
