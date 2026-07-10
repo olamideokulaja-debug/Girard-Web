@@ -741,8 +741,8 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.3</span></div>
-            <div style={{ display: "flex", gap: 16 }}>{["Facebook", "Twitter", "YouTube"].map(soc => <span key={soc} style={{ color: "rgba(255,255,255,.55)" }}>{soc}</span>)}</div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.4</span></div>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
       </footer>
@@ -3261,8 +3261,7 @@ function PublicListings({ onSignIn }) {
           </div>
           <div style={{ padding: 18, display: "flex", flexDirection: "column", flex: 1 }}>
             <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{p.title}</div>
-            <div style={{ fontSize: 13, color: "var(--muted)", margin: "3px 0 10px" }}>{p.area}{p.beds ? " · " + p.beds + " bed" : ""}</div>
-            <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--navy)", marginBottom: 14 }}>{money(p.rent)}<span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 400 }}>/yr</span></div>
+            <div style={{ fontSize: 13, color: "var(--muted)", margin: "3px 0 14px" }}>{p.area}{p.beds ? " · " + p.beds + " bed" : ""}</div>
             <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
               <button onClick={() => setLead({ mode: "viewing", property: p })} className="btn-gold" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Book viewing</button>
               <button onClick={() => setLead({ mode: "enquire", property: p })} className="btn-line on-ivory" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Enquire</button>

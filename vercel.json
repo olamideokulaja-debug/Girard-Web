@@ -5,6 +5,7 @@
   ],
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/delete-account", "destination": "/delete-account.html" }
+    { "source": "/delete-account", "destination": "/delete-account.html" },
+    { "source": "/dispute-resolution", "destination": "/dispute-resolution.html" }
   ]
 }
