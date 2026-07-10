@@ -509,7 +509,7 @@ function Landing({ onStart, onSignIn }) {
 
       {/* NAV */}
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,31,60,.9)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--navy-line)" }}>
-        <div className="wrap" style={{ height: 74, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap", paddingLeft: 16 }}>
+        <div style={{ maxWidth: 1560, margin: "0 auto", height: 74, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap", padding: "0 26px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
             <GirardMark size={38} />
             <div>
@@ -517,7 +517,7 @@ function Landing({ onStart, onSignIn }) {
               <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -1 }}>PROPERTY LIMITED</div>
             </div>
           </div>
-          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
+          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
             <button className="nav-link" onClick={() => go("home")} style={tab === "home" ? { color: "var(--gold)" } : undefined}>Home</button>
             <div className="navdrop">
               <button className="nav-link" onClick={() => go("leadership")} style={["leadership", "excellence", "advantages"].includes(tab) ? { color: "var(--gold)" } : undefined}>About ▾</button>
@@ -810,7 +810,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.7</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.8</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
