@@ -6,7 +6,7 @@ import {
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
   CreditCard, PenLine, Filter, LayoutDashboard, Bell, ScrollText, CalendarDays, Moon, Sun, Download, Trash2, Send, Loader2, MoreHorizontal,
   Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
-  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Info, Heart, Image as ImageIcon
+  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Info, Heart, Play, Pause, Image as ImageIcon
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -380,6 +380,47 @@ function RoiCalculator() {
   </section>;
 }
 
+function WalkthroughVideo() {
+  const steps = [
+    { img: "/walkthrough/1.jpg", n: "01", t: "Manage your whole portfolio", d: "Owners and landlords see rent, occupancy, applications and tasks across every property, from a single dashboard." },
+    { img: "/walkthrough/2.jpg", n: "02", t: "List, let and take enquiries", d: "Publish a home, set the letting terms, and handle viewings and enquiries together in one place." },
+    { img: "/walkthrough/3.jpg", n: "03", t: "Swap homes across borders", d: "Exchange a Lagos home for one abroad, permanent or temporary, guided from match through to secure completion." },
+    { img: "/walkthrough/4.jpg", n: "04", t: "Collect and pay rent", d: "Rent settles directly to the landlord's account, with Girard's 5% administrative fee handled automatically." }
+  ];
+  const [i, setI] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    if (!playing) return;
+    const start = Date.now(); const DUR = 4600;
+    const tick = setInterval(() => {
+      const pr = Math.min(1, (Date.now() - start) / DUR); setProgress(pr);
+      if (pr >= 1) { clearInterval(tick); setI(x => (x + 1) % steps.length); setProgress(0); }
+    }, 60);
+    return () => clearInterval(tick);
+  }, [i, playing]);
+  const jump = (n) => { setPlaying(false); setProgress(0); setI((n + steps.length) % steps.length); };
+  const s = steps[i];
+  return <div className="wt-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,340px) 1fr", gap: 46, alignItems: "center", maxWidth: 940, margin: "0 auto" }}>
+    <div style={{ display: "grid", borderRadius: 20, overflow: "hidden", border: "1px solid var(--navy-line)", boxShadow: "0 30px 60px rgba(0,0,0,.4)" }}>
+      {steps.map((st, k) => <img key={k} src={st.img} alt={st.t} loading="lazy" style={{ gridArea: "1 / 1", width: "100%", display: "block", opacity: k === i ? 1 : 0, transition: "opacity .7s ease" }} />)}
+    </div>
+    <div>
+      <div className="serif" style={{ fontSize: 52, fontWeight: 600, color: "rgba(198,161,91,.45)", lineHeight: 1 }}>{s.n}</div>
+      <h3 className="serif" style={{ fontSize: 28, fontWeight: 600, margin: "6px 0 12px" }}>{s.t}</h3>
+      <p style={{ color: "rgba(255,255,255,.75)", fontSize: 16, lineHeight: 1.7, marginBottom: 22, minHeight: 84 }}>{s.d}</p>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {steps.map((st, k) => <button key={k} onClick={() => jump(k)} aria-label={"Go to step " + (k + 1)} style={{ flex: 1, height: 4, borderRadius: 999, border: "none", padding: 0, cursor: "pointer", background: "rgba(255,255,255,.18)", position: "relative", overflow: "hidden" }}><span style={{ position: "absolute", left: 0, top: 0, bottom: 0, right: 0, background: "var(--gold)", transformOrigin: "left", transform: "scaleX(" + (k < i ? 1 : k === i ? progress : 0) + ")", transition: k === i ? "none" : "transform .3s" }} /></button>)}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button onClick={() => setPlaying(x => !x)} aria-label={playing ? "Pause" : "Play"} style={{ width: 46, height: 46, borderRadius: 999, border: "none", background: "var(--gold)", color: "var(--navy)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>{playing ? <Pause size={18} fill="var(--navy)" /> : <Play size={18} fill="var(--navy)" />}</button>
+        <button onClick={() => jump(i - 1)} aria-label="Previous" style={{ width: 42, height: 42, borderRadius: 999, border: "1px solid var(--navy-line)", background: "transparent", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}><ArrowLeft size={17} /></button>
+        <button onClick={() => jump(i + 1)} aria-label="Next" style={{ width: 42, height: 42, borderRadius: 999, border: "1px solid var(--navy-line)", background: "transparent", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}><ArrowRight size={17} /></button>
+        <span style={{ marginLeft: "auto", fontSize: 13, color: "rgba(255,255,255,.5)" }}>{i + 1} / {steps.length}</span>
+      </div>
+    </div>
+  </div>;
+}
 function Landing({ onStart, onSignIn }) {
   const [tab, setTab] = useState("home");
   const go = (t) => { setTab(t); try { window.scrollTo({ top: 0 }); } catch (e) {} };
@@ -447,6 +488,7 @@ function Landing({ onStart, onSignIn }) {
           .grid-2{grid-template-columns:1fr!important}.hero-grid{grid-template-columns:1fr!important}
           .hero-photo{display:none!important}.mod-grid{grid-template-columns:1fr!important}
           .grid-4{grid-template-columns:1fr 1fr!important}.cap-split{grid-template-columns:1fr!important}
+          .wt-grid{grid-template-columns:1fr!important;gap:26px!important}
         }
         @media(max-width:560px){.grid-4{grid-template-columns:1fr!important}}
       `}</style>
@@ -543,6 +585,17 @@ function Landing({ onStart, onSignIn }) {
               </div>
             </div>
           </div>
+        </div>
+      </section>)}
+
+      {/* SEE HOW IT WORKS */}
+      {tab === "home" && (<section style={{ background: "var(--navy)", color: "#fff", padding: "72px 0 80px", borderTop: "1px solid var(--navy-line)" }}>
+        <div className="wrap">
+          <div style={{ textAlign: "center", marginBottom: 44 }}>
+            <div style={{ color: "var(--gold)", fontSize: 13, letterSpacing: 3, fontWeight: 700, textTransform: "uppercase", marginBottom: 12 }}>See how it works</div>
+            <h2 className="serif sec-h">A guided tour of the platform</h2>
+          </div>
+          <WalkthroughVideo />
         </div>
       </section>)}
 
@@ -741,7 +794,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.4</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.5</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
