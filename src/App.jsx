@@ -498,7 +498,7 @@ function Landing({ onStart, onSignIn }) {
         .hero-h{font-size:clamp(46px,6.6vw,86px);line-height:1.02;font-weight:600;letter-spacing:-1px}
         .sec-h{font-size:clamp(32px,4.4vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.5px}
         @media(max-width:1120px){
-          .nav-links{display:none!important}.burger{display:inline-flex!important}
+          .nav-links{display:none!important}.nav-cta{display:none!important}.burger{display:inline-flex!important}
           .grid-2{grid-template-columns:1fr!important}.hero-grid{grid-template-columns:1fr!important}
           .hero-photo{display:none!important}.mod-grid{grid-template-columns:1fr!important}
           .grid-4{grid-template-columns:1fr 1fr!important}.cap-split{grid-template-columns:1fr!important}
@@ -517,7 +517,7 @@ function Landing({ onStart, onSignIn }) {
               <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -1 }}>PROPERTY LIMITED</div>
             </div>
           </div>
-          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
+          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", whiteSpace: "nowrap", flex: 1, justifyContent: "space-evenly", padding: "0 22px" }}>
             <button className="nav-link" onClick={() => go("home")} style={tab === "home" ? { color: "var(--gold)" } : undefined}>Home</button>
             <div className="navdrop">
               <button className="nav-link" onClick={() => go("leadership")} style={["leadership", "excellence", "advantages"].includes(tab) ? { color: "var(--gold)" } : undefined}>About ▾</button>
@@ -541,9 +541,11 @@ function Landing({ onStart, onSignIn }) {
             <button className="nav-link" onClick={() => go("bourdillon")} style={tab === "bourdillon" ? { color: "var(--gold)" } : undefined}>Ikoyi Project</button>
             <button className="nav-link" onClick={() => go("partners")} style={tab === "partners" ? { color: "var(--gold)" } : undefined}>Partners</button>
             <button className="nav-link" onClick={() => go("contact")} style={tab === "contact" ? { color: "var(--gold)" } : undefined}>Contact</button>
+          </nav>
+          <div className="nav-cta" style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
             <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 16px" }}>Sign in</a>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
-          </nav>
+          </div>
           <button className="burger" onClick={() => setMenu(m => !m)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", color: "#fff" }}>{menu ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
         {menu && (
@@ -810,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.8</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.0</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
