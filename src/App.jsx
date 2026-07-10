@@ -382,17 +382,23 @@ function RoiCalculator() {
 
 function WalkthroughVideo() {
   const steps = [
-    { img: "/walkthrough/1.jpg", n: "01", t: "Manage your whole portfolio", d: "Owners and landlords see rent, occupancy, applications and tasks across every property, from a single dashboard." },
-    { img: "/walkthrough/2.jpg", n: "02", t: "List, let and take enquiries", d: "Publish a home, set the letting terms, and handle viewings and enquiries together in one place." },
-    { img: "/walkthrough/3.jpg", n: "03", t: "Swap homes across borders", d: "Exchange a Lagos home for one abroad, permanent or temporary, guided from match through to secure completion." },
-    { img: "/walkthrough/4.jpg", n: "04", t: "Collect and pay rent", d: "Rent settles directly to the landlord's account, with Girard's 5% administrative fee handled automatically." }
+    { img: "/walkthrough/1.jpg", n: "01", t: "Your portfolio at a glance", d: "Owners see rent, occupancy, applications and open tasks across every property, from one dashboard." },
+    { img: "/walkthrough/2.jpg", n: "02", t: "Vet every tenant thoroughly", d: "Check affordability, employment, guarantor, references and KYC, with an automatic risk score for each applicant." },
+    { img: "/walkthrough/3.jpg", n: "03", t: "List a property in minutes", d: "Set the type, letting terms and photos, and let Girard draft the listing description for you." },
+    { img: "/walkthrough/4.jpg", n: "04", t: "See your whole estate", d: "Every property under management, with its status and occupancy, in a single view." },
+    { img: "/walkthrough/5.jpg", n: "05", t: "Collect rent, track invoices", d: "Rent settles directly to the landlord, while Girard's 5% administrative fee routes automatically." },
+    { img: "/walkthrough/6.jpg", n: "06", t: "Draft agreements and letters", d: "Generate tenancy agreements, MOUs and notices with AI, ready for a qualified lawyer to review." },
+    { img: "/walkthrough/7.jpg", n: "07", t: "Swap homes across borders", d: "Browse reciprocal matches and exchange a Lagos home for one abroad, permanent or temporary." },
+    { img: "/walkthrough/8.jpg", n: "08", t: "Track your investments", d: "Investors see total invested, portfolio value and income, with a live activity feed." },
+    { img: "/walkthrough/9.jpg", n: "09", t: "Everything tenants need", d: "Pay rent, request repairs, view the lease and message Girard, all in one portal." },
+    { img: "/walkthrough/10.jpg", n: "10", t: "Tools built for agents", d: "Manage a pipeline of leads and deals, independently and on your own account." }
   ];
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     if (!playing) return;
-    const start = Date.now(); const DUR = 4600;
+    const start = Date.now(); const DUR = 4200;
     const tick = setInterval(() => {
       const pr = Math.min(1, (Date.now() - start) / DUR); setProgress(pr);
       if (pr >= 1) { clearInterval(tick); setI(x => (x + 1) % steps.length); setProgress(0); }
@@ -401,22 +407,30 @@ function WalkthroughVideo() {
   }, [i, playing]);
   const jump = (n) => { setPlaying(false); setProgress(0); setI((n + steps.length) % steps.length); };
   const s = steps[i];
-  return <div className="wt-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,340px) 1fr", gap: 46, alignItems: "center", maxWidth: 940, margin: "0 auto" }}>
-    <div style={{ display: "grid", borderRadius: 20, overflow: "hidden", border: "1px solid var(--navy-line)", boxShadow: "0 30px 60px rgba(0,0,0,.4)" }}>
-      {steps.map((st, k) => <img key={k} src={st.img} alt={st.t} loading="lazy" style={{ gridArea: "1 / 1", width: "100%", display: "block", opacity: k === i ? 1 : 0, transition: "opacity .7s ease" }} />)}
+  const dot = (c) => ({ width: 11, height: 11, borderRadius: 999, background: c });
+  return <div style={{ maxWidth: 820, margin: "0 auto" }}>
+    <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid var(--navy-line)", boxShadow: "0 34px 70px rgba(0,0,0,.46)" }}>
+      <div style={{ height: 38, background: "var(--navy-3)", display: "flex", alignItems: "center", gap: 8, padding: "0 16px", borderBottom: "1px solid var(--navy-line)" }}>
+        <span style={dot("#ff5f57")} /><span style={dot("#febc2e")} /><span style={dot("#28c840")} />
+        <span style={{ marginLeft: 14, fontSize: 12.5, color: "rgba(255,255,255,.45)" }}>girardpropertylimited.com</span>
+      </div>
+      <div style={{ display: "grid", background: "var(--navy-2)" }}>
+        {steps.map((st, k) => <img key={k} src={st.img} alt={st.t} loading="lazy" style={{ gridArea: "1 / 1", width: "100%", display: "block", opacity: k === i ? 1 : 0, transition: "opacity .7s ease" }} />)}
+      </div>
     </div>
-    <div>
-      <div className="serif" style={{ fontSize: 52, fontWeight: 600, color: "rgba(198,161,91,.45)", lineHeight: 1 }}>{s.n}</div>
-      <h3 className="serif" style={{ fontSize: 28, fontWeight: 600, margin: "6px 0 12px" }}>{s.t}</h3>
-      <p style={{ color: "rgba(255,255,255,.75)", fontSize: 16, lineHeight: 1.7, marginBottom: 22, minHeight: 84 }}>{s.d}</p>
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {steps.map((st, k) => <button key={k} onClick={() => jump(k)} aria-label={"Go to step " + (k + 1)} style={{ flex: 1, height: 4, borderRadius: 999, border: "none", padding: 0, cursor: "pointer", background: "rgba(255,255,255,.18)", position: "relative", overflow: "hidden" }}><span style={{ position: "absolute", left: 0, top: 0, bottom: 0, right: 0, background: "var(--gold)", transformOrigin: "left", transform: "scaleX(" + (k < i ? 1 : k === i ? progress : 0) + ")", transition: k === i ? "none" : "transform .3s" }} /></button>)}
+    <div style={{ display: "flex", gap: 6, margin: "22px 0 18px" }}>
+      {steps.map((st, k) => <button key={k} onClick={() => jump(k)} aria-label={"Go to step " + (k + 1)} style={{ flex: 1, height: 4, borderRadius: 999, border: "none", padding: 0, cursor: "pointer", background: "rgba(255,255,255,.16)", position: "relative", overflow: "hidden" }}><span style={{ position: "absolute", left: 0, top: 0, bottom: 0, right: 0, background: "var(--gold)", transformOrigin: "left", transform: "scaleX(" + (k < i ? 1 : k === i ? progress : 0) + ")", transition: k === i ? "none" : "transform .3s" }} /></button>)}
+    </div>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
+      <div style={{ flex: 1, minWidth: 280 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}><span className="serif" style={{ fontSize: 30, fontWeight: 600, color: "rgba(198,161,91,.5)" }}>{s.n}</span><h3 className="serif" style={{ fontSize: 25, fontWeight: 600, margin: 0 }}>{s.t}</h3></div>
+        <p style={{ color: "rgba(255,255,255,.75)", fontSize: 15.5, lineHeight: 1.65, margin: "10px 0 0", maxWidth: 560 }}>{s.d}</p>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <button onClick={() => setPlaying(x => !x)} aria-label={playing ? "Pause" : "Play"} style={{ width: 46, height: 46, borderRadius: 999, border: "none", background: "var(--gold)", color: "var(--navy)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>{playing ? <Pause size={18} fill="var(--navy)" /> : <Play size={18} fill="var(--navy)" />}</button>
         <button onClick={() => jump(i - 1)} aria-label="Previous" style={{ width: 42, height: 42, borderRadius: 999, border: "1px solid var(--navy-line)", background: "transparent", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}><ArrowLeft size={17} /></button>
         <button onClick={() => jump(i + 1)} aria-label="Next" style={{ width: 42, height: 42, borderRadius: 999, border: "1px solid var(--navy-line)", background: "transparent", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}><ArrowRight size={17} /></button>
-        <span style={{ marginLeft: "auto", fontSize: 13, color: "rgba(255,255,255,.5)" }}>{i + 1} / {steps.length}</span>
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,.5)", minWidth: 44, textAlign: "right" }}>{i + 1} / {steps.length}</span>
       </div>
     </div>
   </div>;
@@ -515,6 +529,7 @@ function Landing({ onStart, onSignIn }) {
             </div>
             <button className="nav-link" onClick={() => go("services")} style={tab === "services" ? { color: "var(--gold)" } : undefined}>Services</button>
             <button className="nav-link" onClick={() => go("platform")} style={tab === "platform" ? { color: "var(--gold)" } : undefined}>Platform</button>
+            <button className="nav-link" onClick={() => go("tour")} style={tab === "tour" ? { color: "var(--gold)" } : undefined}>How it works</button>
             <button className="nav-link" onClick={() => go("who")} style={tab === "who" ? { color: "var(--gold)" } : undefined}>Who we serve</button>
             <div className="navdrop">
               <button className="nav-link" onClick={() => go("listings")} style={["listings", "returns"].includes(tab) ? { color: "var(--gold)" } : undefined}>Listings ▾</button>
@@ -540,6 +555,7 @@ function Landing({ onStart, onSignIn }) {
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("advantages"); setMenu(false); }}>Strategic advantages</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("services"); setMenu(false); }}>Services</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("platform"); setMenu(false); }}>Platform</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("tour"); setMenu(false); }}>How it works</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("who"); setMenu(false); }}>Who we serve</button>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Listings</div>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("listings"); setMenu(false); }}>Browse our listings</button>
@@ -588,12 +604,12 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>)}
 
-      {/* SEE HOW IT WORKS */}
-      {tab === "home" && (<section style={{ background: "var(--navy)", color: "#fff", padding: "72px 0 80px", borderTop: "1px solid var(--navy-line)" }}>
-        <div className="wrap">
-          <div style={{ textAlign: "center", marginBottom: 44 }}>
-            <div style={{ color: "var(--gold)", fontSize: 13, letterSpacing: 3, fontWeight: 700, textTransform: "uppercase", marginBottom: 12 }}>See how it works</div>
-            <h2 className="serif sec-h">A guided tour of the platform</h2>
+      {/* HOW IT WORKS (own tab) */}
+      {tab === "tour" && (<section style={{ background: "var(--navy)", color: "#fff", minHeight: "calc(100vh - 74px)", display: "flex", alignItems: "center", padding: "36px 0" }}>
+        <div className="wrap" style={{ width: "100%" }}>
+          <div style={{ textAlign: "center", marginBottom: 26 }}>
+            <div style={{ color: "var(--gold)", fontSize: 13, letterSpacing: 3, fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>See how it works</div>
+            <h2 className="serif" style={{ fontSize: "clamp(26px,3.2vw,38px)", fontWeight: 600, margin: 0 }}>A guided tour of the platform</h2>
           </div>
           <WalkthroughVideo />
         </div>
@@ -794,7 +810,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.5</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 5.7</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
