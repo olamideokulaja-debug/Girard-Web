@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.5</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.7</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1679,37 +1679,52 @@ const H2 = ({ title, sub, right }) => <div style={{ display: "flex", justifyCont
 
 /* ---------- OWNER DASHBOARD ---------- */
 function TestTenancyCard({ st, setSt, identity, toast }) {
-  const banks = bankLoad();
-  const landlords = Object.keys(banks).filter(k => banks[k] && (banks[k].subaccount || banks[k].split_code));
-  const [who, setWho] = useState(landlords[0] || "");
-  const make = () => {
-    const b = banks[who];
-    if (!b) { toast("Pick a landlord who has a payout account registered", "danger"); return; }
-    const rent = 100000;
-    const fee = Math.round(rent * (GIRARD_FEE_PCT / 100));
+  const [name, setName] = useState("");
+  const [no, setNo] = useState("");
+  const [bk, setBk] = useState(NG_BANKS[0][0]);
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState(null);
+  const [paid, setPaid] = useState(false);
+  const payNow = () => {
+    payWithPaystack({ email: identity.email, amountNaira: 105000, label: "TEST rent (split check)", purpose: "rent", target: res.who, subaccount: res.sub, split_code: res.split, onSuccess: () => { setPaid(true); toast("Paid. Open Paystack \u2192 Transactions and check the Split section.", "success"); } });
+  };
+  const run = async () => {
+    if (!name.trim() || no.length < 10) { toast("Enter an account name and 10-digit account number", "danger"); return; }
+    setBusy(true); setRes(null);
+    const email = "testlandlord+" + Date.now().toString().slice(-6) + "@girardpropertylimited.com";
+    const r = await createSubaccount({ name, bankName: bk, acctNo: no, email });
+    setBusy(false);
+    if (!r || !r.configured) { setRes({ bad: true, msg: "PAYSTACK_SECRET_KEY is not set in Vercel, or the site has not been redeployed since you added it." }); return; }
+    if (!r.ok) { setRes({ bad: true, msg: "Paystack said: " + (r.error || "could not create the subaccount") }); return; }
+    const bank = { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "" };
+    bankSet(email, bank);
+    const rent = 100000, fee = Math.round(rent * (GIRARD_FEE_PCT / 100));
     const id = "PR-TEST" + Date.now().toString().slice(-5);
-    const prop = {
-      id, title: "TEST Tenancy \u00b7 2-Bed Apartment", area: PM_AREAS[0], type: "Apartment", beds: 2,
-      rent, status: "Leased", verified: true, letType: "Long let", term: "1 year",
-      photos: [], amenities: ["Parking", "Security"], address: "Test listing, " + PM_AREAS[0], hue: 208,
-      girardManaged: false, uploadedByGirard: false,
-      bankName: b.bankName || "", bankAcctName: b.bankAcctName || "", bankAcctNo: b.bankAcctNo || "",
-      subaccount: b.subaccount || "", split_code: b.split_code || "", ownerEmail: who,
-      description: "Created to test the 5% split. Safe to delete."
-    };
-    const first = (identity.firstName || identity.name || "Test").split(" ")[0];
+    const prop = { id, title: "TEST Tenancy \u00b7 2-Bed Apartment", area: PM_AREAS[0], type: "Apartment", beds: 2, rent, status: "Leased", verified: true, letType: "Long let", term: "1 year", photos: [], amenities: ["Parking", "Security"], address: "Test listing, " + PM_AREAS[0], hue: 208, girardManaged: false, uploadedByGirard: false, ...bank, ownerEmail: email, description: "Created to test the 5% split. Safe to delete." };
+    const first = ((identity.firstName || identity.name || "Test") + "").split(" ")[0];
     const inv = { id: "INV-TEST" + Date.now().toString().slice(-5), property: id, tenant: first + " (test tenancy)", amount: rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
     setSt({ ...st, properties: [prop, ...st.properties], invoices: [inv, ...st.invoices] });
-    toast("Test tenancy created. Open Rent & invoices and pay it.", "success");
+    setRes({ bad: false, sub: r.subaccount_code, split: r.split_code, who: r.account_name || name });
   };
   return <PmCard style={{ marginTop: 16, borderLeft: "3px solid var(--gold)" }}>
     <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Test the 5% split</div>
-    <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, marginBottom: 12 }}>Creates one small test tenancy ({money(100000)} rent, {money(5000)} fee) owned by a landlord who has registered a payout account, so you can pay it and watch Paystack split 5% to Girard and 95% to them. Use this in Paystack test mode.</div>
-    {landlords.length === 0 ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>No landlord has registered a payout account on this device yet. Sign up as a landlord with a bank account first, then come back.</div>
-      : <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-        <div style={{ flex: 1, minWidth: 220 }}><PmSelect label="Landlord" value={who} onChange={setWho} options={landlords} /></div>
-        <PmBtn kind="gold" icon={Sparkles} onClick={make}>Create test tenancy</PmBtn>
-      </div>}
+    <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, marginBottom: 14 }}>Enter any real bank account (it is only verified, never charged). Girard creates a Paystack subaccount and split group for it, then makes one small test tenancy: {money(100000)} rent plus {money(5000)} fee. Then open Rent &amp; invoices and pay it. Use this with Paystack in test mode.</div>
+    <div style={{ display: "grid", gap: 10 }}>
+      <PmField label="Account name" value={name} onChange={setName} placeholder="e.g. Olamide Okulaja" />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+        <PmField label="Account number" value={no} onChange={v => setNo(v.replace(/[^0-9]/g, "").slice(0, 10))} placeholder="10-digit NUBAN" />
+        <PmSelect label="Bank" value={bk} onChange={setBk} options={NG_BANKS.map(x => x[0])} />
+      </div>
+      <div><PmBtn kind="gold" icon={Sparkles} onClick={run} disabled={busy}>{busy ? "Talking to Paystack\u2026" : "Create test landlord & tenancy"}</PmBtn></div>
+    </div>
+    {res && res.bad && <div style={{ marginTop: 12, background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.25)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>{res.msg}</div>}
+    {res && !res.bad && <div style={{ marginTop: 12, background: "rgba(31,157,87,.08)", border: "1px solid rgba(31,157,87,.3)", borderRadius: 8, padding: "12px 14px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.7 }}>
+      <b>Done.</b> Paystack verified <b>{res.who}</b>.<br />
+      Subaccount: <code>{res.sub}</code><br />
+      {res.split ? <>Split group: <code>{res.split}</code><br /></> : null}
+      <div style={{ marginTop: 10 }}>{paid ? <b style={{ color: "#1F9D57" }}>Paid. Now open Paystack &rarr; Transactions and look for the Split section on that payment.</b> : <PmBtn kind="gold" icon={CreditCard} onClick={payNow}>Pay the {money(105000)} test invoice now</PmBtn>}</div>
+      <div style={{ marginTop: 8, fontSize: 11.5, color: "var(--muted)" }}>Test card 4084 0840 8408 4081 &middot; exp 06/27 &middot; CVV 408</div>
+    </div>}
   </PmCard>;
 }
 function OwnerDash({ st, identity }) {
