@@ -57,9 +57,34 @@ export default async function handler(req, res) {
       res.status(200).json({ configured: true, ok: false, error: (cd && cd.message) || "Paystack could not create the subaccount" });
       return;
     }
+    const subaccount_code = cd.data && cd.data.subaccount_code;
+
+    // Create a split group for THIS vendor only: 95% to them, the 5% remainder
+    // settles to the Girard main account. One group per vendor is deliberate —
+    // a single group holding every vendor would split each rent payment across
+    // all of them, instead of paying the one landlord who is owed it.
+    let split_code = null;
+    try {
+      const share = 100 - (Number(percentage_charge) > 0 ? Number(percentage_charge) : FEE_PERCENT);
+      const sr = await fetch("https://api.paystack.co/split", {
+        method: "POST", headers: hdr,
+        body: JSON.stringify({
+          name: "Girard " + String(resolvedName).slice(0, 40) + " " + Date.now().toString().slice(-6),
+          type: "percentage",
+          currency: "NGN",
+          subaccounts: [{ subaccount: subaccount_code, share }],
+          bearer_type: "subaccount",
+          bearer_subaccount: subaccount_code
+        })
+      });
+      const sd = await sr.json();
+      if (sd && sd.status && sd.data) split_code = sd.data.split_code;
+    } catch (e) { /* subaccount alone is enough to split; split_code is a bonus */ }
+
     res.status(200).json({
       configured: true, ok: true,
-      subaccount_code: cd.data && cd.data.subaccount_code,
+      subaccount_code,
+      split_code,
       account_name: resolvedName
     });
   } catch (e) {

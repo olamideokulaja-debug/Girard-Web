@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.2</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.3</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -834,7 +834,7 @@ const supabase = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 const DEMO = !supabase;
 const PAYSTACK_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 function loadPaystack() { return new Promise((resolve) => { if (window.PaystackPop) return resolve(true); const sc = document.createElement("script"); sc.src = "https://js.paystack.co/v1/inline.js"; sc.onload = () => resolve(true); sc.onerror = () => resolve(false); document.body.appendChild(sc); }); }
-async function payWithPaystack({ email, amountNaira, label, purpose, target, subaccount, onSuccess, onCancel }) {
+async function payWithPaystack({ email, amountNaira, label, purpose, target, subaccount, split_code, onSuccess, onCancel }) {
   const amount = Math.round((+amountNaira || 0) * 100);
   const reference = "GIRARD-" + (purpose || "pay") + "-" + Date.now();
   if (PAYSTACK_KEY && amount > 0) {
@@ -843,9 +843,9 @@ async function payWithPaystack({ email, amountNaira, label, purpose, target, sub
       try {
         const handler = window.PaystackPop.setup({
           key: PAYSTACK_KEY, email: email || "customer@girardpropertylimited.com", amount, currency: "NGN", ref: reference,
-          ...(subaccount ? { subaccount, bearer: "subaccount" } : {}),
+          ...(split_code ? { split_code } : subaccount ? { subaccount, bearer: "subaccount" } : {}),
           metadata: { purpose: purpose || "payment", target: target || email || "", custom_fields: [{ display_name: "Purpose", variable_name: "purpose", value: label || "Girard payment" }] },
-          callback: function (res) { payRecord({ reference: res.reference, purpose, target, amount: amountNaira, status: "success", subaccount: subaccount || null }); onSuccess && onSuccess(res.reference); },
+          callback: function (res) { payRecord({ reference: res.reference, purpose, target, amount: amountNaira, status: "success", subaccount: subaccount || null, split_code: split_code || null }); onSuccess && onSuccess(res.reference); },
           onClose: function () { onCancel && onCancel(); }
         });
         handler.openIframe(); return;
@@ -1208,7 +1208,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
       const res = isSignup ? await authSignUp(email, password, role) : await authSignIn(email, password);
       if (isSignup && res && res.email && (role === "owner" || role === "agent") && !isApprovedAdmin(res.email)) {
         bankSet(res.email, { bankName, bankAcctName: acctName, bankAcctNo: acctNo });
-        createSubaccount({ name: acctName, bankName, acctNo, email: res.email }).then(r => { if (r && r.configured && r.ok) bankSet(res.email, { bankName, bankAcctName: r.account_name || acctName, bankAcctNo: acctNo, subaccount: r.subaccount_code }); });
+        createSubaccount({ name: acctName, bankName, acctNo, email: res.email }).then(r => { if (r && r.configured && r.ok) bankSet(res.email, { bankName, bankAcctName: r.account_name || acctName, bankAcctNo: acctNo, subaccount: r.subaccount_code, split_code: r.split_code || "" }); });
       }
       if (!isSignup && !res.role) { onNeedRole(res.email); return; }
       const sec = !isSignup ? twoFAGet(res.email) : "";
@@ -1485,6 +1485,7 @@ function isGirardManaged(p) { return !!(p && p.girardManaged); }
 function adminFeeOf(p) { return (p && p.uploadedByGirard) ? 0 : Math.round((p.rent || 0) * (GIRARD_FEE_PCT / 100)); }
 // Split only when Girard takes its 5% AND the rent settles to the landlord direct.
 function splitAcctOf(p) { return (p && !p.uploadedByGirard && !p.girardManaged && p.subaccount) ? p.subaccount : null; }
+function splitCodeOf(p) { return (p && !p.uploadedByGirard && !p.girardManaged && p.split_code) ? p.split_code : null; }
 const PM_SEEDSTATUS = ["Available", "Leased", "Pending Verification", "Available", "Leased", "Available"];
 function seedProperties() {
   return Array.from({ length: 30 }).map((_, i) => {
@@ -1767,7 +1768,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     const bank = bankFor(identity && identity.email) || {};
     if (!uploadedByGirard && !bank.bankAcctNo) { toast("Register a settlement bank account on your profile (Data & privacy) first", "danger"); return; }
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, bankName: bank.bankName || "", bankAcctName: bank.bankAcctName || "", bankAcctNo: bank.bankAcctNo || "", subaccount: bank.subaccount || "", description: desc };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, bankName: bank.bankName || "", bankAcctName: bank.bankAcctName || "", bankAcctNo: bank.bankAcctNo || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -2103,6 +2104,7 @@ function PayModal({ inv, st, email, onClose, onPaid }) {
   const total = inv.amount + (inv.lateFee || 0);
   const prop = st ? propOf(st, inv.property) : null;
   const sub = splitAcctOf(prop);
+  const splitCode = splitCodeOf(prop);
   const fee = inv.adminFee || 0;
   return <PmModal title="Pay rent" onClose={onClose}>
     <div style={{ background: "var(--ivory)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
@@ -2111,10 +2113,10 @@ function PayModal({ inv, st, email, onClose, onPaid }) {
       {fee > 0 && <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", fontSize: 13, marginTop: 4 }}><span>Includes Girard administrative fee (5%)</span><span>{money(fee)}</span></div>}
       <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "var(--ink)", fontSize: 17, marginTop: 8, borderTop: "1px solid var(--cream-line)", paddingTop: 8 }}><span>Total</span><span>{money(total)}</span></div>
     </div>
-    {sub && <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>Paystack settles this payment directly to the landlord, and routes Girard's 5% administrative fee to Girard, in the same transaction.</div>}
+    {(sub || splitCode) && <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>Paystack settles this payment directly to the landlord, and routes Girard's 5% administrative fee to Girard, in the same transaction.</div>}
     <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Payment gateway</label>
     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["Paystack", "Flutterwave"].map(g => <button key={g} onClick={() => setGw(g)} style={{ flex: 1, border: "1px solid " + (gw === g ? "var(--gold)" : "var(--cream-line)"), background: gw === g ? "var(--gold-soft)" : "transparent", color: gw === g ? "var(--gold-2)" : "var(--muted)", borderRadius: 8, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>{g}</button>)}</div>
-    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} onClick={() => { setLoading(true); if (gw === "Paystack") { payWithPaystack({ email, amountNaira: total, label: "Rent " + inv.id, purpose: "rent", target: inv.id, subaccount: sub, onSuccess: () => { setLoading(false); onPaid(); }, onCancel: () => setLoading(false) }); } else { setTimeout(onPaid, 1200); } }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
+    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} onClick={() => { setLoading(true); if (gw === "Paystack") { payWithPaystack({ email, amountNaira: total, label: "Rent " + inv.id, purpose: "rent", target: inv.id, subaccount: sub, split_code: splitCode, onSuccess: () => { setLoading(false); onPaid(); }, onCancel: () => setLoading(false) }); } else { setTimeout(onPaid, 1200); } }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
   </PmModal>;
 }
 
@@ -5222,7 +5224,7 @@ function PayoutAccountCard({ identity, toast }) {
     setBusy(true);
     const r = await createSubaccount({ name, bankName: bk, acctNo: no, email });
     setBusy(false);
-    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code }); toast("Payout account verified and saved. Rent will settle directly to you.", "success"); return; }
+    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "" }); toast("Payout account verified and saved. Rent will settle directly to you.", "success"); return; }
     if (r && r.configured && !r.ok) { toast(r.error || "Paystack could not verify that account", "danger"); return; }
     bankSet(email, { bankName: bk, bankAcctName: name, bankAcctNo: no });
     toast("Payout account saved", "success");
