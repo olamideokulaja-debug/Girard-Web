@@ -220,7 +220,7 @@ function ContactSection() {
         <Rule light />
         <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Get in touch</div>
         <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Contact us.</h2>
-        <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 12, lineHeight: 1.6, maxWidth: 520, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Speak with the Girard team about managing your property, listing with us, or investing in our Ikoyi Project.</p>
+        <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 12, lineHeight: 1.6, maxWidth: 520, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Speak with the Girard team about managing your property, listing with us, or investing in our developments.</p>
       </div>
       <div className="cap-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -268,7 +268,7 @@ const INV_CAPS = ["Development partnerships", "Income-producing assets", "Land b
 const SERVICES = [
   { icon: Building2, t: "Real Estate Development", d: "Premium residential, commercial and mixed-use properties engineered for durability, sustainability and elevated lifestyle experiences, guided by disciplined planning, architectural excellence and strict compliance with international standards." },
   { icon: ShieldCheck, t: "Property & Estate Management", d: "End-to-end management of residential and commercial assets, ensuring operational efficiency, tenant satisfaction and long-term asset preservation, with technology-enabled real-time monitoring and data-driven performance tracking." },
-  { icon: ConciergeBell, t: "Short Let & Airbnb Management", d: "Professional management of short-let and serviced residences, with positioning, guest operations and upkeep handled end-to-end so owners earn optimised returns from the hospitality market." },
+  { icon: ConciergeBell, t: "Short Let & Holiday Stays", d: "Professional management of short-let and serviced residences, with positioning, guest operations and upkeep handled end-to-end so owners earn optimised returns from the hospitality market." },
   { icon: Wallet, t: "Buy-to-Let Investment Solutions", d: "A structured pathway for investors seeking stable rental income and long-term wealth creation through professionally selected residential assets, each evaluated with rigorous financial modelling and risk assessment." },
   { icon: TrendingUp, t: "Real Estate Investment & Partnerships", d: "Secure investment models supported by disciplined due diligence, strong governance and transparent reporting, aligning investor objectives with sustainable asset performance and controlled risk exposure." },
   { icon: ClipboardCheck, t: "Real Estate Advisory & Transaction Support", d: "Holistic advisory across legal, financial, compliance, development strategy and transaction execution, enabling informed decisions across acquisitions, disposals, restructuring and project feasibility." }
@@ -323,7 +323,7 @@ function BourdillonGallery() {
   const [paused, setPaused] = useState(false);
   useEffect(() => { if (paused) return; const id = setInterval(() => setI(x => (x + 1) % BGAL.length), 4000); return () => clearInterval(id); }, [paused]);
   return <div style={{ position: "relative", minHeight: 480, overflow: "hidden" }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-    {BGAL.map((src, idx) => <img key={src} src={src} alt="Ikoyi Project" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: idx === i ? 1 : 0, transition: "opacity .8s ease" }} />)}
+    {BGAL.map((src, idx) => <img key={src} src={src} alt="Girard developments" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: idx === i ? 1 : 0, transition: "opacity .8s ease" }} />)}
     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(6,17,42,0) 55%, rgba(6,17,42,.5))", pointerEvents: "none" }} />
     <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", padding: "0 16px" }}>
       {BGAL.map((src, idx) => <button key={src} onClick={() => setI(idx)} aria-label={"View " + (idx + 1)} style={{ width: idx === i ? 26 : 10, height: 10, borderRadius: 999, border: "none", cursor: "pointer", background: idx === i ? "var(--gold)" : "rgba(255,255,255,.55)", transition: "all .3s" }} />)}
@@ -538,7 +538,7 @@ function Landing({ onStart, onSignIn }) {
                 <button className={"navdrop-item" + (tab === "returns" ? " active" : "")} onClick={() => go("returns")}>Estimate your returns</button>
               </div>
             </div>
-            <button className="nav-link" onClick={() => go("bourdillon")} style={tab === "bourdillon" ? { color: "var(--gold)" } : undefined}>Ikoyi Project</button>
+            <button className="nav-link" onClick={() => go("bourdillon")} style={tab === "bourdillon" ? { color: "var(--gold)" } : undefined}>Developments</button>
             <button className="nav-link" onClick={() => go("partners")} style={tab === "partners" ? { color: "var(--gold)" } : undefined}>Partners</button>
             <button className="nav-link" onClick={() => go("contact")} style={tab === "contact" ? { color: "var(--gold)" } : undefined}>Contact</button>
           </nav>
@@ -562,7 +562,7 @@ function Landing({ onStart, onSignIn }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Listings</div>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("listings"); setMenu(false); }}>Browse our listings</button>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("returns"); setMenu(false); }}>Estimate your returns</button>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("bourdillon"); setMenu(false); }}>Ikoyi Project</button>
+            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("bourdillon"); setMenu(false); }}>Developments</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("partners"); setMenu(false); }}>Partners</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("contact"); setMenu(false); }}>Contact</button>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
@@ -579,8 +579,8 @@ function Landing({ onStart, onSignIn }) {
             <div className="rise">
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 22 }}>Digital management &amp; cross-border swaps</div>
               <h1 className="serif hero-h">
-                Managed with <span style={{ fontStyle: "italic", color: "var(--gold)" }}>discipline.</span><br />
-                Moved without <span style={{ fontStyle: "italic", color: "var(--gold)" }}>borders.</span>
+                Building <span style={{ fontStyle: "italic", color: "var(--gold)" }}>tomorrow,</span><br />
+                powered by <span style={{ fontStyle: "italic", color: "var(--gold)" }}>technology.</span>
               </h1>
               <p style={{ fontSize: 17.5, color: "rgba(255,255,255,.76)", marginTop: 24, maxWidth: 520, lineHeight: 1.65, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>
                 Girard Property Limited is a premier real estate development and asset management company, elevating the standards of luxury, urban living and sustainable property investment across Nigeria, now on one governed platform for management, cross-border swaps, intelligence and concierge services.
@@ -689,13 +689,13 @@ function Landing({ onStart, onSignIn }) {
           <BourdillonGallery />
           <div style={{ padding: "72px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 14 }}>Featured development</div>
-            <h2 className="serif" style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Ikoyi Project</h2>
+            <h2 className="serif" style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Developments</h2>
             <div style={{ color: "var(--gold-soft)", fontWeight: 600, marginTop: 8, letterSpacing: 1, fontSize: 13 }}>IKOYI, LAGOS · AN ADDRESS OF DISTINCTION</div>
             <p style={{ color: "rgba(255,255,255,.74)", fontSize: 15.5, lineHeight: 1.7, margin: "18px 0 24px", maxWidth: 460, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>A refined expression of vertical luxury: 40 bespoke residences with panoramic water views, floor-to-ceiling glazing, a rooftop infinity pool and round-the-clock concierge.</p>
             <div style={{ display: "flex", gap: 28, marginBottom: 26, flexWrap: "wrap" }}>
               {[[40, "Bespoke units", ""], [110, "Max height", "m"], [2039, "sq.m plot", ""]].map(([to, l, suf]) => <div key={l}><div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--gold)" }}><CountUp to={to} suffix={suf} /></div><div style={{ fontSize: 12.5, color: "rgba(255,255,255,.6)" }}>{l}</div></div>)}
             </div>
-            <div><a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Enquire about the Ikoyi Project <ArrowUpRight size={16} /></a></div>
+            <div><a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Enquire about our developments <ArrowUpRight size={16} /></a></div>
           </div>
         </div>
         <style>{`@media(max-width:900px){.feat-grid{grid-template-columns:1fr!important}}`}</style>
@@ -812,8 +812,8 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.0</span></div>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.2</span></div>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
       </footer>
@@ -834,7 +834,7 @@ const supabase = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
 const DEMO = !supabase;
 const PAYSTACK_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 function loadPaystack() { return new Promise((resolve) => { if (window.PaystackPop) return resolve(true); const sc = document.createElement("script"); sc.src = "https://js.paystack.co/v1/inline.js"; sc.onload = () => resolve(true); sc.onerror = () => resolve(false); document.body.appendChild(sc); }); }
-async function payWithPaystack({ email, amountNaira, label, purpose, target, onSuccess, onCancel }) {
+async function payWithPaystack({ email, amountNaira, label, purpose, target, subaccount, onSuccess, onCancel }) {
   const amount = Math.round((+amountNaira || 0) * 100);
   const reference = "GIRARD-" + (purpose || "pay") + "-" + Date.now();
   if (PAYSTACK_KEY && amount > 0) {
@@ -843,8 +843,9 @@ async function payWithPaystack({ email, amountNaira, label, purpose, target, onS
       try {
         const handler = window.PaystackPop.setup({
           key: PAYSTACK_KEY, email: email || "customer@girardpropertylimited.com", amount, currency: "NGN", ref: reference,
+          ...(subaccount ? { subaccount, bearer: "subaccount" } : {}),
           metadata: { purpose: purpose || "payment", target: target || email || "", custom_fields: [{ display_name: "Purpose", variable_name: "purpose", value: label || "Girard payment" }] },
-          callback: function (res) { payRecord({ reference: res.reference, purpose, target, amount: amountNaira, status: "success" }); onSuccess && onSuccess(res.reference); },
+          callback: function (res) { payRecord({ reference: res.reference, purpose, target, amount: amountNaira, status: "success", subaccount: subaccount || null }); onSuccess && onSuccess(res.reference); },
           onClose: function () { onCancel && onCancel(); }
         });
         handler.openIframe(); return;
@@ -958,6 +959,15 @@ function isApprovedAdmin(email) { const e = (email || "").toLowerCase().trim(); 
 function isSuperAdmin(email) { const e = (email || "").toLowerCase().trim(); return !!FOUNDERS[e]; }
 function bankLoad() { try { return JSON.parse(localStorage.getItem("girard_bank_v1") || "{}"); } catch (e) { return {}; } }
 function bankFor(email) { const m = bankLoad(); return m[(email || "").toLowerCase().trim()] || null; }
+const GIRARD_FEE_PCT = 5;
+async function createSubaccount({ name, bankName, acctNo, email }) {
+  const code = (NG_BANKS.find(x => x[0] === bankName) || [])[1];
+  if (!code) return { configured: true, ok: false, error: "Unknown bank" };
+  try {
+    const r = await fetch("/api/paystack-subaccount", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ business_name: name, settlement_bank: code, account_number: acctNo, percentage_charge: GIRARD_FEE_PCT, email }) });
+    return await r.json();
+  } catch (e) { return { configured: false }; }
+}
 function bankSet(email, bank) { try { const m = bankLoad(); m[(email || "").toLowerCase().trim()] = bank; localStorage.setItem("girard_bank_v1", JSON.stringify(m)); } catch (e) {} }
 const FOUNDERS = {
   "olamideokulaja@girardpropertylimited.com": { name: "Dr. Olamide Okulaja", firstName: "Olamide", initials: "OO", avatar: "data:image/jpeg;base64,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", title: "Founder & Owner", greeting: "Welcome back", allAccess: true },
@@ -1169,6 +1179,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "signup";
   const [agree, setAgree] = useState(false);
+  const [termsOk, setTermsOk] = useState(false);
   const [twoFA, setTwoFA] = useState(null); const [code, setCode] = useState("");
   const [paywall, setPaywall] = useState(null); const [payBusy, setPayBusy] = useState(false);
   const [resetMsg, setResetMsg] = useState(""); const [resetBusy, setResetBusy] = useState(false);
@@ -1195,7 +1206,10 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
     setBusy(true);
     try {
       const res = isSignup ? await authSignUp(email, password, role) : await authSignIn(email, password);
-      if (isSignup && res && res.email && (role === "owner" || role === "agent") && !isApprovedAdmin(res.email)) bankSet(res.email, { bankName, bankAcctName: acctName, bankAcctNo: acctNo });
+      if (isSignup && res && res.email && (role === "owner" || role === "agent") && !isApprovedAdmin(res.email)) {
+        bankSet(res.email, { bankName, bankAcctName: acctName, bankAcctNo: acctNo });
+        createSubaccount({ name: acctName, bankName, acctNo, email: res.email }).then(r => { if (r && r.configured && r.ok) bankSet(res.email, { bankName, bankAcctName: r.account_name || acctName, bankAcctNo: acctNo, subaccount: r.subaccount_code }); });
+      }
       if (!isSignup && !res.role) { onNeedRole(res.email); return; }
       const sec = !isSignup ? twoFAGet(res.email) : "";
       if (sec) { setTwoFA({ email: res.email, role: res.role || role, secret: sec }); setBusy(false); return; }
@@ -1229,7 +1243,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
       <div className="auth-brand" style={{ background: "var(--navy-2)", padding: "48px 56px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden", borderRight: "1px solid var(--navy-line)" }}>
         <BrandMark />
         <div style={{ position: "relative", zIndex: 2 }}>
-          <h2 className="serif" style={{ fontSize: 40, fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Managed with <span style={{ fontStyle: "italic", color: "var(--gold)" }}>discipline.</span></h2>
+          <h2 className="serif" style={{ fontSize: 40, fontWeight: 600, lineHeight: 1.08, letterSpacing: -.5 }}>Building tomorrow, powered by <span style={{ fontStyle: "italic", color: "var(--gold)" }}>technology.</span></h2>
           <p style={{ color: "rgba(255,255,255,.7)", marginTop: 16, fontSize: 15.5, maxWidth: 360, lineHeight: 1.6, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>One governed platform for owners, tenants, agents and investors across Nigeria, the UK and beyond.</p>
         </div>
         <div style={{ position: "absolute", bottom: -10, left: 0, right: 0, height: 200, opacity: .5 }}><Skyline /></div>
@@ -1240,6 +1254,24 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
           <button onClick={onBack} className="btn-line on-navy" style={{ padding: "7px 13px", marginBottom: 26 }}><ArrowLeft size={14} /> Back</button>
           <h1 className="serif" style={{ fontSize: 30, fontWeight: 600, marginBottom: 6 }}>{isSignup ? "Create your account" : "Welcome back"}</h1>
           <p style={{ color: "rgba(255,255,255,.65)", fontSize: 14, marginBottom: 22 }}>{isSignup ? <>Joining as <span style={{ color: "var(--gold)", fontWeight: 600 }}>{ROLES.find(r => r.key === role)?.name || "a member"}</span>.</> : "Sign in to your Girard account."}</p>
+          {isSignup && !termsOk ? <>
+            <div style={{ background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 12, padding: "16px 18px", maxHeight: 300, overflow: "auto", marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, color: "#fff" }}>Terms of Use &amp; Privacy</div>
+              {[["Girard's role", "Girard Property Limited provides a technology platform for property management, lettings, cross-border swaps and related services. Girard is not a party to any tenancy, sale or swap agreed between users, and does not guarantee any party, property, title or transaction."],
+                ["Fees", "Membership and subscription fees are payable as displayed. A 5% administrative fee applies to lettings on properties not uploaded by a Girard account, and is settled to Girard before closing. Rent settles to the account you register."],
+                ["Your obligations", "You confirm that the information, documents and bank details you provide are accurate and lawfully yours to share, and that you will use the platform lawfully and not misuse other users' information."],
+                ["AI-generated material", "The platform uses AI to draft documents and produce estimates. AI-generated content may contain errors and should be independently verified before use. Always have legal documents reviewed by a qualified lawyer before signing."],
+                ["Independent professionals", "Agents and vendors on Girard are independent and act on their own account. They are not employed, verified or controlled by Girard Property Limited."],
+                ["Data protection", "Your personal data is processed in line with our Privacy Policy under the Nigeria Data Protection Act. You may request deletion of your account at any time."],
+                ["Disputes", "Payment disputes and refunds are handled under our Dispute Resolution &amp; Refund Policy. Payments are processed by Paystack, a licensed provider."]].map(([h, d]) => <div key={h} style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--gold)", marginBottom: 3 }}>{h}</div>
+                <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", lineHeight: 1.6, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{d}</div>
+              </div>)}
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", lineHeight: 1.6 }}>Read the full <a href="/terms" target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>Terms of Use</a>, <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>Privacy Policy</a> and <a href="/dispute-resolution" target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>Dispute Resolution &amp; Refund Policy</a>.</div>
+            </div>
+            <button className="btn-gold" onClick={() => { setTermsOk(true); setAgree(true); setErr(""); }} style={{ width: "100%", marginBottom: 10 }}>I accept the Terms &amp; continue <ArrowRight size={16} /></button>
+            <button className="btn-line on-navy" onClick={onBack} style={{ width: "100%", justifyContent: "center" }}>Decline</button>
+          </> : <>
           {DEMO && <div style={{ background: "rgba(198,161,91,.12)", border: "1px solid rgba(198,161,91,.35)", borderRadius: 6, padding: "10px 12px", fontSize: 12.5, color: "var(--gold)", marginBottom: 18, lineHeight: 1.5, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Demo mode. Accounts are saved on this device only until Supabase is connected.</div>}
           <div style={{ position: "relative", marginBottom: 12 }}><Mail size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} /></div>
@@ -1247,12 +1279,13 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
           {resetMsg && <div style={{ color: "#7CD9A0", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{resetMsg}</div>}
           {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{err}</div>}
           {isSignup && (role === "owner" || role === "agent") && !isApprovedAdmin(email) && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.6)", marginBottom: 8 }}>Settlement bank account (for rent{role === "agent" ? " and earnings" : ""})</div><input className="field" placeholder="Account name" value={acctName} onChange={e => setAcctName(e.target.value)} style={{ marginBottom: 10 }} /><div style={{ display: "flex", gap: 10 }}><input className="field" placeholder="10-digit account number" value={acctNo} onChange={e => setAcctNo(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))} /><select className="field" value={bankName} onChange={e => setBankName(e.target.value)} style={{ maxWidth: 150 }}>{NG_BANKS.map(x => <option key={x[0]} value={x[0]}>{x[0]}</option>)}</select></div></div>}
-          {isSignup && <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "2px 0 14px", cursor: "pointer" }}><input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} style={{ marginTop: 3, accentColor: "var(--gold)" }} /><span style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", lineHeight: 1.5, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>I agree to Girard's <b style={{ color: "var(--gold)" }}>Terms of Use</b> and to the processing of my personal data in line with the <b style={{ color: "var(--gold)" }}>Privacy Policy</b>, under the Nigeria Data Protection Act.</span></label>}
+          {isSignup && <div style={{ display: "flex", gap: 8, alignItems: "flex-start", margin: "2px 0 14px", fontSize: 12.5, color: "rgba(255,255,255,.6)", lineHeight: 1.5 }}><CheckCircle2 size={14} color="#7CD9A0" style={{ flexShrink: 0, marginTop: 2 }} /><span>Terms of Use and Privacy Policy accepted. <a href="#" onClick={e => { e.preventDefault(); setTermsOk(false); }} style={{ color: "var(--gold)" }}>Review again</a></span></div>}
           <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", opacity: busy ? .7 : 1, marginTop: 4 }}>{busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"} <ArrowUpRight size={16} /></button>
           <div style={{ textAlign: "center", marginTop: 18, fontSize: 13.5, color: "rgba(255,255,255,.65)" }}>
             {isSignup ? "Already have an account? " : "New to Girard? "}
             <a href="#" onClick={e => { e.preventDefault(); onToggle(); }} style={{ color: "var(--gold)", fontWeight: 600 }}>{isSignup ? "Sign in" : "Create one"}</a>
           </div>
+          </>}
         </div>
       </div>
     </div>
@@ -1415,8 +1448,43 @@ function baseRent(area, beds) {
   const b = { "Ikoyi": 9, "Victoria Island": 8, "Lekki": 6, "Magodo": 4.5, "Maryland": 4, "Ikeja": 4, "Gbagada": 3.5, "Yaba": 3, "Surulere": 2.8, "Ajah": 2.5 }[area] || 3;
   return Math.round((b + beds * 1.15) * 1000000);
 }
+const FAVP_KEY = "girard_fav_props_v1";
+function favPropsLoad() { try { return JSON.parse(localStorage.getItem(FAVP_KEY) || "[]"); } catch (e) { return []; } }
+function favPropsSave(a) { try { localStorage.setItem(FAVP_KEY, JSON.stringify(a)); } catch (e) {} }
+function useFavProps() {
+  const [favs, setFavs] = useState(favPropsLoad);
+  const toggle = (id) => setFavs(prev => { const n = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]; favPropsSave(n); return n; });
+  return [favs, toggle];
+}
+function FavHeart({ on, onToggle, style }) {
+  return <button onClick={e => { e.stopPropagation(); onToggle(); }} title={on ? "Remove from saved" : "Save property"} aria-label={on ? "Remove from saved" : "Save property"} style={{ position: "absolute", top: 8, right: 8, zIndex: 3, width: 32, height: 32, borderRadius: 999, border: "none", background: "rgba(255,255,255,.9)", boxShadow: "0 2px 8px rgba(0,0,0,.18)", cursor: "pointer", display: "grid", placeItems: "center", ...(style || {}) }}><Heart size={16} color={on ? "#D0453B" : "#6b7280"} fill={on ? "#D0453B" : "none"} /></button>;
+}
+function SavedProperties({ st, identity, go }) {
+  const [favs, toggle] = useFavProps();
+  const list = (st.properties || []).filter(p => favs.includes(p.id));
+  return <div>
+    <H2 title="Saved properties" sub={list.length + " saved"} />
+    {list.length === 0 ? <PmCard><div style={{ textAlign: "center", padding: 26 }}><Heart size={26} color="var(--muted)" style={{ marginBottom: 10 }} /><div style={{ fontWeight: 700, color: "var(--ink)" }}>Nothing saved yet</div><div style={{ color: "var(--muted)", fontSize: 13.5, marginTop: 6 }}>Tap the heart on any property to save it here for later.</div></div></PmCard>
+      : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
+        {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", position: "relative" }}>
+          <FavHeart on={true} onToggle={() => toggle(p.id)} />
+          <HouseArt hue={p.hue} status={p.status} photo={p.img || poolPhoto(p.id)} />
+          <div style={{ padding: 14 }}>
+            <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
+            <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{p.area}{p.beds ? " \u00b7 " + p.beds + " bed" : ""}</div>
+            <div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)", marginTop: 8 }}>{money(p.rent)}<span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 400 }}>/yr</span></div>
+          </div>
+        </PmCard>)}
+      </div>}
+  </div>;
+}
+function AiNote({ style, extra }) {
+  return <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "8px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.55, display: "flex", gap: 7, alignItems: "flex-start", ...(style || {}) }}><Sparkles size={13} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} /><span>AI-generated content may contain errors and should be independently verified before use.{extra ? " " + extra : ""}</span></div>;
+}
 function isGirardManaged(p) { return !!(p && p.girardManaged); }
-function adminFeeOf(p) { return (p && p.uploadedByGirard) ? 0 : Math.round((p.rent || 0) * 0.05); }
+function adminFeeOf(p) { return (p && p.uploadedByGirard) ? 0 : Math.round((p.rent || 0) * (GIRARD_FEE_PCT / 100)); }
+// Split only when Girard takes its 5% AND the rent settles to the landlord direct.
+function splitAcctOf(p) { return (p && !p.uploadedByGirard && !p.girardManaged && p.subaccount) ? p.subaccount : null; }
 const PM_SEEDSTATUS = ["Available", "Leased", "Pending Verification", "Available", "Leased", "Available"];
 function seedProperties() {
   return Array.from({ length: 30 }).map((_, i) => {
@@ -1468,8 +1536,10 @@ const PM_KEY = "girard_pm_v3";
 function pmLoad() { try { const r = localStorage.getItem(PM_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = pmSeed(); try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 function pmSave(s) { try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} }
 
+const AI_NAME = "Ada";
 let CUR = "₦"; try { CUR = localStorage.getItem("girard_cur") || "₦"; } catch (e) {}
 const CUR_RATE = { "₦": 1, "$": 1 / 1650, "£": 1 / 2080, "€": 1 / 1780 };
+const moneyC = (ngn) => { const r = CUR_RATE[CUR] || 1; const v = Number(ngn || 0) * r; const a = Math.abs(v); if (a >= 1e9) return CUR + (v / 1e9).toFixed(1) + "B"; if (a >= 1e6) return CUR + (v / 1e6).toFixed(1) + "M"; if (a >= 1e3) return CUR + Math.round(v / 1e3) + "K"; return CUR + Math.round(v).toLocaleString(); };
 const money = (a, c) => { const cur = c || CUR; const rate = c ? 1 : (CUR_RATE[CUR] || 1); const val = Math.round(Number(a || 0) * rate); return cur + val.toLocaleString(cur === "₦" ? "en-NG" : "en-US"); };
 const propOf = (st, id) => st.properties.find(p => p.id === id);
 
@@ -1617,7 +1687,7 @@ function OwnerDash({ st, identity }) {
     <H2 title={"Good day, " + identity.firstName} sub="Girard-managed portfolio at a glance" right={<span style={{ color: "var(--muted)", fontSize: 13 }}>{today}</span>} />
     {identity.role === "admin" && <RevenueSummary />}
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
-      <CStat icon={Wallet} label="Monthly income" value="₦83.4M" sub="▲ 6.4% vs May" c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={Wallet} label="Monthly income" value={moneyC(83400000)} sub="▲ 6.4% vs May" c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={Building2} label="Properties" value={String(st.properties.length)} sub="Under management" c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={Home} label="Occupancy" value={occ + "%"} sub={leased + " leased"} c="#10B981" bg="#E7F7F0" />
       <CStat icon={Wrench} label="Open tickets" value={String(st.tickets.filter(t => t.status !== "Resolved").length)} sub="1 emergency" c="#F59E0B" bg="#FEF4E3" />
@@ -1642,12 +1712,14 @@ function PropertiesScreen({ st, setSt, identity }) {
   const isAdmin = identity.role === "admin";
   const [area, setArea] = useState("All");
   const [sel, setSel] = useState(null);
+  const [favs, toggleFav] = useFavProps();
   const list = st.properties.filter(p => area === "All" || p.area === area);
   const verify = (id) => { const next = { ...st, properties: st.properties.map(p => p.id === id ? { ...p, status: "Available", verified: true } : p) }; setSt(next); setSel(null); };
   return <div>
     <H2 title="Properties" sub={list.length + " of " + st.properties.length + " shown"} right={<div style={{ width: 200 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
-      {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", cursor: "pointer" }}>
+      {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", cursor: "pointer", position: "relative" }}>
+        <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
         <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} photo={p.img || poolPhoto(p.id)} /></div>
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
@@ -1676,9 +1748,12 @@ function PropertiesScreen({ st, setSt, identity }) {
 /* ---------- ADD PROPERTY ---------- */
 function AddPropertyScreen({ st, setSt, toast, identity }) {
   const [f, setF] = useState({ type: PM_TYPES[0], area: PM_AREAS[0], beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No" });
+  const PHOTO_CATS = ["Front view", "Rear view", "Living room", "Kitchen", "Bedroom", "Bathroom", "Other"];
+  const [photoTags, setPhotoTags] = useState([]);
+  const tagAt = (i) => photoTags[i] || PHOTO_CATS[i] || "Other";
   const uploadedByGirard = isApprovedAdmin(identity && identity.email);
   const myBank = bankFor(identity && identity.email);
-  const TERM_OPTS = { "Long let": ["1 year", "2 years", "3 years", "5 years"], "Short let": ["Per day", "Per week", "Per month"], "Airbnb / serviced": ["Per night", "Per week", "Per month"] };
+  const TERM_OPTS = { "Long let": ["1 year", "2 years", "3 years", "5 years"], "Short let": ["Per day", "Per week", "Per month"], "Holiday stay / serviced": ["Per night", "Per week", "Per month"] };
   const [ai, setAi] = useState(null);
   const [price, setPrice] = useState("");
   const [done, setDone] = useState(false);
@@ -1692,7 +1767,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     const bank = bankFor(identity && identity.email) || {};
     if (!uploadedByGirard && !bank.bankAcctNo) { toast("Register a settlement bank account on your profile (Data & privacy) first", "danger"); return; }
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, bankName: bank.bankName || "", bankAcctName: bank.bankAcctName || "", bankAcctNo: bank.bankAcctNo || "", description: desc };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, bankName: bank.bankName || "", bankAcctName: bank.bankAcctName || "", bankAcctNo: bank.bankAcctNo || "", subaccount: bank.subaccount || "", description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -1703,7 +1778,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         <PmSelect label="Property type" value={f.type} onChange={v => setF({ ...f, type: v })} options={PM_TYPES} />
         <PmSelect label="Area (Lagos)" value={f.area} onChange={v => setF({ ...f, area: v })} options={PM_AREAS} />
         <PmSelect label="Bedrooms" value={f.beds} onChange={v => setF({ ...f, beds: v })} options={["0", "1", "2", "3", "4", "5"]} />
-        <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v, term: TERM_OPTS[v][0] })} options={["Long let", "Short let", "Airbnb / serviced"]} />
+        <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v, term: TERM_OPTS[v][0] })} options={["Long let", "Short let", "Holiday stay / serviced"]} />
         <PmSelect label={f.letType === "Long let" ? "Acceptable length of stay" : "Lease period"} value={f.term} onChange={v => setF({ ...f, term: v })} options={TERM_OPTS[f.letType]} />
         <PmSelect label="Rent managed by Girard?" value={f.managed} onChange={v => setF({ ...f, managed: v })} options={["No", "Yes"]} />
         {uploadedByGirard ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>Girard account: no administrative fee applies. Rent settles to Girard.</div> : (myBank && myBank.bankAcctNo ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}><b style={{ color: "var(--ink)" }}>Rent settlement:</b> {myBank.bankAcctName} · {myBank.bankName} ••••{String(myBank.bankAcctNo).slice(-4)}. A 5% administrative fee applies and is settled to Girard once, before closing. Rent {f.managed === "Yes" ? "is collected into Girard's managed account." : "settles directly to your registered account."}</div> : <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.25)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>No settlement bank account is registered to your profile. Add one under <b>Data &amp; privacy</b> so rent can settle to you.</div>)}
@@ -1720,10 +1795,11 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     </div>
     <PmCard style={{ marginTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Listing description</div><PmBtn size="sm" kind="navy" icon={Sparkles} onClick={genDesc}>{descBusy ? "Writing…" : "Generate with AI"}</PmBtn></div>
+      <AiNote style={{ marginBottom: 10 }} />
       <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={4} placeholder="Describe the property, or let AI draft it for you." style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)", resize: "vertical" }} />
     </PmCard>
     <PmCard style={{ marginTop: 16 }}>
-      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Photos <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 12.5 }}>({photos.length}/5)</span></div>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Photos <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 12.5 }}>({photos.length}/5)</span></div>
       <AiPanel>
         <div style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.6, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>
           <b>Photo guidance for your {f.beds === "0" ? "studio" : f.beds + "-bed " + f.type.toLowerCase()}:</b> add 3 to 5 landscape (horizontal) shots. Lead with a wide living-room or exterior photo, then the kitchen, main bedroom, bathroom and any view or amenity.
@@ -1732,17 +1808,21 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
           </div>
         </div>
       </AiPanel>
-      <label onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); addPhotos(e.dataTransfer.files); }} style={{ display: "block", marginTop: 14, border: "2px dashed var(--cream-line)", borderRadius: 12, padding: "26px 20px", textAlign: "center", cursor: "pointer", background: "var(--ivory-2)" }}>
+      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12, lineHeight: 1.5 }}>Label each photo so buyers and tenants can review the property room by room. The first photo is the cover image.</div>
+      <label onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); addPhotos(e.dataTransfer.files); }} style={{ display: "block", marginTop: 0, border: "2px dashed var(--cream-line)", borderRadius: 12, padding: "26px 20px", textAlign: "center", cursor: "pointer", background: "var(--ivory-2)" }}>
         <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => { addPhotos(e.target.files); e.target.value = ""; }} />
         <ImageIcon size={26} color="var(--gold-2)" />
         <div style={{ fontWeight: 600, color: "var(--ink)", marginTop: 8 }}>Click to upload or drag photos here</div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>Up to 5 images. We optimise them for the web automatically.</div>
       </label>
       {photos.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10, marginTop: 14 }}>
-        {photos.map((src, i) => <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3", background: "var(--ivory)" }}>
-          <img src={src} alt={"Photo " + (i + 1)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          {i === 0 && <span style={{ position: "absolute", top: 6, left: 6, background: "var(--gold)", color: "#201601", fontSize: 9.5, fontWeight: 800, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase" }}>Cover</span>}
-          <button onClick={() => setPhotos(prev => prev.filter((_, j) => j !== i))} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,.55)", color: "#fff", border: "none", borderRadius: 999, width: 24, height: 24, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={13} /></button>
+        {photos.map((src, i) => <div key={i}>
+          <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3", background: "var(--ivory)" }}>
+            <img src={src} alt={tagAt(i)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            {i === 0 && <span style={{ position: "absolute", top: 6, left: 6, background: "var(--gold)", color: "#201601", fontSize: 9.5, fontWeight: 800, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase" }}>Cover</span>}
+            <button onClick={() => { setPhotos(prev => prev.filter((_, j) => j !== i)); setPhotoTags(prev => photos.map((_, k) => prev[k] || PHOTO_CATS[k] || "Other").filter((_, j) => j !== i)); }} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,.55)", color: "#fff", border: "none", borderRadius: 999, width: 24, height: 24, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={13} /></button>
+          </div>
+          <select value={tagAt(i)} onChange={e => setPhotoTags(prev => { const n = photos.map((_, k) => prev[k] || PHOTO_CATS[k] || "Other"); n[i] = e.target.value; return n; })} style={{ width: "100%", marginTop: 6, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 7, padding: "5px 7px", fontSize: 11.5, fontWeight: 600, color: "var(--ink)", fontFamily: "inherit", cursor: "pointer" }}>{PHOTO_CATS.map(c => <option key={c} value={c}>{c}</option>)}</select>
         </div>)}
       </div>}
     </PmCard>
@@ -1755,11 +1835,13 @@ function TenantFind({ st, setSt, identity, toast }) {
   const [beds, setBeds] = useState("Any");
   const [sel, setSel] = useState(null);
   const [apply, setApply] = useState(null);
+  const [favs, toggleFav] = useFavProps();
   const list = st.properties.filter(p => p.status === "Available" && (area === "All" || p.area === area) && (beds === "Any" || (beds === "3+" ? p.beds >= 3 : p.beds === +beds)));
   return <div>
     <H2 title="Find a home" sub={list.length + " available"} right={<div style={{ display: "flex", gap: 10 }}><div style={{ width: 160 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div><div style={{ width: 120 }}><PmSelect value={beds} onChange={setBeds} options={["Any", "1", "2", "3+"]} /></div></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden" }}>
+        <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
         <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" photo={p.img || poolPhoto(p.id)} /></div>
         <div style={{ padding: 14 }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
@@ -2009,25 +2091,30 @@ function RentScreen({ st, setSt, identity, toast }) {
         <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{i.id}</td><td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{i.tenant}</td><td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--muted)" }}>{p ? p.area : ""}</td>
         <td style={{ padding: "13px 16px" }}><b style={{ color: "var(--ink)" }}>{money(i.amount)}</b>{i.lateFee && <div style={{ fontSize: 11, color: "#D0453B" }}>+{money(i.lateFee)} late fee</div>}{i.adminFee ? <div style={{ fontSize: 11, color: "var(--gold-2)" }}>incl. {money(i.adminFee)} admin fee</div> : null}</td>
         <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{i.due}</td><td style={{ padding: "13px 16px" }}><PmPill label={i.status} /></td>
-        <td style={{ padding: "13px 16px" }}>{i.status !== "Paid" ? <PmBtn size="sm" icon={CreditCard} onClick={() => setPay(i)}>Pay</PmBtn> : <PmBtn size="sm" kind="ghost" icon={FileText} onClick={() => toast("Receipt downloaded")}>Receipt</PmBtn>}</td>
+        <td style={{ padding: "13px 16px" }}>{i.status === "Paid" ? <PmBtn size="sm" kind="ghost" icon={FileText} onClick={() => toast("Receipt downloaded")}>Receipt</PmBtn> : (mine || identity.role === "admin") ? <PmBtn size="sm" icon={CreditCard} onClick={() => setPay(i)}>Pay</PmBtn> : <PmBtn size="sm" kind="ghost" icon={BellRing} onClick={() => toast("Reminder sent to " + i.tenant)}>Remind</PmBtn>}</td>
       </tr>; })}</tbody>
     </table></div></PmCard>
-    {pay && <PayModal inv={pay} onClose={() => setPay(null)} onPaid={() => { setSt({ ...st, invoices: st.invoices.map(a => a.id === pay.id ? { ...a, status: "Paid", lateFee: undefined } : a) }); toast("Payment successful, receipt issued", "success"); setPay(null); }} />}
+    {pay && <PayModal inv={pay} st={st} email={identity.email} onClose={() => setPay(null)} onPaid={() => { setSt({ ...st, invoices: st.invoices.map(a => a.id === pay.id ? { ...a, status: "Paid", lateFee: undefined } : a) }); toast("Payment successful, receipt issued", "success"); setPay(null); }} />}
   </div>;
 }
-function PayModal({ inv, onClose, onPaid }) {
+function PayModal({ inv, st, email, onClose, onPaid }) {
   const [gw, setGw] = useState("Paystack");
   const [loading, setLoading] = useState(false);
   const total = inv.amount + (inv.lateFee || 0);
+  const prop = st ? propOf(st, inv.property) : null;
+  const sub = splitAcctOf(prop);
+  const fee = inv.adminFee || 0;
   return <PmModal title="Pay rent" onClose={onClose}>
     <div style={{ background: "var(--ivory)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", fontSize: 13 }}><span>Rent</span><span>{money(inv.amount)}</span></div>
       {inv.lateFee && <div style={{ display: "flex", justifyContent: "space-between", color: "#D0453B", fontSize: 13, marginTop: 4 }}><span>Late fee</span><span>{money(inv.lateFee)}</span></div>}
+      {fee > 0 && <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", fontSize: 13, marginTop: 4 }}><span>Includes Girard administrative fee (5%)</span><span>{money(fee)}</span></div>}
       <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "var(--ink)", fontSize: 17, marginTop: 8, borderTop: "1px solid var(--cream-line)", paddingTop: 8 }}><span>Total</span><span>{money(total)}</span></div>
     </div>
+    {sub && <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>Paystack settles this payment directly to the landlord, and routes Girard's 5% administrative fee to Girard, in the same transaction.</div>}
     <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Payment gateway</label>
     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["Paystack", "Flutterwave"].map(g => <button key={g} onClick={() => setGw(g)} style={{ flex: 1, border: "1px solid " + (gw === g ? "var(--gold)" : "var(--cream-line)"), background: gw === g ? "var(--gold-soft)" : "transparent", color: gw === g ? "var(--gold-2)" : "var(--muted)", borderRadius: 8, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>{g}</button>)}</div>
-    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} onClick={() => { setLoading(true); setTimeout(onPaid, 1200); }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
+    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} onClick={() => { setLoading(true); if (gw === "Paystack") { payWithPaystack({ email, amountNaira: total, label: "Rent " + inv.id, purpose: "rent", target: inv.id, subaccount: sub, onSuccess: () => { setLoading(false); onPaid(); }, onCancel: () => setLoading(false) }); } else { setTimeout(onPaid, 1200); } }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
   </PmModal>;
 }
 
@@ -2085,12 +2172,56 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask AI", Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Ikoyi Project sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask AI", Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Ikoyi Project sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  investor: [["work", "Dashboard", LayoutDashboard], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  investor: [["work", "Dashboard", LayoutDashboard], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
 };
+function AdaAssistant({ st, identity }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [msgs, setMsgs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const boxRef = useRef(null);
+  useEffect(() => { if (boxRef.current) boxRef.current.scrollTop = boxRef.current.scrollHeight; }, [msgs, loading, open]);
+  const context = () => {
+    const ps = (st && st.properties) || [];
+    return "Role: " + ((identity && identity.role) || "guest") + ". Properties: " + ps.length + ", leased: " + ps.filter(x => x.status === "Leased").length + ", available: " + ps.filter(x => x.status === "Available").length + ".";
+  };
+  const ask = async () => {
+    const question = q.trim(); if (!question || loading) return;
+    setMsgs(m => [...m, { me: true, text: question }]); setQ(""); setLoading(true);
+    const r = await aiProxy("Context: " + context() + "\n\nQuestion: " + question, "You are " + AI_NAME + ", the assistant inside the Girard Property platform. Be brief, warm and practical. Help with using the platform (listing, lettings, rent, swaps, documents). Never give legal or financial advice; suggest a qualified professional instead. If you do not know, say so.", 700);
+    setLoading(false);
+    setMsgs(m => [...m, { me: false, text: (r && r.ok && r.text) ? r.text : (AI_NAME + " is not connected yet. Add ANTHROPIC_API_KEY in Vercel to enable live answers.") }]);
+  };
+  return <>
+    <button onClick={() => setOpen(o => !o)} title={"Ask " + AI_NAME} aria-label={"Ask " + AI_NAME} style={{ position: "fixed", right: 20, bottom: 20, zIndex: 85, height: 52, borderRadius: 999, border: "none", background: "var(--navy)", color: "var(--gold)", boxShadow: "0 12px 30px rgba(10,31,60,.34)", cursor: "pointer", display: "flex", alignItems: "center", gap: 9, padding: "0 20px", fontFamily: "inherit", fontWeight: 700, fontSize: 14 }}>
+      {open ? <X size={19} /> : <><Sparkles size={18} /> Ask {AI_NAME}</>}
+    </button>
+    {open && <div style={{ position: "fixed", right: 20, bottom: 84, zIndex: 85, width: 370, maxWidth: "calc(100vw - 40px)", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, boxShadow: "0 26px 64px rgba(10,31,60,.3)", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "min(540px, calc(100vh - 130px))" }}>
+      <div style={{ background: "var(--navy)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 999, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center", flexShrink: 0 }}><Sparkles size={16} /></div>
+        <div style={{ minWidth: 0 }}><div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{AI_NAME}</div><div style={{ color: "rgba(255,255,255,.6)", fontSize: 11.5 }}>Your Girard assistant</div></div>
+      </div>
+      <div ref={boxRef} style={{ padding: 14, overflowY: "auto", flex: 1, background: "var(--ivory)", minHeight: 150 }}>
+        {msgs.length === 0 && <div style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.6 }}>Hello{identity && identity.firstName ? " " + identity.firstName : ""}. I am {AI_NAME}. Ask me how to list a property, chase rent, start a swap or find something on the platform.</div>}
+        {msgs.map((m, i) => <div key={i} style={{ display: "flex", justifyContent: m.me ? "flex-end" : "flex-start", marginBottom: 9 }}>
+          <div style={{ maxWidth: "84%", background: m.me ? "var(--navy)" : "var(--white)", color: m.me ? "#fff" : "var(--ink)", border: m.me ? "none" : "1px solid var(--cream-line)", borderRadius: 11, padding: "9px 12px", fontSize: 13.2, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{m.text}</div>
+        </div>)}
+        {loading && <div style={{ color: "var(--muted)", fontSize: 12.5, display: "flex", gap: 6, alignItems: "center" }}><Loader2 size={13} className="spin" /> {AI_NAME} is thinking…</div>}
+      </div>
+      <div style={{ padding: 12, borderTop: "1px solid var(--cream-line)", background: "var(--white)" }}>
+        <AiNote style={{ marginBottom: 9 }} />
+        <div style={{ display: "flex", gap: 8 }}>
+          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && ask()} placeholder={"Ask " + AI_NAME + "\u2026"} style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "9px 12px", fontSize: 13.5, fontFamily: "inherit", color: "var(--ink)" }} />
+          <button onClick={ask} disabled={loading} aria-label="Send" style={{ width: 40, borderRadius: 9, border: "none", background: "var(--gold)", color: "var(--navy)", cursor: "pointer", display: "grid", placeItems: "center", opacity: loading ? .6 : 1 }}><Send size={16} /></button>
+        </div>
+      </div>
+    </div>}
+  </>;
+}
 function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const canSwitch = identity0.allAccess;
   const [activeRole, setActiveRole] = useState(identity0.role);
@@ -2113,6 +2244,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const screen = () => {
     const P = { st, setSt, identity, toast, toAi: (data) => { setAiSeed(data); setView("ai"); } };
     if (view === "dash") return <OwnerDash st={st} identity={identity} />;
+    if (view === "saved") return <SavedProperties {...P} go={setView} />;
     if (view === "props") return <PropertiesScreen {...P} />;
     if (view === "add") return <AddPropertyScreen {...P} />;
     if (view === "apps") return <ApplicationsScreen {...P} />;
@@ -2191,7 +2323,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       <header className="pm-topbar" style={{ background: "var(--white)", borderBottom: "1px solid var(--cream-line)", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 20, gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <button className="pm-burger" onClick={() => setNav2Open(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}><Menu size={22} /></button>
-          <div style={{ minWidth: 0 }}><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }} className="pm-topbar-title-sub">{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div className="pm-topbar-title-sub" style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "work" ? "Investment portfolio" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "Ikoyi Project · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : view === "ai" ? "AI document studio" : view === "payments" ? "Confirmed payments" : "Digital Property Management · Lagos"}</div></div>
+          <div style={{ minWidth: 0 }}><div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }} className="pm-topbar-title-sub">{ROLES.find(r => r.key === identity.role)?.name || "Workspace"}</div><div className="pm-topbar-title-sub" style={{ fontSize: 11.5, color: "var(--muted)" }}>{(view === "swap" || view === "swpipe") ? "Property Swap Marketplace · Cross-border" : view === "saved" ? "Saved properties" : view === "work" ? "Investment portfolio" : view === "intel" ? "Market Intelligence" : view === "feed" ? "Live activity feed" : view === "crm" ? "Pipeline & CRM" : view === "reports" ? "Analytics & reporting" : view === "support" ? "Support Services · Concierge" : view === "plans" ? "Plans & pricing" : view === "settings" ? "Settings" : view === "users" ? "User management" : view === "financials" ? "Financials & revenue" : view === "signups" ? "Sign-ups & growth" : view === "reminders" ? "Rent reminders · Automatic" : view === "enquiries" ? "Enquiries & viewings" : view === "sales" ? "Developments · Sales board" : view === "wallet" ? "Agent earnings & withdrawals" : view === "vetting" ? "Partner vetting & payouts" : view === "ai" ? "AI document studio" : view === "payments" ? "Confirmed payments" : "Digital Property Management · Lagos"}</div></div>
         </div>
         <div className="pm-topbar-right" style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
           <select value={cur} onChange={e => setCur(e.target.value)} title="Display currency" className="pm-hide-mobile" style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "6px 8px", color: "var(--ink)", fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>{["\u20a6", "$", "\u00a3", "\u20ac"].map(x => <option key={x} value={x}>{x}</option>)}</select>
@@ -2232,7 +2364,8 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       </header>
       <main style={{ padding: 24, flex: 1 }}>{activeRole === "agent" && <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12.5, color: "var(--ink)", lineHeight: 1.5, display: "flex", gap: 8, alignItems: "flex-start" }}><AlertTriangle size={15} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 1 }} /><span>Agents on Girard are independent professionals. They are not employed, verified or controlled by Girard Property Limited, and act on their own account.</span></div>}<div key={view} className="view-enter">{screen()}</div></main>
     </div>
-    <div style={{ position: "fixed", bottom: 20, right: 20, display: "flex", flexDirection: "column", gap: 10, zIndex: 80 }}>
+    <AdaAssistant st={st} identity={identity} />
+    <div style={{ position: "fixed", bottom: 84, right: 20, display: "flex", flexDirection: "column", gap: 10, zIndex: 80 }}>
       {toasts.map(t => <div key={t.id} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderLeft: "4px solid " + (t.tone === "danger" ? "#D0453B" : "#1F9D57"), borderRadius: 10, padding: "12px 16px", fontSize: 13.5, fontWeight: 600, color: "var(--ink)", maxWidth: 340, boxShadow: "0 10px 30px rgba(10,31,60,.14)" }}>{t.msg}</div>)}
     </div>
   </div>;
@@ -2602,10 +2735,11 @@ function LiveFeed({ identity }) {
         <div style={{ width: 38, height: 38, borderRadius: 9, background: K.c + "1f", color: K.c, display: "grid", placeItems: "center", flexShrink: 0 }}><K.icon size={18} /></div>
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{e.text}</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}><PmPill label={K.label} /> <span style={{ marginLeft: 6 }}>{e.market} · {ago(e.mins)}</span></div></div>
         {e.price && <div style={{ fontWeight: 700, color: "var(--navy)", fontSize: 13.5, whiteSpace: "nowrap" }}>{e.price}</div>}
+        <a href={waLink(OFFICE_WA, "Hello Girard Communications, I would like to act on this marketplace item: " + e.text + (e.price ? " (" + e.price + ")" : "") + ".")} target="_blank" rel="noreferrer" onClick={ev => ev.stopPropagation()} className="btn-line on-ivory" style={{ flexShrink: 0, fontSize: 12, padding: "6px 11px", whiteSpace: "nowrap", gap: 5 }}><MessageSquare size={13} /> Contact Girard</a>
         <ChevronRight size={16} color="var(--muted)" style={{ flexShrink: 0 }} />
       </div>; })}
     </PmCard>
-    {sel && <PmModal title={FEED_KINDS[sel.kind].label} onClose={() => setSel(null)}><div style={{ fontSize: 14.5, color: "var(--ink)", lineHeight: 1.6, marginBottom: 14 }}>{sel.text}</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>{[["Type", FEED_KINDS[sel.kind].label], ["Market", sel.market], ["When", ago(sel.mins)], ["Value", sel.price || "\u2014"]].map(([k, v]) => <div key={k} style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .4 }}>{k}</div><div style={{ fontSize: 13.5, color: "var(--ink)", marginTop: 3 }}>{v}</div></div>)}</div><div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>This is a live marketplace event. Contact Girard to act on this opportunity.</div></PmModal>}
+    {sel && <PmModal title={FEED_KINDS[sel.kind].label} onClose={() => setSel(null)}><div style={{ fontSize: 14.5, color: "var(--ink)", lineHeight: 1.6, marginBottom: 14 }}>{sel.text}</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>{[["Type", FEED_KINDS[sel.kind].label], ["Market", sel.market], ["When", ago(sel.mins)], ["Value", sel.price || "\u2014"]].map(([k, v]) => <div key={k} style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .4 }}>{k}</div><div style={{ fontSize: 13.5, color: "var(--ink)", marginTop: 3 }}>{v}</div></div>)}</div><div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>This is a live marketplace event. Girard Communications can put you in touch and take it forward.</div><a href={waLink(OFFICE_WA, "Hello Girard Communications, I would like to act on this marketplace item: " + sel.text + (sel.price ? " (" + sel.price + ")" : "") + ".")} target="_blank" rel="noreferrer" className="btn-gold" style={{ width: "100%", justifyContent: "center" }}><MessageSquare size={15} /> Contact Girard Communications</a></PmModal>}
     <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
   </div>;
 }
@@ -2615,8 +2749,8 @@ const CRM_COLS = ["Lead", "Qualifying", "Negotiation", "Agreed", "Completed"];
 const CRM_KIND_C = { Application: "#2F6FB0", Offer: "#E0A106", Swap: "var(--gold-2)", Lead: "var(--navy)" };
 function crmSeed() {
   const pm = pmLoad(); const sw = swLoad(); const cards = [];
-  pm.applications.forEach((a, i) => { const p = pm.properties.find(x => x.id === a.property); cards.push({ id: "C-A" + i, name: a.tenant, kind: "Application", market: "Nigeria", detail: (p ? p.area : "") + " · " + money(a.income), stage: a.status === "Approved" ? 3 : a.status === "Rejected" ? 4 : 1 }); });
-  sw.deals.forEach((d, i) => cards.push({ id: "C-S" + i, name: d.a + " ⇄ " + d.b, kind: "Swap", market: d.aCountry, detail: "Cash " + usd(d.cash), stage: d.stage >= 11 ? 4 : d.stage >= 6 ? 3 : 2 }));
+  pm.applications.forEach((a, i) => { const p = pm.properties.find(x => x.id === a.property); cards.push({ id: "C-A" + (i + 1), name: a.tenant, kind: "Application", market: "Nigeria", detail: (p ? p.area : "") + " · " + money(a.income), stage: a.status === "Approved" ? 3 : a.status === "Rejected" ? 4 : 1 }); });
+  sw.deals.forEach((d, i) => cards.push({ id: "C-S" + (i + 1), name: d.a + " ⇄ " + d.b, kind: "Swap", market: d.aCountry, detail: "Cash " + usd(d.cash), stage: d.stage >= 11 ? 4 : d.stage >= 6 ? 3 : 2 }));
   cards.push({ id: "C-O1", name: "Offer · 3-Bed Ikoyi", kind: "Offer", market: "Nigeria", detail: "₦11.2M/yr", stage: 2 });
   cards.push({ id: "C-O2", name: "Offer · London flat", kind: "Offer", market: "UK", detail: "£712,000", stage: 2 });
   cards.push({ id: "C-L1", name: "Lead · London investor", kind: "Lead", market: "UK", detail: "Seeking Lagos swap", stage: 0 });
@@ -2635,13 +2769,14 @@ function PipelineCRM({ identity, toast }) {
   const setCrm = (n) => { setCrmRaw(n); crmSave(n); };
   const move = (id, dir) => { setCrm({ ...crm, cards: crm.cards.map(c => c.id === id ? { ...c, stage: Math.max(0, Math.min(4, c.stage + dir)) } : c) }); };
   const cards = crm.cards.filter(c => (kind === "All" || c.kind === kind) && (market === "All" || c.market === market));
+  const refOf = {}; crm.cards.forEach((c, n) => { refOf[c.id] = "GC-" + String(n + 1).padStart(3, "0"); });
   return <div>
     <H2 title="Pipeline & CRM" sub={cards.length + " active items across applications, offers, leads and swaps"} right={<div style={{ display: "flex", gap: 10 }}><div style={{ width: 150 }}><PmSelect value={kind} onChange={setKind} options={["All", "Lead", "Application", "Offer", "Swap"]} /></div><div style={{ width: 140 }}><PmSelect value={market} onChange={setMarket} options={["All", "Nigeria", "UK", "US"]} /></div></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12 }} className="crm-board">
       {CRM_COLS.map((col, ci) => <div key={col} style={{ background: "var(--ivory)", borderRadius: 12, padding: 12, minHeight: 200 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13 }}>{col}</span><span style={{ background: "var(--white)", color: "var(--muted)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{cards.filter(c => c.stage === ci).length}</span></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{cards.filter(c => c.stage === ci).map(c => <PmCard key={c.id} pad={12}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 12.5, lineHeight: 1.3 }}>{c.name}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 12.5, lineHeight: 1.3 }}>{c.name}</span><span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, flexShrink: 0 }}>{refOf[c.id]}</span></div>
           <div style={{ margin: "6px 0 8px" }}><span style={{ background: CRM_KIND_C[c.kind] + "1f", color: CRM_KIND_C[c.kind], fontWeight: 700, fontSize: 10.5, padding: "2px 7px", borderRadius: 999 }}>{c.kind}</span> <span style={{ fontSize: 11, color: "var(--muted)" }}>{c.market}</span></div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10 }}>{c.detail}</div>
           <div style={{ display: "flex", gap: 6 }}>{ci > 0 && <button onClick={() => move(c.id, -1)} style={{ border: "1px solid var(--cream-line)", background: "transparent", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "var(--muted)", fontSize: 12 }}>‹</button>}{ci < 4 && <button onClick={() => { move(c.id, 1); toast("Moved to " + CRM_COLS[ci + 1]); }} style={{ border: "none", background: "var(--navy)", color: "#fff", borderRadius: 6, padding: "3px 10px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Advance ›</button>}</div>
@@ -3408,7 +3543,7 @@ function EnquiriesScreen({ toast }) {
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           <a href={waLink(x.phone, "Hello " + x.name + ", thank you for your interest in " + x.propTitle + " with Girard Property.")} target="_blank" rel="noreferrer" title="WhatsApp" style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 8, background: "rgba(37,211,102,.16)", color: "#1FA855" }}><MessageSquare size={16} /></a>
-          <a href={"tel:" + String(x.phone).replace(/[^0-9+]/g, "")} title="Call" style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 8, border: "1px solid var(--cream-line)", color: "var(--ink)" }}><Phone size={15} /></a>
+          <a href={waLink(x.phone, "Hello " + x.name + ", this is Girard Property calling about " + x.propTitle + ". Is now a good time?")} target="_blank" rel="noreferrer" title="WhatsApp call" style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 8, border: "1px solid var(--cream-line)", color: "#1FA855" }}><Phone size={15} /></a>
           <select value={x.status} onChange={e => setStatus(x.id, e.target.value)} style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "7px 10px", color: "var(--ink)", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{ENQ_STATUS.map(st => <option key={st} value={st}>{st}</option>)}</select>
           <ReportBlock targetType="enquiry" targetId={x.id} targetLabel={x.name + " \u00b7 " + x.propTitle} userRef={x.email || x.phone} reporter="admin" toast={toast} onBlocked={() => setBTick(t => t + 1)} />
         </div>
@@ -3471,7 +3606,7 @@ function SalesBoard({ toast }) {
     { icon: TrendingUp, label: "Committed value", value: moneyShort(committedValue), c: "#3B82F6", bg: "#EAF2FE" }
   ];
   return <div>
-    <H2 title="Ikoyi Project · Sales board" sub="Unit-by-unit availability for the 40 residences" right={<div style={{ width: 160 }}><PmSelect value={filter} onChange={setFilter} options={["All", "Available", "Reserved", "Sold"]} /></div>} />
+    <H2 title="Developments · Sales board" sub="Unit-by-unit availability for the 40 residences" right={<div style={{ width: 160 }}><PmSelect value={filter} onChange={setFilter} options={["All", "Available", "Reserved", "Sold"]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }} className="dash-kpi">
       {kpis.map(k => <CStat key={k.label} icon={k.icon} label={k.label} value={k.value} c={k.c} bg={k.bg} />)}
     </div>
@@ -3807,6 +3942,197 @@ const SWAP_POOL = [
   { id: "SM-5", title: "Brownstone Apartment", place: "New York, USA", value: "$1.1M", by: "J. Rivera", types: ["Permanent", "Temporary"] }
 ];
 const SJ_KEY = "girard_swapjourney_v1";
+function swapAgreementDraft(j) {
+  const A = (j.prop && (j.prop.area || j.prop.market)) || "Nigeria";
+  const B = (j.match && j.match.place) || "the counterparty jurisdiction";
+  const cur = (j.prop && j.prop.currency) || "\u20a6";
+  const bal = j.balanceValue ? (cur + j.balanceValue) : "the balancing sum recorded in Schedule 3 (if any)";
+  const d = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return [
+    "CROSS-BORDER PROPERTY EXCHANGE AGREEMENT",
+    "Dated " + d,
+    "",
+    "PARTIES",
+    "(1) The First Owner, being the registered owner of the property described in Schedule 1, situate at " + A + " (the \"First Property\"); and",
+    "(2) The Second Owner, being the registered owner of the property described in Schedule 2, situate at " + B + " (the \"Second Property\"),",
+    "each a \"Party\" and together the \"Parties\".",
+    "",
+    "RECITALS",
+    "A. Each Party is the beneficial owner of its respective property and wishes to exchange that property for the property of the other, on the terms of this Agreement.",
+    "B. The Parties were introduced through the Girard Property Limited platform (\"Girard\"), which acts as an introducer and facilitator only. Girard is not a party to this Agreement and gives no warranty as to any Party, property, title or transaction.",
+    "C. Each Party has been advised to obtain, and confirms it has had the opportunity to obtain, independent legal, tax and valuation advice in each relevant jurisdiction.",
+    "",
+    "1. DEFINITIONS AND INTERPRETATION",
+    "1.1 \"Completion\" means simultaneous performance of the obligations in clause 7.",
+    "1.2 \"Balancing Payment\" means " + bal + ", payable to equalise the agreed values of the properties.",
+    "1.3 \"Escrow Agent\" means the escrow provider appointed under clause 6.",
+    "1.4 \"Title Documents\" means all instruments of title, consents and records listed in Schedules 1 and 2.",
+    "1.5 \"Encumbrance\" means any mortgage, charge, lien, lease, licence, easement, caveat, option, right of pre-emption or third-party right of any kind.",
+    "1.6 Headings are for convenience only. The singular includes the plural. References to a jurisdiction include its laws, authorities and registries.",
+    "",
+    "2. THE EXCHANGE",
+    "2.1 The First Owner shall transfer the First Property to the Second Owner, and the Second Owner shall transfer the Second Property to the First Owner, free from Encumbrances and with full title guarantee, on and subject to the terms of this Agreement.",
+    "2.2 The transfers are interdependent. Neither transfer shall take effect unless both take effect.",
+    "2.3 Each property is exchanged with vacant possession on Completion unless Schedule 1 or 2 expressly records otherwise.",
+    "",
+    "3. CONSIDERATION AND BALANCING PAYMENT",
+    "3.1 The consideration for each transfer is the transfer of the other property, together with the Balancing Payment where applicable.",
+    "3.2 The Balancing Payment shall be deposited with the Escrow Agent before Completion and released strictly in accordance with clause 6.",
+    "3.3 Each Party bears its own costs, and the taxes, duties, registration and professional fees applicable in its own jurisdiction, save as Schedule 3 records otherwise.",
+    "",
+    "4. TITLE, WARRANTIES AND DISCLOSURE",
+    "4.1 Each Party warrants that: (a) it is the sole legal and beneficial owner of its property; (b) it has full power and authority to enter into and perform this Agreement; (c) its title is good, marketable and free from Encumbrances; (d) all Title Documents are genuine, complete and lawfully held; (e) there is no litigation, dispute, claim or acquisition notice affecting the property; (f) all rates, taxes, ground rent and service charges are paid to date; and (g) it is not insolvent and no step has been taken for its winding-up or bankruptcy.",
+    "4.2 Each Party has disclosed to the other all matters materially affecting the value, use, condition or enjoyment of its property, including planning, zoning and building-control matters, encroachments, structural defects and outstanding notices.",
+    "4.3 The warranties in clause 4.1 are given on the date of this Agreement and are deemed repeated at Completion.",
+    "4.4 No statement made by Girard, and no check, badge or status displayed on the Girard platform, forms part of the warranties in this Agreement or may be relied upon as a representation by either Party.",
+    "",
+    "5. DUE DILIGENCE AND CONDITIONS PRECEDENT",
+    "5.1 Completion is conditional on each of the following, in respect of both properties: (a) satisfactory title investigation by the receiving Party's lawyers; (b) official searches at the relevant land registry or registries returning clear; (c) all consents required for transfer, including any governor's consent, statutory consent, mortgagee or landlord consent, being obtained; (d) all anti-money-laundering, sanctions and source-of-funds checks being completed to each Party's and the Escrow Agent's satisfaction; and (e) any tax clearance or foreign-exchange approval required in either jurisdiction being in place.",
+    "5.2 Each Party shall use all reasonable endeavours to satisfy the conditions applicable to it, and shall keep the other informed of progress.",
+    "5.3 If the conditions are not satisfied or waived by the long-stop date in Schedule 3, either Party may terminate this Agreement by written notice, whereupon the Balancing Payment shall be returned to the depositing Party and neither Party shall have any further claim, save for antecedent breach.",
+    "",
+    "6. ESCROW",
+    "6.1 The Balancing Payment shall be held by the Escrow Agent on the terms of this clause and the escrow instructions signed by both Parties.",
+    "6.2 The Escrow Agent shall release the Balancing Payment only upon: (a) written confirmation from both Parties that Completion has occurred; and (b) the release authorisation issued through the Girard platform.",
+    "6.3 If this Agreement is terminated before Completion, the Escrow Agent shall return the Balancing Payment to the depositing Party within 10 business days, less any bank charges.",
+    "6.4 The Escrow Agent acts as stakeholder and not as agent for either Party.",
+    "",
+    "7. COMPLETION",
+    "7.1 Completion shall take place on the date specified in Schedule 3, or such other date as the Parties agree in writing.",
+    "7.2 At Completion, simultaneously: (a) each Party shall execute and deliver a duly stamped transfer, deed of assignment or equivalent instrument in favour of the other; (b) each Party shall hand over the Title Documents, keys, access codes and any warranties or guarantees relating to its property; (c) the Escrow Agent shall release the Balancing Payment in accordance with clause 6; and (d) each Party shall deliver any consent, receipt or clearance obtained under clause 5.",
+    "7.3 Title Documents shall not be released to either Party before Completion.",
+    "7.4 Risk in each property passes on Completion. Each Party shall maintain insurance on its property to full reinstatement value until Completion.",
+    "",
+    "8. POST-COMPLETION AND PERFECTION",
+    "8.1 Each Party shall, at its own cost, promptly do all things necessary to perfect the transfer in favour of the other, including stamping, registration, notification of authorities and payment of any duty.",
+    "8.2 Each Party shall provide such further assurance, execute such further documents and give such assistance as the other may reasonably require to perfect and register title, and this obligation survives Completion.",
+    "8.3 Each Party shall deliver evidence of registration to the other within 60 days of Completion, or as soon as the relevant registry permits.",
+    "",
+    "9. DEFAULT AND REMEDIES",
+    "9.1 If a Party fails to complete on the due date, the other may serve a notice to complete requiring Completion within 14 business days, time being of the essence.",
+    "9.2 If the defaulting Party still fails to complete, the other may terminate this Agreement and pursue all remedies available at law or in equity, including specific performance and damages.",
+    "9.3 Interest at the rate in Schedule 3 accrues on any sum not paid when due, from the due date until payment.",
+    "",
+    "10. ANTI-MONEY LAUNDERING, SANCTIONS AND SOURCE OF FUNDS",
+    "10.1 Each Party warrants that the funds and assets applied under this Agreement derive from lawful sources and are not the proceeds of crime.",
+    "10.2 Each Party shall promptly provide such identification, ownership and source-of-funds evidence as the other Party, the Escrow Agent, any bank or any regulator may reasonably require, and consents to the making of any report required by law.",
+    "10.3 Each Party warrants that it is not subject to any sanctions regime applicable in either jurisdiction.",
+    "",
+    "11. CONFIDENTIALITY AND DATA PROTECTION",
+    "11.1 Each Party shall keep confidential the terms of this Agreement and all information received about the other, save where disclosure is required by law, by a regulator, or to its professional advisers, lenders or the Escrow Agent.",
+    "11.2 Personal data shall be processed only as necessary for this transaction and in accordance with applicable data-protection law, including the Nigeria Data Protection Act where relevant.",
+    "",
+    "12. FORCE MAJEURE",
+    "12.1 Neither Party is liable for delay caused by an event beyond its reasonable control, provided it notifies the other promptly and uses reasonable endeavours to mitigate. If the event continues for more than 60 days, either Party may terminate on written notice and clause 5.3 applies.",
+    "",
+    "13. NOTICES",
+    "13.1 Notices must be in writing and sent to the addresses in Schedule 4 by hand, by international courier, or by email with confirmation of receipt.",
+    "13.2 A notice is deemed served on delivery, or on the next business day if delivered outside business hours.",
+    "",
+    "14. GENERAL",
+    "14.1 Entire agreement. This Agreement, with its Schedules, is the entire agreement between the Parties and supersedes all prior discussions, and neither Party has relied on any representation not set out in it.",
+    "14.2 Variation. No variation is effective unless in writing and signed by both Parties.",
+    "14.3 No assignment. Neither Party may assign or transfer its rights without the other's prior written consent.",
+    "14.4 Severance. If any provision is held invalid, the remainder continues in full force.",
+    "14.5 No partnership. Nothing in this Agreement creates a partnership, joint venture or agency between the Parties, or between either Party and Girard.",
+    "14.6 Third parties. Save for the Escrow Agent in respect of clause 6, no third party may enforce this Agreement.",
+    "14.7 Counterparts. This Agreement may be executed in counterparts, including by electronic signature, each of which is an original.",
+    "14.8 Costs. Each Party bears its own legal and professional costs.",
+    "",
+    "15. GOVERNING LAW AND DISPUTE RESOLUTION",
+    "15.1 The transfer of each property is governed by the law of the jurisdiction in which that property is situate, and the Parties submit to the exclusive jurisdiction of its courts and registries for all matters of title, registration and perfection.",
+    "15.2 This Agreement and any non-contractual obligation arising from it are governed by the laws of the Federal Republic of Nigeria.",
+    "15.3 Any dispute shall first be referred to good-faith negotiation between the Parties for 21 days. If unresolved, it shall be finally settled by arbitration under the Arbitration and Mediation Act, seated in Lagos, before a sole arbitrator, in the English language. Nothing prevents either Party from seeking urgent interim relief from any competent court.",
+    "",
+    "16. INDEPENDENT LEGAL ADVICE",
+    "16.1 Each Party confirms that it has been advised to obtain, and has had a full opportunity to obtain, independent legal advice in each relevant jurisdiction before signing.",
+    "16.2 This document is a draft prepared to assist the Parties. It must be reviewed, adapted and approved by qualified lawyers in each jurisdiction before execution.",
+    "",
+    "SCHEDULE 1 - The First Property (description, title number, registered owner, Encumbrances, fixtures, Title Documents)",
+    "SCHEDULE 2 - The Second Property (description, title number, registered owner, Encumbrances, fixtures, Title Documents)",
+    "SCHEDULE 3 - Agreed values, Balancing Payment, escrow instructions, long-stop date, Completion date, default interest rate",
+    "SCHEDULE 4 - Notice addresses and professional advisers",
+    "",
+    "EXECUTED as a deed by the Parties on the date first written above, in the presence of the witnesses named below.",
+    "",
+    "First Owner: ______________________   Witness: ______________________",
+    "Second Owner: _____________________   Witness: ______________________"
+  ].join("\n");
+}
+function swapContractDraft(j) {
+  const A = (j.prop && (j.prop.area || j.prop.market)) || "Nigeria";
+  const B = (j.match && j.match.place) || "the counterparty jurisdiction";
+  const cur = (j.prop && j.prop.currency) || "\u20a6";
+  const bal = j.balanceValue ? (cur + j.balanceValue) : "the balancing sum recorded in the Schedule (if any)";
+  const d = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return [
+    "DEED OF ASSIGNMENT",
+    "Dated " + d,
+    "",
+    "PARTIES",
+    "(1) The Assignor, of the property described in the Schedule, situate at " + A + "; and",
+    "(2) The Assignee, of the property described in the Schedule, situate at " + B + ".",
+    "",
+    "RECITALS",
+    "A. The Parties have completed an exchange of their respective properties under a Cross-Border Property Exchange Agreement, and the balancing payment has been released from escrow.",
+    "B. This Deed is executed to perfect the transfer and to enable registration of title in the Assignee's favour.",
+    "C. Girard Property Limited acted as introducer and facilitator only. It is not a party to this Deed and gives no warranty as to any party, property, title or transaction.",
+    "",
+    "1. ASSIGNMENT",
+    "1.1 In consideration of the exchange and of " + bal + " (receipt of which the Assignor acknowledges), the Assignor as beneficial owner assigns to the Assignee ALL THAT the property described in the Schedule, together with the whole unexpired residue of the term of years granted, and all rights, easements and appurtenances belonging to it, TO HOLD unto the Assignee absolutely.",
+    "1.2 The property is assigned free from all mortgages, charges, liens and third-party rights, and with full title guarantee.",
+    "",
+    "2. RECEIPT AND CONSIDERATION",
+    "2.1 The Assignor acknowledges receipt of the consideration and of the balancing payment released from escrow, and this Deed operates as a sufficient receipt.",
+    "",
+    "3. COVENANTS FOR TITLE",
+    "3.1 The Assignor covenants that it has the right to assign, that the Assignee shall have quiet enjoyment free from interruption, and that the Assignor will at its own cost do all things reasonably required to give effect to this Deed.",
+    "3.2 The Assignor has disclosed all matters materially affecting title, use or enjoyment, and no notice, claim or acquisition proceeding is outstanding.",
+    "",
+    "4. VACANT POSSESSION",
+    "4.1 Vacant possession of the property is given to the Assignee on the date of this Deed, together with keys, access codes and all Title Documents.",
+    "",
+    "5. CONSENTS, STAMPING AND REGISTRATION",
+    "5.1 The Assignee shall, at its own cost, promptly apply for any governor's consent or statutory consent required, and shall stamp and register this Deed at the appropriate registry.",
+    "5.2 The Assignor shall provide all documents, signatures, photographs and attendances reasonably required to obtain consent and to complete registration, and shall not withdraw or obstruct any application.",
+    "5.3 Each Party shall bear the duties, fees and professional costs applicable in its own jurisdiction.",
+    "",
+    "6. FURTHER ASSURANCE",
+    "6.1 Each Party shall execute such further deeds and do such further acts as may be necessary to perfect the Assignee's title, and this clause survives completion and registration.",
+    "",
+    "7. APPORTIONMENT",
+    "7.1 Rates, ground rent, service charges and other outgoings are apportioned on a daily basis to the date of this Deed. Any balance shall be settled within 14 days of demand.",
+    "",
+    "8. RISK AND INSURANCE",
+    "8.1 Risk passed to the Assignee on completion of the exchange. The Assignee shall insure the property from that date to full reinstatement value.",
+    "",
+    "9. WARRANTIES, CAPACITY AND ANTI-MONEY LAUNDERING",
+    "9.1 Each Party warrants that it has full capacity and authority to execute this Deed, that it is not insolvent, and that all funds applied derive from lawful sources.",
+    "9.2 Each Party shall provide such identification and source-of-funds evidence as any bank, registry or regulator may reasonably require.",
+    "",
+    "10. NOTICES",
+    "10.1 Notices must be in writing and delivered by hand, by courier or by email with confirmation of receipt, to the addresses in the Schedule.",
+    "",
+    "11. GENERAL",
+    "11.1 This Deed, with the Exchange Agreement, is the entire agreement between the Parties on its subject matter.",
+    "11.2 No variation is effective unless in writing and signed by both Parties.",
+    "11.3 If any provision is held invalid, the remainder continues in full force.",
+    "11.4 This Deed may be executed in counterparts, including by electronic signature, each of which is an original.",
+    "",
+    "12. GOVERNING LAW",
+    "12.1 This Deed is governed by the law of the jurisdiction in which the property is situate, and the Parties submit to the exclusive jurisdiction of its courts and registries for all matters of title, perfection and registration.",
+    "",
+    "13. INDEPENDENT LEGAL ADVICE",
+    "13.1 Each Party confirms it has been advised to obtain independent legal advice before executing this Deed. This document is a draft and must be reviewed and approved by a qualified lawyer before execution.",
+    "",
+    "SCHEDULE - The property (description, title number, registered owner, Title Documents, notice addresses, balancing payment)",
+    "",
+    "IN WITNESS of which the Parties have executed this Deed on the date first written above.",
+    "",
+    "Assignor: ______________________   Witness: ______________________",
+    "Assignee: ______________________   Witness: ______________________"
+  ].join("\n");
+}
 function sjDefault() { return { stage: 0, paid: false, prop: { market: "Nigeria", area: "", value: "", currency: "₦", photos: [], docs: [] }, verified: false, targets: [], match: null, chat: [], agreementText: "", signedMe: false, signedThem: false, escrowFunded: false, balanceValue: "", finalMe: false, finalThem: false, revealed: false, swapType: "Permanent", contractText: "", payoutName: "", payoutNum: "", payoutBank: NG_BANKS[0][0], stopped: false, flagged: false }; }
 function sjLoad() { try { const r = localStorage.getItem(SJ_KEY); if (r) { const x = JSON.parse(r); return { ...sjDefault(), ...x, prop: { ...sjDefault().prop, ...(x && x.prop || {}) } }; } } catch (e) {} return sjDefault(); }
 function sjSave(s) { try { localStorage.setItem(SJ_KEY, JSON.stringify(s)); } catch (e) {} }
@@ -3861,15 +4187,15 @@ function SwapJourney({ identity, toast, toAi }) {
   const [filed, setFiled] = useState(() => swapFiledLoad(owner));
   const isTemp = (j.swapType || "Permanent") === "Temporary";
   const STEPS = isTemp
-    ? ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agree dates & terms", "Exchange & complete"]
-    : ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
+    ? ["Register", "Your property", "Document checks", "Browse & match", "Negotiate", "Agree dates & terms", "Exchange & complete"]
+    : ["Register", "Your property", "Document checks", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
   const blocked = j.stopped;
   const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1100; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); setJ({ prop: { ...j.prop, photos: [...j.prop.photos, cv.toDataURL("image/jpeg", 0.72)].slice(0, 5) } }); }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
   const toggleDoc = d => setJ({ prop: { ...j.prop, docs: j.prop.docs.includes(d) ? j.prop.docs.filter(x => x !== d) : [...j.prop.docs, d] } });
   const toggleTarget = t => setJ({ targets: j.targets.includes(t) ? j.targets.filter(x => x !== t) : [...j.targets, t] });
   const sendMsg = () => { if (!msg.trim()) return; const mine = { me: true, text: msg }; setJ({ chat: [...j.chat, mine] }); setMsg(""); setTimeout(() => setJraw(prev => { const n = { ...prev, chat: [...prev.chat, { me: false, text: "Thank you. That works for me, let us proceed to the agreement." }] }; swapSaveMine(owner, n); return n; }), 900); };
-  const genAgreement = async () => { setGen(true); const r = await aiProxy("Draft a concise cross-border property swap agreement (about 150 words) between two owners exchanging properties, one in " + (j.prop.area || j.prop.market) + " and one in " + (j.match ? j.match.place : "the counterparty location") + ". Include parties, the swap, any balancing payment held in escrow, verification of title, and governing law. Plain text, no markdown."); setGen(false); setJ({ agreementText: (r && r.ok && r.text) ? r.text : ("CROSS-BORDER PROPERTY SWAP AGREEMENT\n\nThis agreement is made between the initiating owner (property in " + (j.prop.area || j.prop.market) + ") and the counterparty (property in " + (j.match ? j.match.place : "") + "), each warranting good and marketable title verified by Girard. The parties agree to exchange the said properties. Any balancing sum shall be held in escrow and released on final sign-off by both parties. Title documents shall be released to each party only upon completion. This agreement is subject to the laws of the applicable jurisdictions and to Girard's verification and anti-fraud review.") }); };
-  const genContract = async () => { setGen(true); const r = await aiProxy("Draft a short contract of sale (about 120 words) to perfect a completed property swap, referencing transfer of title, the balancing payment released from escrow, and each party's obligation to perfect registration. Plain text, no markdown."); setGen(false); setJ({ contractText: (r && r.ok && r.text) ? r.text : "CONTRACT OF SALE\n\nFollowing the completed swap and release of escrow, each party agrees to execute all instruments necessary to perfect transfer and registration of title in the other's favour. Girard may act as concierge to perfect the documents. Completion is subject to both parties' final sign-off and Girard's verification." }); };
+  const genAgreement = async () => { setGen(true); const r = await aiProxy("You are a senior Nigerian property lawyer. Draft a comprehensive, detailed cross-border property exchange agreement (1,200-1,600 words) between two owners exchanging properties, one in " + (j.prop.area || j.prop.market) + " and one in " + (j.match ? j.match.place : "the counterparty location") + ". Use numbered clauses and formal drafting. Include: parties and recitals; definitions and interpretation; the exchange and its interdependence; consideration and any balancing payment held in escrow; full title warranties and disclosure; due diligence and conditions precedent (title searches, governor's consent, mortgagee consent, AML/sanctions and source-of-funds checks, tax clearance, FX approval); escrow release mechanics; completion mechanics with simultaneous exchange of transfers, title documents and keys; risk and insurance; post-completion perfection, stamping and registration with further assurance; default, notice to complete, specific performance and default interest; force majeure; confidentiality and data protection; notices; boilerplate (entire agreement, variation, no assignment, severance, no partnership, counterparts, costs); governing law with lex situs for each transfer and Lagos-seated arbitration; independent legal advice; and schedules for each property, values, escrow terms and notice addresses. State expressly that Girard Property Limited is an introducer and facilitator only, is not a party, and gives no warranty as to any party, property, title or transaction. Plain text, no markdown.", "", 3000); setGen(false); setJ({ agreementText: (r && r.ok && r.text && r.text.length > 600) ? r.text : swapAgreementDraft(j) }); };
+  const genContract = async () => { setGen(true); const r = await aiProxy("You are a senior Nigerian property lawyer. Draft a detailed deed of assignment / contract of sale (700-900 words) to perfect a completed cross-border property exchange. Use numbered clauses. Include: parties and recitals; the assignment of the whole unexpired residue of the term; consideration including the balancing payment released from escrow with receipt clause; full title guarantee and covenants for title; vacant possession; indemnity; each party's obligation to stamp, register and perfect the assignment and to obtain any governor's or statutory consent; further assurance surviving completion; apportionment of rates and outgoings; risk and insurance; warranties as to authority and capacity; AML confirmation; notices; entire agreement, variation, severance, counterparts and electronic execution; governing law being the law of the jurisdiction where the property is situate; and an execution block with witnesses. Plain text, no markdown.", "", 2200); setGen(false); setJ({ contractText: (r && r.ok && r.text && r.text.length > 400) ? r.text : swapContractDraft(j) }); };
   const locked = !(j.signedMe && j.signedThem && j.escrowFunded && j.finalMe && j.finalThem);
 
   const confid = <div style={{ display: "flex", gap: 10, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: "12px 14px", fontSize: 12.5, color: "var(--muted)", marginBottom: 16 }}><Lock size={16} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 1 }} /><span>Everything you share is held in strict confidence and used only by Girard for verification and matching. Your details and documents are never revealed to anyone else without your consent.</span></div>;
@@ -3904,10 +4230,10 @@ function SwapJourney({ identity, toast, toAi }) {
     </div></div>;
     if (j.stage === 2) return <PmCard style={{ maxWidth: 620 }}>
       <div style={{ width: 52, height: 52, borderRadius: 12, background: "var(--gold-soft)", color: "var(--gold-2)", display: "grid", placeItems: "center", marginBottom: 14 }}><ShieldCheck size={26} /></div>
-      <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Girard is verifying you</div>
-      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px", textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Before you can browse swaps, Girard verifies your identity, your property and your title documents. You will receive an SMS the moment browsing is enabled.</p>
+      <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>Girard is checking your documents</div>
+      <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "8px 0 16px", textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Before you can browse swaps, Girard carries out internal checks on your identity, your property and your title documents. These checks are part of our own onboarding process. They are not a guarantee, warranty or certification of any party, property, title or transaction, and they do not replace your own due diligence or the advice of your lawyer. You will receive an SMS the moment browsing is enabled.</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>{["Identity / KYC", "Property ownership", "Title documents"].map(c => <div key={c} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5 }}><Clock size={16} color="var(--gold-2)" /><b style={{ color: "var(--ink)" }}>{c}</b><span style={{ color: "var(--muted)", marginLeft: "auto", fontSize: 12.5 }}>In review</span></div>)}</div>
-      <PmBtn kind="navy" icon={CheckCircle2} onClick={() => { setJ({ verified: true, stage: 3 }); toast("Verified. SMS sent: you can now browse swaps.", "success"); }}>Girard has verified me (demo)</PmBtn>
+      <PmBtn kind="navy" icon={CheckCircle2} onClick={() => { setJ({ verified: true, stage: 3 }); toast("Checks complete. SMS sent: you can now browse swaps.", "success"); }}>Checks complete (demo)</PmBtn>
       <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>In production a Girard officer approves this from the oversight desk and Twilio sends the SMS.</div>
     </PmCard>;
     if (j.stage === 3) { const matches = SWAP_POOL.filter(m => (j.targets.length === 0 || j.targets.includes(m.place)) && (m.types || ["Permanent"]).includes(j.swapType || "Permanent")); return <div>
@@ -3944,7 +4270,8 @@ function SwapJourney({ identity, toast, toAi }) {
     if (j.stage === 5) return <PmCard style={{ maxWidth: 720 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Swap agreement</div>{toAi && <PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => toAi(swapSeed("agreement"))}>Open in AI studio</PmBtn>}</div>
       {!j.agreementText ? <PmBtn kind="navy" icon={Sparkles} onClick={genAgreement}>{gen ? "Generating…" : "Generate agreement (AI)"}</PmBtn>
-        : <><div style={{ position: "relative", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 260, overflow: "auto", textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{j.agreementText}<div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--muted)" }}><Lock size={12} /> Locked</div></div>
+        : <><div style={{ position: "relative", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{j.agreementText}<div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--muted)" }}><Lock size={12} /> Locked</div></div>
+          <AiNote style={{ marginTop: 10 }} extra="This draft must be reviewed and approved by qualified lawyers in each jurisdiction before signing." />
           <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedMe ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>You</div><div style={{ fontWeight: 700, color: j.signedMe ? "#1F9D57" : "var(--ink)" }}>{j.signedMe ? "Signed ✓" : "Awaiting signature"}</div>{!j.signedMe && <PmBtn size="sm" style={{ marginTop: 8 }} onClick={() => { setJ({ signedMe: true }); setTimeout(() => setJraw(prev => { const n = { ...prev, signedThem: true }; swapSaveMine(owner, n); return n; }), 800); toast("You e-signed. Counterparty notified."); }}>E-sign</PmBtn>}</div>
             <div style={{ flex: 1, minWidth: 200, border: "1px solid " + (j.signedThem ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}><div style={{ fontSize: 12, color: "var(--muted)" }}>Counterparty</div><div style={{ fontWeight: 700, color: j.signedThem ? "#1F9D57" : "var(--ink)" }}>{j.signedThem ? "Signed ✓" : "Awaiting signature"}</div></div>
@@ -3993,7 +4320,8 @@ function SwapJourney({ identity, toast, toAi }) {
       {!locked && <PmCard>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 10 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Contract of sale & concierge</div>{toAi && <PmBtn size="sm" kind="ghost" icon={Sparkles} onClick={() => toAi(swapSeed("contract"))}>Open in AI studio</PmBtn>}</div>
         {!j.contractText ? <PmBtn kind="navy" icon={Sparkles} onClick={genContract}>{gen ? "Drafting…" : "Draft contract of sale (AI)"}</PmBtn>
-          : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 220, overflow: "auto", textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{j.contractText}</div>}
+          : <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 18, whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 420, overflow: "auto", textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{j.contractText}</div>}
+        {j.contractText && <AiNote style={{ marginTop: 10 }} extra="Have this reviewed by a qualified lawyer before signing." />}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 14, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
           <div style={{ fontSize: 13, color: "var(--muted)" }}>Girard concierge to perfect documents · <b style={{ color: "var(--ink)" }}>10% of sales value</b></div>
           {!relCode ? <PmBtn kind="navy" icon={Lock} onClick={() => { const c = String(Math.floor(100000 + Math.random() * 900000)); setRelCode(c); toast("Release authorisation code issued to the Girard release officer: " + c + " (demo). Enter it to release the escrow.", "success"); }}>Authorise escrow release</PmBtn> : <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><input value={relIn} onChange={e => setRelIn(e.target.value)} placeholder="6-digit code" maxLength={6} style={{ padding: "9px 12px", borderRadius: 8, border: "1px solid var(--cream-line)", fontSize: 14, width: 150, fontFamily: "inherit" }} /><PmBtn kind="gold" icon={CheckCircle2} disabled={relIn !== relCode} onClick={async () => { const bal = Math.round(+String(j.balanceValue || "").replace(/,/g, "")) || 0; if (j.escrowFunded && bal > 0) { const code = (NG_BANKS.find(x => x[0] === j.payoutBank) || [])[1] || ""; const r = await paystackTransfer({ amount: bal, account_number: j.payoutNum, bank_code: code, name: j.payoutName || "Swap counterparty", reason: "Escrow release " + owner }); toast(r && r.configured && r.ok ? "Swap completed and filed. Escrow released via Paystack." : "Swap completed and filed. Escrow release recorded (add counterparty bank for a live transfer).", "success"); } else { toast("Swap completed and filed. You can start another swap now.", "success"); } const rec = swapFileCompleted(owner, j); setFiled(prev => [rec, ...prev]); setRelCode(""); setRelIn(""); swapSaveMine(owner, sjDefault()); setJraw(sjDefault()); }}>Confirm release & complete</PmBtn></div>}
@@ -4020,7 +4348,7 @@ function SwapJourney({ identity, toast, toAi }) {
 function SwapOversight({ toast }) {
   const [rows, setRows] = useState([]);
   useEffect(() => { let on = true; swapFetchAll().then(x => { if (on) setRows(x); }); return () => { on = false; }; }, []);
-  const STEPS = ["Register", "Your property", "Verification", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
+  const STEPS = ["Register", "Your property", "Document checks", "Browse & match", "Negotiate", "Agreement", "Escrow & completion"];
   const update = (owner, data, note, tone) => { setRows(rs => rs.map(r => r.owner === owner ? { ...r, data } : r)); swapSaveMine(owner, data); if (note) { toast(note, tone || "success"); auditLog(note, (data.prop && (data.prop.area || data.prop.market)) || owner); } };
   const flagged = rows.filter(r => r.data.flagged).length;
   const escrow = rows.filter(r => r.data.escrowFunded).length;
@@ -4043,7 +4371,7 @@ function SwapOversight({ toast }) {
         <span style={{ fontSize: 11, fontWeight: 700, color: done ? "#1F9D57" : current ? "var(--gold-2)" : "var(--muted)" }}>{done ? "Achieved" : current ? "In progress" : "Not achieved"}</span>
       </div>; })}</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-        {j.stage === 2 && !j.verified && <PmBtn kind="gold" icon={CheckCircle2} onClick={() => update(r.owner, { ...j, verified: true, stage: 3 }, "Verified. Applicant notified by SMS.")}>Approve verification</PmBtn>}
+        {j.stage === 2 && !j.verified && <PmBtn kind="gold" icon={CheckCircle2} onClick={() => update(r.owner, { ...j, verified: true, stage: 3 }, "Checks complete. Applicant notified by SMS.")}>Approve checks</PmBtn>}
         {!j.stopped ? <PmBtn kind="ghost" icon={AlertTriangle} onClick={() => update(r.owner, { ...j, stopped: true }, "Swap paused for review", "danger")}>Stop / manual review</PmBtn> : <PmBtn icon={CheckCircle2} onClick={() => update(r.owner, { ...j, stopped: false }, "Swap resumed")}>Resume</PmBtn>}
         {!j.flagged ? <PmBtn kind="ghost" icon={ShieldCheck} onClick={() => update(r.owner, { ...j, flagged: true }, "Flagged for fraud review", "danger")}>Flag fraud</PmBtn> : <PmBtn kind="ghost" onClick={() => update(r.owner, { ...j, flagged: false })}>Clear flag</PmBtn>}
       </div>
@@ -4250,9 +4578,9 @@ function InvestorOverview({ identity, go }) {
   return <div>
     <H2 title={"Good day, " + identity.firstName} sub="Your investment portfolio at a glance" />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 18 }}>
-      <CStat icon={Banknote} label="Total invested" value="₦2.4B" sub="Across 6 assets" c="#3B82F6" bg="#EAF2FE" />
-      <CStat icon={TrendingUp} label="Portfolio value" value="₦2.9B" sub="+20.8% since entry" c="#10B981" bg="#E7F7F0" />
-      <CStat icon={Wallet} label="Net income (YTD)" value="₦186M" sub="Rent & distributions" c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={Banknote} label="Total invested" value={moneyC(2400000000)} sub="Across 6 assets" c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={TrendingUp} label="Portfolio value" value={moneyC(2900000000)} sub="+20.8% since entry" c="#10B981" bg="#E7F7F0" />
+      <CStat icon={Wallet} label="Net income (YTD)" value={moneyC(186000000)} sub="Rent & distributions" c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={LineChart} label="Avg. yield" value="8.7%" sub="Prime residential" c="#F59E0B" bg="#FEF3E2" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }} className="pm-grid2">
@@ -4356,7 +4684,8 @@ function AIStudio({ identity, toast, seed }) {
   const download = () => { try { const blob = new Blob([out], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = (mode === "free" ? "girard-document" : type.split(" ")[0].toLowerCase() + "-girard") + ".txt"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } catch (e) {} };
   const inp = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 14, fontFamily: "inherit" };
   return <div>
-    <H2 title="AI document studio" sub="Draft agreements, MOUs and letters aligned to Nigerian practice. Have any document reviewed by a qualified lawyer before signing." />
+    <H2 title="AI document studio" sub="Draft agreements, MOUs and letters aligned to Nigerian practice." />
+    <AiNote style={{ marginBottom: 14 }} extra="Have any document reviewed by a qualified lawyer before signing." />
     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{[["doc", "Agreements & MOUs"], ["free", "Ask anything"]].map(([k, l]) => <button key={k} onClick={() => setMode(k)} style={{ padding: "9px 16px", borderRadius: 8, border: "1px solid " + (mode === k ? "var(--gold)" : "var(--cream-line)"), background: mode === k ? "var(--gold-soft)" : "transparent", color: mode === k ? "var(--gold-2)" : "var(--muted)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{l}</button>)}</div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 16 }} className="pm-grid2">
       <PmCard>
@@ -4774,8 +5103,8 @@ function AskAI({ st, identity, toast }) {
   const ask = async () => { if (!q.trim()) return; const question = q; setMsgs(m => [...m, { me: true, text: question }]); setQ(""); setLoading(true); const r = await aiProxy("Answer using ONLY this data. Be concise, use numbers. If not answerable from the data, say so.\n\n" + summary() + "\n\nQuestion: " + question, "You are Girard's precise real estate portfolio analyst. Short, direct answers.", 800); setLoading(false); setMsgs(m => [...m, { me: false, text: (r && r.ok && r.text) ? r.text : ("AI is not connected yet (add ANTHROPIC_API_KEY in Vercel). Quick facts: " + (st.properties || []).length + " properties, " + (st.properties || []).filter(p => p.status === "Leased").length + " leased.") }]); };
   const sugg = ["Which properties are vacant?", "What is my total rent roll?", "Which area has the most properties?", "How many applications do I have?"];
   return <div>
-    <H2 title="Ask Girard AI" sub="Ask anything about your portfolio in plain English" />
-    <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: "9px 13px", marginBottom: 14, fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, display: "flex", gap: 8, alignItems: "flex-start" }}><Sparkles size={14} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 1 }} />AI-generated results may contain errors and should be independently verified.</div>
+    <H2 title={"Ask " + AI_NAME} sub="Ask anything about your portfolio in plain English" />
+    <AiNote style={{ marginBottom: 14 }} />
     <PmCard>
       <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, minHeight: 260, maxHeight: 420, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
         {msgs.length === 0 ? <div style={{ margin: "auto", textAlign: "center" }}><div style={{ color: "var(--muted)", fontSize: 13.5, marginBottom: 12 }}>Ask about occupancy, rent, applications, areas and more.</div><div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>{sugg.map(x => <button key={x} onClick={() => setQ(x)} style={{ border: "1px solid var(--cream-line)", background: "var(--white)", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, color: "var(--ink)", cursor: "pointer" }}>{x}</button>)}</div></div>
@@ -4887,13 +5216,24 @@ function PayoutAccountCard({ identity, toast }) {
   const email = (identity && identity.email) || "";
   const cur = bankFor(email) || {};
   const [name, setName] = useState(cur.bankAcctName || ""); const [no, setNo] = useState(cur.bankAcctNo || ""); const [bk, setBk] = useState(cur.bankName || NG_BANKS[0][0]);
-  const save = () => { if (!name.trim() || no.length < 10) { toast("Enter the account name and 10-digit number", "danger"); return; } bankSet(email, { bankName: bk, bankAcctName: name, bankAcctNo: no }); toast("Payout account saved", "success"); };
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    if (!name.trim() || no.length < 10) { toast("Enter the account name and 10-digit number", "danger"); return; }
+    setBusy(true);
+    const r = await createSubaccount({ name, bankName: bk, acctNo: no, email });
+    setBusy(false);
+    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code }); toast("Payout account verified and saved. Rent will settle directly to you.", "success"); return; }
+    if (r && r.configured && !r.ok) { toast(r.error || "Paystack could not verify that account", "danger"); return; }
+    bankSet(email, { bankName: bk, bankAcctName: name, bankAcctNo: no });
+    toast("Payout account saved", "success");
+  };
   return <PmCard>
     <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#EAF2FE", display: "grid", placeItems: "center" }}><Banknote size={18} color="#3B82F6" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Payout account</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Where your rent and earnings settle</div></div></div>
     <div style={{ display: "grid", gap: 10 }}>
       <PmField label="Account name" value={name} onChange={setName} placeholder="Account holder name" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2"><PmField label="Account number" value={no} onChange={v => setNo(v.replace(/[^0-9]/g, "").slice(0, 10))} placeholder="10-digit NUBAN" /><PmSelect label="Bank" value={bk} onChange={setBk} options={NG_BANKS.map(x => x[0])} /></div>
-      <div><PmBtn kind="gold" onClick={save}>Save payout account</PmBtn></div>
+      <div><PmBtn kind="gold" onClick={save} disabled={busy}>{busy ? "Verifying…" : "Save payout account"}</PmBtn></div>
+      <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>Girard verifies this account with Paystack and settles rent to it directly. Girard's 5% administrative fee is routed automatically in the same transaction.</div>
     </div>
   </PmCard>;
 }
@@ -4913,7 +5253,7 @@ function PrivacyScreen({ identity, toast }) {
   return <div>
     <H2 title="Data & privacy" sub="How Girard handles your data, and your rights under the NDPA" />
     {(identity.role === "owner" || identity.role === "agent") && <div style={{ marginBottom: 16 }}><PayoutAccountCard identity={identity} toast={toast} /></div>}
-    <div style={{ marginBottom: 16 }}><BlockedUsersCard toast={toast} /></div>
+    {identity.role === "admin" && <div style={{ marginBottom: 16 }}><BlockedUsersCard toast={toast} /></div>}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
       <PmCard><div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#EAF2FE", display: "grid", placeItems: "center" }}><Download size={18} color="#3B82F6" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Export my data</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Download a copy of your data</div></div></div><PmBtn kind="navy" icon={Download} onClick={exportData}>Download my data</PmBtn></PmCard>
       <PmCard><div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#FDECEC", display: "grid", placeItems: "center" }}><Trash2 size={18} color="#D0453B" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Delete my data</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Erase your data from this device</div></div></div><PmBtn kind="ghost" icon={Trash2} onClick={deleteData}>Request erasure</PmBtn></PmCard>
