@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.3</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.5</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1484,8 +1484,15 @@ function AiNote({ style, extra }) {
 function isGirardManaged(p) { return !!(p && p.girardManaged); }
 function adminFeeOf(p) { return (p && p.uploadedByGirard) ? 0 : Math.round((p.rent || 0) * (GIRARD_FEE_PCT / 100)); }
 // Split only when Girard takes its 5% AND the rent settles to the landlord direct.
-function splitAcctOf(p) { return (p && !p.uploadedByGirard && !p.girardManaged && p.subaccount) ? p.subaccount : null; }
-function splitCodeOf(p) { return (p && !p.uploadedByGirard && !p.girardManaged && p.split_code) ? p.split_code : null; }
+function splitBankOf(p) {
+  if (!p || p.uploadedByGirard || p.girardManaged) return null;      // Girard keeps these in full
+  const live = p.ownerEmail ? bankFor(p.ownerEmail) : null;          // current payout account wins
+  if (live && (live.split_code || live.subaccount)) return live;
+  if (p.split_code || p.subaccount) return { split_code: p.split_code, subaccount: p.subaccount };
+  return null;
+}
+function splitAcctOf(p) { const b = splitBankOf(p); return (b && b.subaccount) || null; }
+function splitCodeOf(p) { const b = splitBankOf(p); return (b && b.split_code) || null; }
 const PM_SEEDSTATUS = ["Available", "Leased", "Pending Verification", "Available", "Leased", "Available"];
 function seedProperties() {
   return Array.from({ length: 30 }).map((_, i) => {
@@ -1671,6 +1678,40 @@ function CStat({ icon: Icon, label, value, sub, c = "#3B82F6", bg = "#EAF2FE" })
 const H2 = ({ title, sub, right }) => <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 20 }}><div><h1 className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--ink)", letterSpacing: -.3 }}>{title}</h1>{sub && <div style={{ color: "var(--muted)", fontSize: 14, marginTop: 3 }}>{sub}</div>}</div>{right}</div>;
 
 /* ---------- OWNER DASHBOARD ---------- */
+function TestTenancyCard({ st, setSt, identity, toast }) {
+  const banks = bankLoad();
+  const landlords = Object.keys(banks).filter(k => banks[k] && (banks[k].subaccount || banks[k].split_code));
+  const [who, setWho] = useState(landlords[0] || "");
+  const make = () => {
+    const b = banks[who];
+    if (!b) { toast("Pick a landlord who has a payout account registered", "danger"); return; }
+    const rent = 100000;
+    const fee = Math.round(rent * (GIRARD_FEE_PCT / 100));
+    const id = "PR-TEST" + Date.now().toString().slice(-5);
+    const prop = {
+      id, title: "TEST Tenancy \u00b7 2-Bed Apartment", area: PM_AREAS[0], type: "Apartment", beds: 2,
+      rent, status: "Leased", verified: true, letType: "Long let", term: "1 year",
+      photos: [], amenities: ["Parking", "Security"], address: "Test listing, " + PM_AREAS[0], hue: 208,
+      girardManaged: false, uploadedByGirard: false,
+      bankName: b.bankName || "", bankAcctName: b.bankAcctName || "", bankAcctNo: b.bankAcctNo || "",
+      subaccount: b.subaccount || "", split_code: b.split_code || "", ownerEmail: who,
+      description: "Created to test the 5% split. Safe to delete."
+    };
+    const first = (identity.firstName || identity.name || "Test").split(" ")[0];
+    const inv = { id: "INV-TEST" + Date.now().toString().slice(-5), property: id, tenant: first + " (test tenancy)", amount: rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
+    setSt({ ...st, properties: [prop, ...st.properties], invoices: [inv, ...st.invoices] });
+    toast("Test tenancy created. Open Rent & invoices and pay it.", "success");
+  };
+  return <PmCard style={{ marginTop: 16, borderLeft: "3px solid var(--gold)" }}>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Test the 5% split</div>
+    <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, marginBottom: 12 }}>Creates one small test tenancy ({money(100000)} rent, {money(5000)} fee) owned by a landlord who has registered a payout account, so you can pay it and watch Paystack split 5% to Girard and 95% to them. Use this in Paystack test mode.</div>
+    {landlords.length === 0 ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>No landlord has registered a payout account on this device yet. Sign up as a landlord with a bank account first, then come back.</div>
+      : <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div style={{ flex: 1, minWidth: 220 }}><PmSelect label="Landlord" value={who} onChange={setWho} options={landlords} /></div>
+        <PmBtn kind="gold" icon={Sparkles} onClick={make}>Create test tenancy</PmBtn>
+      </div>}
+  </PmCard>;
+}
 function OwnerDash({ st, identity }) {
   const leased = st.properties.filter(p => p.status === "Leased").length;
   const occ = Math.round(leased / st.properties.length * 100);
@@ -1768,7 +1809,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     const bank = bankFor(identity && identity.email) || {};
     if (!uploadedByGirard && !bank.bankAcctNo) { toast("Register a settlement bank account on your profile (Data & privacy) first", "danger"); return; }
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, bankName: bank.bankName || "", bankAcctName: bank.bankAcctName || "", bankAcctNo: bank.bankAcctNo || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", description: desc };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, bankName: bank.bankName || "", bankAcctName: bank.bankAcctName || "", bankAcctNo: bank.bankAcctNo || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", ownerEmail: (identity && identity.email) || "", description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -2245,7 +2286,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const toast = (msg, tone) => { const id = Math.random(); setToasts(x => [...x, { id, msg, tone }]); setTimeout(() => setToasts(x => x.filter(t => t.id !== id)), 3000); };
   const screen = () => {
     const P = { st, setSt, identity, toast, toAi: (data) => { setAiSeed(data); setView("ai"); } };
-    if (view === "dash") return <OwnerDash st={st} identity={identity} />;
+    if (view === "dash") return <><OwnerDash st={st} identity={identity} />{isSuperAdmin(identity.email) && <TestTenancyCard st={st} setSt={setSt} identity={identity} toast={toast} />}</>;
     if (view === "saved") return <SavedProperties {...P} go={setView} />;
     if (view === "props") return <PropertiesScreen {...P} />;
     if (view === "add") return <AddPropertyScreen {...P} />;
