@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.9</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.0</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -968,7 +968,30 @@ async function createSubaccount({ name, bankName, acctNo, email }) {
     return await r.json();
   } catch (e) { return { configured: false }; }
 }
-function bankSet(email, bank) { try { const m = bankLoad(); m[(email || "").toLowerCase().trim()] = bank; localStorage.setItem("girard_bank_v1", JSON.stringify(m)); } catch (e) {} }
+function bankSet(email, bank) {
+  const key = (email || "").toLowerCase().trim();
+  try { const m = bankLoad(); m[key] = bank; localStorage.setItem("girard_bank_v1", JSON.stringify(m)); } catch (e) {}
+  if (supabase) {
+    supabase.from("banks").upsert([{ email: key, bank_name: bank.bankName || "", acct_name: bank.bankAcctName || "", acct_no: bank.bankAcctNo || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", updated_at: new Date().toISOString() }], { onConflict: "email" }).then(() => {}, () => {});
+    if (bank.subaccount || bank.split_code) {
+      // Keep this landlord's listings on their current payout account, so rent
+      // still splits correctly if they change their bank details later.
+      supabase.from("properties").update({ subaccount: bank.subaccount || "", split_code: bank.split_code || "" }).eq("owner_email", key).then(() => {}, () => {});
+    }
+  }
+}
+// Pull the signed-in user's own payout account back from the database so it follows
+// them to any device. RLS means they can only ever read their own row.
+async function bankSync(email) {
+  if (!supabase || !email) return null;
+  try {
+    const { data, error } = await supabase.from("banks").select("*").eq("email", email.toLowerCase().trim()).maybeSingle();
+    if (error || !data) return null;
+    const bank = { bankName: data.bank_name || "", bankAcctName: data.acct_name || "", bankAcctNo: data.acct_no || "", subaccount: data.subaccount || "", split_code: data.split_code || "" };
+    try { const m = bankLoad(); m[email.toLowerCase().trim()] = bank; localStorage.setItem("girard_bank_v1", JSON.stringify(m)); } catch (e) {}
+    return bank;
+  } catch (e) { return null; }
+}
 const FOUNDERS = {
   "olamideokulaja@girardpropertylimited.com": { name: "Dr. Olamide Okulaja", firstName: "Olamide", initials: "OO", avatar: "data:image/jpeg;base64,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", title: "Founder & Owner", greeting: "Welcome back", allAccess: true },
   "founder@girardpropertylimited.com": { name: "Girard Founder", title: "Founder & Administrator", greeting: "Welcome back", allAccess: true },
@@ -1506,7 +1529,7 @@ function seedProperties() {
       rent: baseRent(area, beds), status, verified: status !== "Pending Verification",
       amenities: am.length ? am : ["Parking", "Security"], address: (10 + i) + " " + PM_STREETS[i % 6] + ", " + area,
       letType: i % 5 === 0 ? "Short let" : "Long let", term: i % 5 === 0 ? null : (i % 2 === 0 ? "2 years" : "1 year"),
-      girardManaged: i % 2 === 0, uploadedByGirard: i % 3 !== 0, bankName: NG_BANKS[i % NG_BANKS.length][0], bankAcctName: "Owner " + (1000 + i), bankAcctNo: String(2000000000 + i * 1234567).slice(0, 10), hue: 200 + (i * 7) % 30
+      girardManaged: i % 2 === 0, uploadedByGirard: i % 3 !== 0, hue: 200 + (i * 7) % 30
     };
   });
 }
@@ -1543,6 +1566,50 @@ function pmSeed() {
 const PM_KEY = "girard_pm_v3";
 function pmLoad() { try { const r = localStorage.getItem(PM_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = pmSeed(); try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 function pmSave(s) { try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} }
+
+/* ---- Shared property + invoice storage --------------------------------
+   The browser copy is a fast local cache; Supabase is the source of truth,
+   so every device sees the same listings and invoices. Note that no bank
+   account number is stored on a property: only the Paystack subaccount and
+   split code, which is all a rent payment needs.                         */
+function propToRow(p) {
+  const { id, ownerEmail, status, girardManaged, uploadedByGirard, subaccount, split_code, bankAcctNo, bankAcctName, bankName, ...rest } = p;
+  return { id, owner_email: (ownerEmail || "").toLowerCase(), status: status || "Available", girard_managed: !!girardManaged, uploaded_by_girard: !!uploadedByGirard, subaccount: subaccount || "", split_code: split_code || "", data: rest, updated_at: new Date().toISOString() };
+}
+function rowToProp(r) {
+  return { ...(r.data || {}), id: r.id, ownerEmail: r.owner_email || "", status: r.status, girardManaged: !!r.girard_managed, uploadedByGirard: !!r.uploaded_by_girard, subaccount: r.subaccount || "", split_code: r.split_code || "" };
+}
+function invToRow(i) {
+  const { id, property, tenant, amount, adminFee, status, ...rest } = i;
+  return { id, property_id: property, tenant, amount: Math.round(amount || 0), admin_fee: Math.round(adminFee || 0), status: status || "Pending", data: rest, updated_at: new Date().toISOString() };
+}
+function rowToInv(r) {
+  return { ...(r.data || {}), id: r.id, property: r.property_id, tenant: r.tenant, amount: Number(r.amount || 0), adminFee: Number(r.admin_fee || 0), status: r.status };
+}
+async function propUpsert(p) { if (!supabase) return; try { await supabase.from("properties").upsert([propToRow(p)], { onConflict: "id" }); } catch (e) {} }
+async function invUpsert(i) { if (!supabase) return; try { await supabase.from("invoices").upsert([invToRow(i)], { onConflict: "id" }); } catch (e) {} }
+// Returns null when Supabase is not configured or has nothing yet, so the app
+// quietly falls back to its local copy instead of showing an empty workspace.
+// Push anything that changed to the database, so other devices see it.
+function syncShared(prev, next) {
+  if (!supabase) return;
+  try {
+    const pm = {}; (prev.properties || []).forEach(x => { pm[x.id] = JSON.stringify(x); });
+    (next.properties || []).forEach(x => { if (pm[x.id] !== JSON.stringify(x)) propUpsert(x); });
+    const im = {}; (prev.invoices || []).forEach(x => { im[x.id] = JSON.stringify(x); });
+    (next.invoices || []).forEach(x => { if (im[x.id] !== JSON.stringify(x)) invUpsert(x); });
+  } catch (e) {}
+}
+async function sharedLoad() {
+  if (!supabase) return null;
+  try {
+    const [pr, ir] = await Promise.all([supabase.from("properties").select("*"), supabase.from("invoices").select("*")]);
+    const props = (!pr.error && pr.data && pr.data.length) ? pr.data.map(rowToProp) : null;
+    const invs = (!ir.error && ir.data && ir.data.length) ? ir.data.map(rowToInv) : null;
+    if (!props && !invs) return null;
+    return { properties: props, invoices: invs };
+  } catch (e) { return null; }
+}
 
 const AI_NAME = "Ada";
 let CUR = "₦"; try { CUR = localStorage.getItem("girard_cur") || "₦"; } catch (e) {}
@@ -1700,7 +1767,7 @@ function TestTenancyCard({ st, setSt, identity, toast }) {
     bankSet(email, bank);
     const rent = 100000, fee = Math.round(rent * (GIRARD_FEE_PCT / 100));
     const id = "PR-TEST" + Date.now().toString().slice(-5);
-    const prop = { id, title: "TEST Tenancy \u00b7 2-Bed Apartment", area: PM_AREAS[0], type: "Apartment", beds: 2, rent, status: "Leased", verified: true, letType: "Long let", term: "1 year", photos: [], amenities: ["Parking", "Security"], address: "Test listing, " + PM_AREAS[0], hue: 208, girardManaged: false, uploadedByGirard: false, ...bank, ownerEmail: email, description: "Created to test the 5% split. Safe to delete." };
+    const prop = { id, title: "TEST Tenancy \u00b7 2-Bed Apartment", area: PM_AREAS[0], type: "Apartment", beds: 2, rent, status: "Leased", verified: true, letType: "Long let", term: "1 year", photos: [], amenities: ["Parking", "Security"], address: "Test listing, " + PM_AREAS[0], hue: 208, girardManaged: false, uploadedByGirard: false, subaccount: bank.subaccount, split_code: bank.split_code, ownerEmail: email, description: "Created to test the 5% split. Safe to delete." };
     const first = ((identity.firstName || identity.name || "Test") + "").split(" ")[0];
     const inv = { id: "INV-TEST" + Date.now().toString().slice(-5), property: id, tenant: first + " (test tenancy)", amount: rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
     setSt({ ...st, properties: [prop, ...st.properties], invoices: [inv, ...st.invoices] });
@@ -1824,7 +1891,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     const bank = bankFor(identity && identity.email) || {};
     if (!uploadedByGirard && !bank.bankAcctNo) { toast("Register a settlement bank account on your profile (Data & privacy) first", "danger"); return; }
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, bankName: bank.bankName || "", bankAcctName: bank.bankAcctName || "", bankAcctNo: bank.bankAcctNo || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", ownerEmail: (identity && identity.email) || "", description: desc };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, subaccount: bank.subaccount || "", split_code: bank.split_code || "", ownerEmail: (identity && identity.email) || "", description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -2122,7 +2189,7 @@ function LeaseModal({ st, setSt, app, onClose, toast }) {
         {signed[key] ? <span style={{ color: "#1F9D57", fontWeight: 700, fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}><CheckCircle2 size={16} /> Signed</span> : <PmBtn size="sm" icon={PenLine} onClick={() => setSigned(s => ({ ...s, [key]: true }))}>{key === "owner" ? "Countersign" : "e-Sign"}</PmBtn>}
       </div>)}
     </div>
-    {(() => { const fee = adminFeeOf(prop); const rentTo = prop.girardManaged ? "Girard managed account" : ((prop.bankName || "landlord account") + (prop.bankAcctNo ? " ••••" + String(prop.bankAcctNo).slice(-4) : "")); return <div style={{ marginTop: 16, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Settlement before closing</div><div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "4px 0" }}><span style={{ color: "var(--muted)" }}>Advance rent (annual) → {rentTo}</span><b style={{ color: "var(--ink)" }}>{money(prop.rent)}</b></div>{fee > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "4px 0" }}><span style={{ color: "var(--muted)" }}>Girard administrative fee (5%) → Girard account</span><b style={{ color: "var(--ink)" }}>{money(fee)}</b></div>}<div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", borderTop: "1px solid var(--cream-line)", marginTop: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)" }}>Total before closing</span><b className="serif" style={{ fontSize: 17, color: "var(--ink)" }}>{money(prop.rent + fee)}</b></div><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.5 }}>{fee > 0 ? ("The 5% administrative fee is settled to Girard. Rent settles to " + rentTo + ".") : "Girard-uploaded property: no administrative fee applies."}</div></div>; })()}
+    {(() => { const fee = adminFeeOf(prop); const ob = prop.ownerEmail ? bankFor(prop.ownerEmail) : null; const rentTo = prop.girardManaged ? "Girard managed account" : (ob && ob.bankAcctNo ? (ob.bankName || "landlord account") + " ••••" + String(ob.bankAcctNo).slice(-4) : "the landlord’s registered account"); return <div style={{ marginTop: 16, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Settlement before closing</div><div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "4px 0" }}><span style={{ color: "var(--muted)" }}>Advance rent (annual) → {rentTo}</span><b style={{ color: "var(--ink)" }}>{money(prop.rent)}</b></div>{fee > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "4px 0" }}><span style={{ color: "var(--muted)" }}>Girard administrative fee (5%) → Girard account</span><b style={{ color: "var(--ink)" }}>{money(fee)}</b></div>}<div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", borderTop: "1px solid var(--cream-line)", marginTop: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)" }}>Total before closing</span><b className="serif" style={{ fontSize: 17, color: "var(--ink)" }}>{money(prop.rent + fee)}</b></div><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.5 }}>{fee > 0 ? ("The 5% administrative fee is settled to Girard. Rent settles to " + rentTo + ".") : "Girard-uploaded property: no administrative fee applies."}</div></div>; })()}
     <PmBtn kind="gold" icon={CheckCircle2} disabled={!both} style={{ marginTop: 16 }} onClick={finalize}>Finalise and store lease</PmBtn>
   </PmModal>;
 }
@@ -2297,7 +2364,19 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const [nav2Open, setNav2Open] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
-  const setSt = (next) => { setStRaw(next); pmSave(next); };
+  const setSt = (next) => { syncShared(st, next); setStRaw(next); pmSave(next); };
+  // Hydrate shared listings/invoices, and this user's own payout account, so the
+  // same data appears on every device they sign in from.
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      if (identity && identity.email) await bankSync(identity.email);
+      const shared = await sharedLoad();
+      if (dead || !shared) return;
+      setStRaw(prev => ({ ...prev, ...(shared.properties ? { properties: shared.properties } : {}), ...(shared.invoices ? { invoices: shared.invoices } : {}) }));
+    })();
+    return () => { dead = true; };
+  }, [identity && identity.email]);
   const toast = (msg, tone) => { const id = Math.random(); setToasts(x => [...x, { id, msg, tone }]); setTimeout(() => setToasts(x => x.filter(t => t.id !== id)), 3000); };
   const screen = () => {
     const P = { st, setSt, identity, toast, toAi: (data) => { setAiSeed(data); setView("ai"); } };
