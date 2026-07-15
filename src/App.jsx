@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.0</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.1</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -960,6 +960,8 @@ function isSuperAdmin(email) { const e = (email || "").toLowerCase().trim(); ret
 function bankLoad() { try { return JSON.parse(localStorage.getItem("girard_bank_v1") || "{}"); } catch (e) { return {}; } }
 function bankFor(email) { const m = bankLoad(); return m[(email || "").toLowerCase().trim()] || null; }
 const GIRARD_FEE_PCT = 5;
+// True once real Paystack keys are in use. Guards test-only tooling.
+function isLiveKeys() { return String(PAYSTACK_KEY || "").startsWith("pk_live"); }
 async function createSubaccount({ name, bankName, acctNo, email }) {
   const code = (NG_BANKS.find(x => x[0] === bankName) || [])[1];
   if (!code) return { configured: true, ok: false, error: "Unknown bank" };
@@ -1773,6 +1775,12 @@ function TestTenancyCard({ st, setSt, identity, toast }) {
     setSt({ ...st, properties: [prop, ...st.properties], invoices: [inv, ...st.invoices] });
     setRes({ bad: false, sub: r.subaccount_code, split: r.split_code, who: r.account_name || name });
   };
+  if (isLiveKeys()) return <PmCard style={{ marginTop: 16, borderLeft: "3px solid #D0453B" }}>
+    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><AlertTriangle size={18} color="#D0453B" style={{ flexShrink: 0, marginTop: 2 }} /><div>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Split testing is off: you are on live keys</div>
+      <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>This tool creates a real Paystack subaccount and charges a real card {money(105000)}. It is disabled while live keys are in use. To test again, put your <b>test</b> keys back in Vercel and redeploy.</div>
+    </div></div>
+  </PmCard>;
   return <PmCard style={{ marginTop: 16, borderLeft: "3px solid var(--gold)" }}>
     <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Test the 5% split</div>
     <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, marginBottom: 14 }}>Enter any real bank account (it is only verified, never charged). Girard creates a Paystack subaccount and split group for it, then makes one small test tenancy: {money(100000)} rent plus {money(5000)} fee. Then open Rent &amp; invoices and pay it. Use this with Paystack in test mode.</div>
