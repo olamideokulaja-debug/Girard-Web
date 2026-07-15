@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.1</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.2</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1602,6 +1602,31 @@ function syncShared(prev, next) {
     (next.invoices || []).forEach(x => { if (im[x.id] !== JSON.stringify(x)) invUpsert(x); });
   } catch (e) {}
 }
+// Sample data shipped with the app, plus anything created by the split tester.
+// Real listings start at PR-2000, so they are never matched here.
+function isDemoProp(p) { return !!p && (p.id === "PR-BOURDILLON" || /^PR-10\d\d$/.test(p.id) || /^PR-TEST/.test(p.id)); }
+function isDemoInv(i) { return !!i && (/^INV-900\d$/.test(i.id) || /^INV-TEST/.test(i.id)); }
+function isDemoApp(a) { return !!a && /^AP-0\d$/.test(a.id); }
+async function demoPurge(st) {
+  const props = (st.properties || []).filter(isDemoProp).map(x => x.id);
+  const invs = (st.invoices || []).filter(isDemoInv).map(x => x.id);
+  if (supabase) {
+    try {
+      if (props.length) await supabase.from("properties").delete().in("id", props);
+      if (invs.length) await supabase.from("invoices").delete().in("id", invs);
+      // sweep any sample rows written from another device too
+      await supabase.from("properties").delete().or("id.eq.PR-BOURDILLON,id.like.PR-10%,id.like.PR-TEST%");
+      await supabase.from("invoices").delete().or("id.like.INV-900%,id.like.INV-TEST%");
+    } catch (e) {}
+  }
+  return {
+    ...st,
+    properties: (st.properties || []).filter(x => !isDemoProp(x)),
+    invoices: (st.invoices || []).filter(x => !isDemoInv(x)),
+    applications: (st.applications || []).filter(x => !isDemoApp(x)),
+    leases: []
+  };
+}
 async function sharedLoad() {
   if (!supabase) return null;
   try {
@@ -1747,6 +1772,31 @@ function CStat({ icon: Icon, label, value, sub, c = "#3B82F6", bg = "#EAF2FE" })
 const H2 = ({ title, sub, right }) => <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 20 }}><div><h1 className="serif" style={{ fontSize: 26, fontWeight: 600, color: "var(--ink)", letterSpacing: -.3 }}>{title}</h1>{sub && <div style={{ color: "var(--muted)", fontSize: 14, marginTop: 3 }}>{sub}</div>}</div>{right}</div>;
 
 /* ---------- OWNER DASHBOARD ---------- */
+function DemoDataCard({ st, setSt, toast }) {
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const props = (st.properties || []).filter(isDemoProp).length;
+  const invs = (st.invoices || []).filter(isDemoInv).length;
+  const apps = (st.applications || []).filter(isDemoApp).length;
+  const total = props + invs + apps;
+  const run = async () => {
+    if (confirm.trim().toUpperCase() !== "CLEAR") { toast("Type CLEAR to confirm", "danger"); return; }
+    setBusy(true);
+    const next = await demoPurge(st);
+    setSt(next); setBusy(false); setConfirm("");
+    toast("Sample data removed. Your workspace now shows real listings only.", "success");
+  };
+  return <PmCard style={{ marginTop: 16 }}>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Sample data</div>
+    {total === 0 ? <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>No sample data left. Everything here is real.</div> : <>
+      <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, marginBottom: 12 }}>Girard ships with sample listings so the app is not empty while you set it up. Before real customers use it, clear them out. This removes <b>{props} sample {props === 1 ? "property" : "properties"}</b>, <b>{invs} sample {invs === 1 ? "invoice" : "invoices"}</b> and <b>{apps} sample {apps === 1 ? "application" : "applications"}</b>, on this device and in the database. Real listings (and anything you or a landlord added) are not touched. This cannot be undone.</div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div style={{ flex: 1, minWidth: 200 }}><PmField label={"Type CLEAR to confirm"} value={confirm} onChange={setConfirm} placeholder="CLEAR" /></div>
+        <PmBtn kind="ghost" icon={Trash2} onClick={run} disabled={busy}>{busy ? "Clearing\u2026" : "Clear sample data"}</PmBtn>
+      </div>
+    </>}
+  </PmCard>;
+}
 function TestTenancyCard({ st, setSt, identity, toast }) {
   const [name, setName] = useState("");
   const [no, setNo] = useState("");
@@ -2388,7 +2438,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const toast = (msg, tone) => { const id = Math.random(); setToasts(x => [...x, { id, msg, tone }]); setTimeout(() => setToasts(x => x.filter(t => t.id !== id)), 3000); };
   const screen = () => {
     const P = { st, setSt, identity, toast, toAi: (data) => { setAiSeed(data); setView("ai"); } };
-    if (view === "dash") return <><OwnerDash st={st} identity={identity} />{isSuperAdmin(identity.email) && <TestTenancyCard st={st} setSt={setSt} identity={identity} toast={toast} />}</>;
+    if (view === "dash") return <><OwnerDash st={st} identity={identity} />{isSuperAdmin(identity.email) && <><TestTenancyCard st={st} setSt={setSt} identity={identity} toast={toast} /><DemoDataCard st={st} setSt={setSt} toast={toast} /></>}</>;
     if (view === "saved") return <SavedProperties {...P} go={setView} />;
     if (view === "props") return <PropertiesScreen {...P} />;
     if (view === "add") return <AddPropertyScreen {...P} />;
@@ -3590,7 +3640,12 @@ function BlockedUsersCard({ toast }) {
   </PmCard>;
 }
 function PublicListings({ onSignIn }) {
-  const all = (() => { try { return pmLoad().properties || []; } catch (e) { return []; } })();
+  const [all, setAll] = useState(() => { try { return pmLoad().properties || []; } catch (e) { return []; } });
+  useEffect(() => {
+    let dead = false;
+    (async () => { const shared = await sharedLoad(); if (!dead && shared && shared.properties) setAll(shared.properties); })();
+    return () => { dead = true; };
+  }, []);
   const avail = all.filter(p => p.status === "Available" || p.featured).slice(0, 9);
   const [lead, setLead] = useState(null);
   return <section id="listings" style={{ background: "var(--ivory)", padding: "88px 0" }}>
