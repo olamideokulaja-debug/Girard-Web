@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.8</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 6.9</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1715,7 +1715,7 @@ function TestTenancyCard({ st, setSt, identity, toast }) {
         <PmField label="Account number" value={no} onChange={v => setNo(v.replace(/[^0-9]/g, "").slice(0, 10))} placeholder="10-digit NUBAN" />
         <PmSelect label="Bank" value={bk} onChange={setBk} options={NG_BANKS.map(x => x[0])} />
       </div>
-      <div><PmBtn kind="gold" icon={Sparkles} onClick={run} disabled={busy}>{busy ? "Talking to Paystack\u2026" : "Create test landlord & tenancy"}</PmBtn></div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}><PmBtn kind="gold" icon={Sparkles} onClick={run} disabled={busy}>{busy ? "Talking to Paystack\u2026" : "Create test landlord & tenancy"}</PmBtn><a href="#" onClick={e => { e.preventDefault(); setName("Test Landlord"); setNo("0000000000"); setBk("Zenith Bank"); }} style={{ color: "var(--gold-2)", fontSize: 12.5, fontWeight: 600 }}>Use Paystack's test account</a></div>
     </div>
     {res && res.bad && <div style={{ marginTop: 12, background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.25)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>{res.msg}</div>}
     {res && !res.bad && <div style={{ marginTop: 12, background: "rgba(31,157,87,.08)", border: "1px solid rgba(31,157,87,.3)", borderRadius: 8, padding: "12px 14px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.7 }}>

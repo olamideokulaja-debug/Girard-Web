@@ -29,16 +29,22 @@ export default async function handler(req, res) {
   }
 
   const hdr = { Authorization: "Bearer " + KEY, "Content-Type": "application/json" };
+  // Paystack limits LIVE bank resolves to 3/day while you are on test keys. The resolve is a
+  // safety net for real money, so run it in live mode only and skip it in test mode.
+  const isTest = String(KEY).startsWith("sk_test");
 
   try {
-    // Resolve the account first so we never create a subaccount against a wrong number.
-    const vr = await fetch("https://api.paystack.co/bank/resolve?account_number=" + encodeURIComponent(account_number) + "&bank_code=" + encodeURIComponent(settlement_bank), { headers: hdr });
-    const vd = await vr.json();
-    if (!vd || !vd.status) {
-      res.status(200).json({ configured: true, ok: false, error: (vd && vd.message) || "Could not resolve that account number with the selected bank" });
-      return;
+    let resolvedName = business_name;
+    if (!isTest) {
+      // Resolve the account first so we never create a subaccount against a wrong number.
+      const vr = await fetch("https://api.paystack.co/bank/resolve?account_number=" + encodeURIComponent(account_number) + "&bank_code=" + encodeURIComponent(settlement_bank), { headers: hdr });
+      const vd = await vr.json();
+      if (!vd || !vd.status) {
+        res.status(200).json({ configured: true, ok: false, error: (vd && vd.message) || "Could not resolve that account number with the selected bank" });
+        return;
+      }
+      resolvedName = (vd.data && vd.data.account_name) || business_name;
     }
-    const resolvedName = (vd.data && vd.data.account_name) || business_name;
 
     const cr = await fetch("https://api.paystack.co/subaccount", {
       method: "POST", headers: hdr,
@@ -54,7 +60,9 @@ export default async function handler(req, res) {
     });
     const cd = await cr.json();
     if (!cd || !cd.status) {
-      res.status(200).json({ configured: true, ok: false, error: (cd && cd.message) || "Paystack could not create the subaccount" });
+      let msg = (cd && cd.message) || "Paystack could not create the subaccount";
+      if (isTest && /resolve|limit|exceeded/i.test(msg)) msg += " \u2014 in test mode use Paystack's test account: Zenith Bank, account number 0000000000.";
+      res.status(200).json({ configured: true, ok: false, error: msg });
       return;
     }
     const subaccount_code = cd.data && cd.data.subaccount_code;
@@ -82,7 +90,7 @@ export default async function handler(req, res) {
     } catch (e) { /* subaccount alone is enough to split; split_code is a bonus */ }
 
     res.status(200).json({
-      configured: true, ok: true,
+      configured: true, ok: true, test_mode: isTest,
       subaccount_code,
       split_code,
       account_name: resolvedName
