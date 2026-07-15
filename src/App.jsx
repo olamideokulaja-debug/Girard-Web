@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.7</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.9</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -3123,11 +3123,19 @@ function ReportsScreen({ identity, toast }) {
   useEffect(() => { let on = true; paymentsFetch().then(x => { if (on) setPays(x); }); jobsFetch().then(x => { if (on) setJobs(x); }); return () => { on = false; }; }, []);
   const leased = pm.properties.filter(p => p.status === "Leased").length;
   const rentRoll = pm.properties.reduce((s, p) => s + (p.rent || 0), 0);
-  const income = [{ m: "Feb", v: 58 }, { m: "Mar", v: 64 }, { m: "Apr", v: 61 }, { m: "May", v: 72 }, { m: "Jun", v: 78 }, { m: "Jul", v: 83 }];
+  const MN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const income = (() => {
+    const paid = (pm.invoices || []).filter(i => i.status === "Paid"); const now = new Date(); const out = [];
+    for (let k = 5; k >= 0; k--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - k, 1); const tag = d.toISOString().slice(0, 7);
+      out.push({ m: MN[d.getMonth()], v: Math.round(paid.filter(i => String(i.paidAt || i.due || "").slice(0, 7) === tag).reduce((t, i) => t + (i.amount || 0), 0) / 1e6) });
+    }
+    return out;
+  })();
   const funnel = CRM_COLS.map((c, i) => ({ label: c, v: crm.cards.filter(x => x.stage >= i).length }));
   const appStatus = ["Applied", "More Info Required", "Approved", "Rejected"].map((s, i) => ({ name: s, v: pm.applications.filter(a => a.status === s).length, c: ["#2F6FB0", "#E0A106", "#1F9D57", "#D0453B"][i] }));
   const appData = appStatus.filter(a => a.v > 0);
-  const swapStage = [{ m: "Neg", v: sw.deals.filter(d => d.stage < 6).length }, { m: "Escrow", v: sw.deals.filter(d => d.stage >= 6 && d.stage < 11).length }, { m: "Done", v: 4 }];
+  const swapStage = [{ m: "Neg", v: sw.deals.filter(d => d.stage < 6).length }, { m: "Escrow", v: sw.deals.filter(d => d.stage >= 6 && d.stage < 11).length }, { m: "Done", v: sw.deals.filter(d => d.stage >= 11).length }];
   const byArea = Object.entries(pm.properties.reduce((o, p) => { o[p.area] = (o[p.area] || 0) + 1; return o; }, {})).map(([m, v]) => ({ m, v })).slice(0, 7);
   const _now = new Date(); const _months = []; for (let i = 5; i >= 0; i--) { const d = new Date(_now.getFullYear(), _now.getMonth() - i, 1); _months.push({ key: d.getFullYear() + "-" + d.getMonth(), m: d.toLocaleDateString(undefined, { month: "short" }) }); }
   const _sm = (dd, key) => { const dt = new Date(dd); return !isNaN(dt) && (dt.getFullYear() + "-" + dt.getMonth() === key); };
@@ -3206,24 +3214,39 @@ const INTEL = {
 function IntelScreen() {
   const [market, setMarket] = useState("Nigeria");
   const d = INTEL[market];
-  const [ai, setAi] = useState({ loading: true });
-  const [refreshed, setRefreshed] = useState(new Date());
-  const brief = async () => {
-    setAi({ loading: true });
-    const r = await aiProxy(`Write a two-sentence residential property market briefing for ${market}: price growth ${d.kpis[0].v}, gross yield ${d.kpis[1].v}. Reference this planning highlight: ${d.planning[0]}. No preamble.`);
-    setAi({ loading: false, offline: !r.ok, text: r.ok ? r.text : `${market} residential values are up ${d.kpis[0].v} over the past year on a gross yield near ${d.kpis[1].v}, with demand steady across prime and mid-market segments. Supply is being shaped by schemes such as ${d.planning[0].toLowerCase()}, supporting a constructive medium-term outlook.` });
-    setRefreshed(new Date());
+  // Real, sourced market data written daily by /api/refresh-intel.
+  const [live, setLive] = useState({ loading: true, row: null });
+  const load = async () => {
+    setLive({ loading: true, row: null });
+    if (!supabase) { setLive({ loading: false, row: null }); return; }
+    try {
+      const { data, error } = await supabase.from("market_intel").select("*").eq("market", market).maybeSingle();
+      setLive({ loading: false, row: (error || !data) ? null : data });
+    } catch (e) { setLive({ loading: false, row: null }); }
   };
-  useEffect(() => { brief(); }, [market]);
+  useEffect(() => { load(); }, [market]);
+  const row = live.row;
+  const refreshed = row && row.updated_at ? new Date(row.updated_at) : null;
   return <div>
-    <H2 title="Market intelligence" sub={"Sold prices, yields, planning and auctions, distilled by the AI Engine"} right={<div style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 150 }}><PmSelect value={market} onChange={setMarket} options={["Nigeria", "UK", "US"]} /></div><PmBtn kind="navy" icon={Sparkles} onClick={brief}>Refresh briefing</PmBtn></div>} />
-    <div style={{ marginBottom: 16 }}><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.6, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{ai.text}</div><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8 }}>Last refreshed {refreshed.toLocaleString()}</div></AiPanel></div>
-    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-      {d.kpis.map(k => <PmStat key={k.l} icon={LineChart} label={k.l} value={k.v} tone={k.t} />)}
-    </div>
+    <H2 title="Market intelligence" sub="Published market data, gathered daily and cited" right={<div style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 150 }}><PmSelect value={market} onChange={setMarket} options={["Nigeria", "UK", "US"]} /></div><PmBtn kind="ghost" icon={Loader2} onClick={load}>Reload</PmBtn></div>} />
+    {live.loading ? <PmCard style={{ marginBottom: 16 }}><div style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--muted)", fontSize: 13.5 }}><Loader2 size={14} className="spin" /> Loading the latest published data\u2026</div></PmCard>
+      : !row ? <PmCard style={{ marginBottom: 16 }}><div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><AlertTriangle size={17} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} /><div style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6 }}><b>No briefing for {market} yet.</b> Market data is gathered from published sources by a daily job. Girard will not show an estimate in the meantime. If this persists, run <code>/api/refresh-intel</code> and check that ANTHROPIC_API_KEY and SUPABASE_SERVICE_ROLE_KEY are set.</div></div></PmCard>
+      : <>
+        <PmCard style={{ marginBottom: 16, borderLeft: "3px solid var(--gold)" }}>
+          <div style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.65, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{row.briefing}</div>
+          {row.as_at && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>Data as at {row.as_at}{refreshed ? " \u00b7 checked " + refreshed.toLocaleDateString() : ""}</div>}
+          {(row.sources || []).length > 0 && <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--cream-line)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .4, marginBottom: 6 }}>Sources</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{(row.sources || []).map((x, i) => <a key={i} href={x.url} target="_blank" rel="noreferrer" style={{ fontSize: 11.5, color: "var(--muted)", border: "1px solid var(--cream-line)", borderRadius: 999, padding: "3px 9px", textDecoration: "none" }}>{(x.title || x.url).slice(0, 46)}</a>)}</div>
+          </div>}
+        </PmCard>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+          {[["Price growth", row.price_growth, row.price_growth_note], ["Gross yield", row.gross_yield, row.gross_yield_note], ["Average price", row.avg_price, row.avg_price_note]].map(([l, v, note]) => <PmStat key={l} icon={LineChart} label={l} value={v || "\u2014"} tone={v ? undefined : "muted"} sub={v ? note : "Not published for this market"} />)}
+        </div>
+      </>}
     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Sold-price index ({d.cur}, rebased to 100)</div><MiniArea data={d.priceTrend} /></PmCard>
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Gross yields by area (%)</div><MiniBars data={d.yields} h={180} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 2 }}>Sold-price index ({d.cur}, rebased to 100)</div><div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 8 }}>Illustrative shape, not live data</div><MiniArea data={d.priceTrend} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 2 }}>Gross yields by area (%)</div><div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 8 }}>Illustrative shape, not live data</div><MiniBars data={d.yields} h={180} /></PmCard>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }} className="pm-grid3">
       {[["Planning applications", d.planning, Building2], ["Auction results", d.auctions, Gavel], ["Local plans", d.localPlans, FileText]].map(([title, items, Icon]) => (
@@ -3402,6 +3425,7 @@ function SettingsScreen({ identity, toast, onSignOut, onSwitchRole }) {
 const USR_KEY = "girard_users_v1";
 function usrLoad() {
   try { const r = localStorage.getItem(USR_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  if (isPurged()) return { users: [] };
   const s = {
     users: [
       { name: "Ada Eze", email: "ada@example.com", role: "tenant", status: "Active" },
@@ -3512,24 +3536,38 @@ function FinancialsScreen() {
 
 function SignupsScreen() {
   const usr = usrLoad();
-  const base = 1240;
-  const total = usr.users.length + base;
-  const trend = [{ m: "Feb", v: 120 }, { m: "Mar", v: 165 }, { m: "Apr", v: 190 }, { m: "May", v: 240 }, { m: "Jun", v: 300 }, { m: "Jul", v: 355 }];
+  const users = usr.users || [];
+  const total = users.length;
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  // Real sign-ups by month, where we know when they joined.
+  const trend = (() => {
+    const now = new Date(); const out = [];
+    for (let n = 5; n >= 0; n--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - n, 1);
+      const tag = d.toISOString().slice(0, 7);
+      out.push({ m: monthNames[d.getMonth()], v: users.filter(u => String(u.createdAt || u.created_at || "").slice(0, 7) === tag).length });
+    }
+    return out;
+  })();
+  const hasTrend = trend.some(x => x.v > 0);
+  const roleCount = (r) => users.filter(u => (u.role || "") === r).length;
   const byRole = [
-    { name: "Tenants", v: 620, c: "#3B82F6" },
-    { name: "Owners", v: 410, c: "#8B5CF6" },
-    { name: "Agents", v: 180, c: "#F59E0B" },
-    { name: "Investors", v: 118, c: "#10B981" }
-  ];
-  const funnel = [{ label: "Visitors", v: 8200 }, { label: "Sign-ups", v: 1330 }, { label: "Verified", v: 1120 }, { label: "Active", v: 940 }];
+    { name: "Tenants", v: roleCount("tenant"), c: "#3B82F6" },
+    { name: "Owners", v: roleCount("owner"), c: "#8B5CF6" },
+    { name: "Agents", v: roleCount("agent"), c: "#F59E0B" },
+    { name: "Investors", v: roleCount("investor"), c: "#10B981" }
+  ].filter(x => x.v > 0);
+  const thisMonth = users.filter(u => String(u.createdAt || u.created_at || "").slice(0, 7) === new Date().toISOString().slice(0, 7)).length;
+  const verified = users.filter(u => u.verified || u.kyc === "Complete").length;
+  const funnel = [{ label: "Sign-ups", v: total }, { label: "Active", v: users.filter(u => u.status === "Active").length }, { label: "Suspended", v: users.filter(u => u.status !== "Active").length }];
   const roleName = { tenant: "Tenant", owner: "Owner", agent: "Agent", investor: "Investor", admin: "Admin" };
   return <div>
     <H2 title="Sign-ups & growth" sub="New accounts and activation across all roles" right={<PmBtn kind="ghost" icon={FileText}>Export</PmBtn>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
-      <CStat icon={UserPlus} label="Total users" value={total.toLocaleString()} sub="▲ 355 this month" c="#3B82F6" bg="#EAF2FE" />
-      <CStat icon={TrendingUp} label="New this month" value="355" sub="+18% vs June" c="#10B981" bg="#E7F7F0" />
+      <CStat icon={UserPlus} label="Total users" value={total.toLocaleString()} sub={total ? thisMonth + " joined this month" : "No accounts yet"} c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={TrendingUp} label="New this month" value={String(thisMonth)} sub={thisMonth ? "New accounts" : "None yet"} c="#10B981" bg="#E7F7F0" />
       <CStat icon={CheckCircle2} label="Activation rate" value="71%" sub="Active / verified" c="#8B5CF6" bg="#F1ECFE" />
-      <CStat icon={ShieldCheck} label="Verified" value="1,120" sub="KYC complete" c="#F59E0B" bg="#FEF4E3" />
+      <CStat icon={ShieldCheck} label="Verified" value={String(verified)} sub={verified ? "KYC complete" : "None yet"} c="#F59E0B" bg="#FEF4E3" />
     </div>
     <PmCard style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>New sign-ups per month</div><span style={{ fontSize: 12, color: "var(--muted)" }}>last 6 months</span></div>
@@ -4919,7 +4957,7 @@ function InvestorOverview({ identity, go }) {
   const inv = { count: 0, invested: 0, value: 0, income: 0 };
   const [sellOpen, setSellOpen] = useState(false); const [sellName, setSellName] = useState(""); const [sellPrice, setSellPrice] = useState("");
   const toggleFav = (k) => setFavs(prev => { const n = prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]; favSave(n); return n; });
-  const DEALS = [
+  const DEALS = isPurged() ? [] : [
     { t: "Lekki Phase 1 · Buy-to-let block", tk: "₦480M", yld: "9.2%", loc: "Lekki Phase 1, Lagos", type: "Buy-to-let residential", units: "12 × 2-bed apartments", strategy: "Acquire below replacement cost, light refurbishment, then let to young professionals on annual tenancies. Girard manages letting and upkeep end to end. Hold 5 years, then refinance or sell.", risk: "Medium", returns: "9.2% gross yield · roughly 18% IRR over 5 years", note: "Title verified (C of O). Vendor motivated. Full due-diligence pack available on request." },
     { t: "Ikoyi · Serviced apartments", tk: "₦1.2B", yld: "7.8%", loc: "Ikoyi, Lagos", type: "Serviced / short-let residential", units: "20 keys, 1 & 2-bed", strategy: "Operate as branded serviced apartments with short-let and corporate lets. Higher management intensity, premium nightly rates, strong occupancy from the diplomatic and corporate market.", risk: "Medium-high", returns: "7.8% net yield · upside from occupancy and ADR growth", note: "Prime location. Existing operator in place; assignable management agreement." },
     { t: "Yaba · Student housing", tk: "₦260M", yld: "11.4%", loc: "Yaba, Lagos", type: "Purpose-built student accommodation", units: "48 studio beds", strategy: "Purpose-built student housing near tertiary campuses. Bulk lets per academic year give predictable, high-yield income with low void risk.", risk: "Medium", returns: "11.4% gross yield · stable, inflation-linked rents", note: "Strong demand-supply gap. Managed lettings via Girard reduce voids." },
@@ -4939,6 +4977,7 @@ function InvestorOverview({ identity, go }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 8, flexWrap: "wrap" }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Deal flow</div><div style={{ display: "flex", gap: 6 }}><PmBtn size="sm" kind={savedOnly ? "gold" : "ghost"} icon={Heart} onClick={() => setSavedOnly(v => !v)}>Saved ({favs.length})</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => go("intel")}>Market intel</PmBtn></div></div>
         {DEALS.filter(d => !savedOnly || favs.includes(d.t)).map(d => <div key={d.t} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "11px 0", borderTop: "1px solid var(--cream-line)" }}><div><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{d.t}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>Ticket {d.tk} · yield {d.yld}</div></div><div style={{ display: "flex", alignItems: "center", gap: 6 }}><button onClick={() => toggleFav(d.t)} title="Save" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><Heart size={17} color={favs.includes(d.t) ? "#D0453B" : "var(--muted)"} fill={favs.includes(d.t) ? "#D0453B" : "none"} /></button><PmBtn size="sm" onClick={() => setDeal(d)}>Explore</PmBtn></div></div>)}
         {savedOnly && !DEALS.some(d => favs.includes(d.t)) && <div style={{ padding: "12px 0", color: "var(--muted)", fontSize: 13 }}>No saved opportunities yet. Tap the heart on any deal to save it.</div>}
+        {DEALS.length === 0 && <div style={{ padding: "12px 0", color: "var(--muted)", fontSize: 13, lineHeight: 1.6 }}>No opportunities listed yet. Girard will publish investment opportunities here as they open.</div>}
       </PmCard>
       <PmCard>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Market snapshot</div>

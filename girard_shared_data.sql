@@ -96,3 +96,26 @@ create policy "invoices write" on public.invoices
 --   select count(*) from public.invoices;
 --   select count(*) from public.banks;
 -- -------------------------------------------------------------------
+
+-- -------------------------------------------------------------------
+-- 4. MARKET INTELLIGENCE (real, sourced figures from the daily job)
+--    Written by /api/refresh-intel using the service-role key.
+--    Readable by everyone; never written from the browser.
+-- -------------------------------------------------------------------
+create table if not exists public.market_intel (
+  market            text primary key,
+  briefing          text,
+  price_growth      text,
+  price_growth_note text,
+  gross_yield       text,
+  gross_yield_note  text,
+  avg_price         text,
+  avg_price_note    text,
+  as_at             text,
+  sources           jsonb default '[]'::jsonb,
+  updated_at        timestamptz default now()
+);
+alter table public.market_intel enable row level security;
+drop policy if exists "intel read" on public.market_intel;
+create policy "intel read" on public.market_intel for select to anon, authenticated using (true);
+-- No write policy on purpose: only the service-role job may write.
