@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.2</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.5</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1546,6 +1546,7 @@ const BOURDILLON = {
 };
 
 function pmSeed() {
+  if (isPurged()) return { properties: [], applications: [], leases: [], invoices: [], jobs: [], units: [], tickets: [], vendors: [] };
   return {
     properties: [BOURDILLON, ...seedProperties()],
     applications: [
@@ -1565,6 +1566,9 @@ function pmSeed() {
     ]
   };
 }
+const PURGED_KEY = "girard_purged_v1";
+// Once you clear sample data, the app must never seed it again.
+function isPurged() { try { return localStorage.getItem(PURGED_KEY) === "1"; } catch (e) { return false; } }
 const PM_KEY = "girard_pm_v3";
 function pmLoad() { try { const r = localStorage.getItem(PM_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = pmSeed(); try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 function pmSave(s) { try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} }
@@ -1582,11 +1586,11 @@ function rowToProp(r) {
   return { ...(r.data || {}), id: r.id, ownerEmail: r.owner_email || "", status: r.status, girardManaged: !!r.girard_managed, uploadedByGirard: !!r.uploaded_by_girard, subaccount: r.subaccount || "", split_code: r.split_code || "" };
 }
 function invToRow(i) {
-  const { id, property, tenant, amount, adminFee, status, ...rest } = i;
-  return { id, property_id: property, tenant, amount: Math.round(amount || 0), admin_fee: Math.round(adminFee || 0), status: status || "Pending", data: rest, updated_at: new Date().toISOString() };
+  const { id, property, tenant, tenantEmail, amount, adminFee, status, ...rest } = i;
+  return { id, property_id: property, tenant, tenant_email: (tenantEmail || "").toLowerCase(), amount: Math.round(amount || 0), admin_fee: Math.round(adminFee || 0), status: status || "Pending", data: rest, updated_at: new Date().toISOString() };
 }
 function rowToInv(r) {
-  return { ...(r.data || {}), id: r.id, property: r.property_id, tenant: r.tenant, amount: Number(r.amount || 0), adminFee: Number(r.admin_fee || 0), status: r.status };
+  return { ...(r.data || {}), id: r.id, property: r.property_id, tenant: r.tenant, tenantEmail: r.tenant_email || "", amount: Number(r.amount || 0), adminFee: Number(r.admin_fee || 0), status: r.status };
 }
 async function propUpsert(p) { if (!supabase) return; try { await supabase.from("properties").upsert([propToRow(p)], { onConflict: "id" }); } catch (e) {} }
 async function invUpsert(i) { if (!supabase) return; try { await supabase.from("invoices").upsert([invToRow(i)], { onConflict: "id" }); } catch (e) {} }
@@ -1608,23 +1612,36 @@ function isDemoProp(p) { return !!p && (p.id === "PR-BOURDILLON" || /^PR-10\d\d$
 function isDemoInv(i) { return !!i && (/^INV-900\d$/.test(i.id) || /^INV-TEST/.test(i.id)); }
 function isDemoApp(a) { return !!a && /^AP-0\d$/.test(a.id); }
 async function demoPurge(st) {
+  // Clear every store that ships with sample records, and set a flag so the
+  // app never seeds them again. Real listings (PR-2000+) are kept.
   const props = (st.properties || []).filter(isDemoProp).map(x => x.id);
   const invs = (st.invoices || []).filter(isDemoInv).map(x => x.id);
   if (supabase) {
     try {
       if (props.length) await supabase.from("properties").delete().in("id", props);
       if (invs.length) await supabase.from("invoices").delete().in("id", invs);
-      // sweep any sample rows written from another device too
       await supabase.from("properties").delete().or("id.eq.PR-BOURDILLON,id.like.PR-10%,id.like.PR-TEST%");
       await supabase.from("invoices").delete().or("id.like.INV-900%,id.like.INV-TEST%");
     } catch (e) {}
   }
+  try {
+    localStorage.setItem(PURGED_KEY, "1");
+    // sample enquiries, pipeline, agent deals, swaps and support records
+    localStorage.setItem(ENQ_KEY, JSON.stringify({ items: [] }));
+    localStorage.setItem(CRM_KEY, JSON.stringify({ cards: [] }));
+    localStorage.setItem(AGENT_KEY, JSON.stringify({ paid: false, deals: [] }));
+    localStorage.setItem(SW_KEY, JSON.stringify({ listings: [], deals: [], matches: [] }));
+    [SUP_KEY, REM_KEY, NOTIF_KEY, DOCS_KEY, PAYMENTS_KEY, "girard_swapjourney_v1", "girard_swapfiled_v1", "girard_audit_v1"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  } catch (e) {}
   return {
     ...st,
     properties: (st.properties || []).filter(x => !isDemoProp(x)),
     invoices: (st.invoices || []).filter(x => !isDemoInv(x)),
-    applications: (st.applications || []).filter(x => !isDemoApp(x)),
-    leases: []
+    applications: [],
+    leases: [],
+    jobs: [],
+    units: [],
+    tickets: []
   };
 }
 async function sharedLoad() {
@@ -1821,7 +1838,7 @@ function TestTenancyCard({ st, setSt, identity, toast }) {
     const id = "PR-TEST" + Date.now().toString().slice(-5);
     const prop = { id, title: "TEST Tenancy \u00b7 2-Bed Apartment", area: PM_AREAS[0], type: "Apartment", beds: 2, rent, status: "Leased", verified: true, letType: "Long let", term: "1 year", photos: [], amenities: ["Parking", "Security"], address: "Test listing, " + PM_AREAS[0], hue: 208, girardManaged: false, uploadedByGirard: false, subaccount: bank.subaccount, split_code: bank.split_code, ownerEmail: email, description: "Created to test the 5% split. Safe to delete." };
     const first = ((identity.firstName || identity.name || "Test") + "").split(" ")[0];
-    const inv = { id: "INV-TEST" + Date.now().toString().slice(-5), property: id, tenant: first + " (test tenancy)", amount: rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
+    const inv = { id: "INV-TEST" + Date.now().toString().slice(-5), property: id, tenant: first + " (test tenancy)", tenantEmail: identity.email || "", amount: rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
     setSt({ ...st, properties: [prop, ...st.properties], invoices: [inv, ...st.invoices] });
     setRes({ bad: false, sub: r.subaccount_code, split: r.split_code, who: r.account_name || name });
   };
@@ -1854,25 +1871,41 @@ function TestTenancyCard({ st, setSt, identity, toast }) {
 }
 function OwnerDash({ st, identity }) {
   const leased = st.properties.filter(p => p.status === "Leased").length;
-  const occ = Math.round(leased / st.properties.length * 100);
-  const income = [{ m: "Feb", v: 58 }, { m: "Mar", v: 64 }, { m: "Apr", v: 61 }, { m: "May", v: 72 }, { m: "Jun", v: 78 }, { m: "Jul", v: 83 }];
+  const occ = st.properties.length ? Math.round(leased / st.properties.length * 100) : 0;
+  // Real money: rent actually collected, by month, from paid invoices.
+  const paidInv = (st.invoices || []).filter(i => i.status === "Paid");
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const income = (() => {
+    const now = new Date(); const out = [];
+    for (let k = 5; k >= 0; k--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+      const tag = d.toISOString().slice(0, 7);
+      const v = paidInv.filter(i => String(i.paidAt || i.due || "").slice(0, 7) === tag).reduce((t, i) => t + (i.amount || 0), 0);
+      out.push({ m: monthNames[d.getMonth()], v: Math.round(v / 1e6) });
+    }
+    return out;
+  })();
+  const hasIncome = income.some(x => x.v > 0);
+  // Monthly income = annual rent on let properties, divided over the year.
+  const monthlyIncome = Math.round(st.properties.filter(p => p.status === "Leased").reduce((t, p) => t + (p.rent || 0), 0) / 12);
   const byArea = PM_AREAS.slice(0, 7).map(a => ({ m: a, v: Math.round(st.properties.filter(p => p.area === a).reduce((s, p) => s + p.rent, 0) / 1e6) }));
   const occData = [{ name: "Leased", v: leased, c: "#10B981" }, { name: "Available", v: st.properties.length - leased, c: "#F59E0B" }];
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
-  const activity = [
-    { icon: Users, t: "New application · 3-Bed Ikoyi", s: "12m ago" },
-    { icon: Wallet, t: "Rent received · INV-9001", s: "1h ago" },
-    { icon: Wrench, t: "Ticket resolved · Living room AC", s: "3h ago" },
-    { icon: Building2, t: "New instruction · Penthouse VI", s: "Yesterday" }
-  ];
+  const activity = (() => {
+    const out = [];
+    (st.applications || []).slice(0, 2).forEach(a => { const pr = st.properties.find(x => x.id === a.property); out.push({ icon: Users, t: "Application \u00b7 " + a.tenant + (pr ? " \u00b7 " + pr.title : ""), s: a.status }); });
+    (st.invoices || []).filter(i => i.status === "Paid").slice(0, 2).forEach(i => out.push({ icon: Wallet, t: "Rent received \u00b7 " + i.id, s: money(i.amount) }));
+    (st.properties || []).slice(0, 2).forEach(p => out.push({ icon: Building2, t: "Listing \u00b7 " + p.title, s: p.status }));
+    return out.slice(0, 4);
+  })();
   return <div>
     <H2 title={"Good day, " + identity.firstName} sub="Girard-managed portfolio at a glance" right={<span style={{ color: "var(--muted)", fontSize: 13 }}>{today}</span>} />
     {identity.role === "admin" && <RevenueSummary />}
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
-      <CStat icon={Wallet} label="Monthly income" value={moneyC(83400000)} sub="▲ 6.4% vs May" c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={Wallet} label="Monthly income" value={moneyC(monthlyIncome)} sub={leased ? "Rent on " + leased + " let " + (leased === 1 ? "property" : "properties") : "No properties let yet"} c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={Building2} label="Properties" value={String(st.properties.length)} sub="Under management" c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={Home} label="Occupancy" value={occ + "%"} sub={leased + " leased"} c="#10B981" bg="#E7F7F0" />
-      <CStat icon={Wrench} label="Open tickets" value={String(st.tickets.filter(t => t.status !== "Resolved").length)} sub="1 emergency" c="#F59E0B" bg="#FEF4E3" />
+      <CStat icon={Wrench} label="Open tickets" value={String((st.tickets || []).filter(t => t.status !== "Resolved").length)} sub={((st.tickets || []).filter(t => t.status !== "Resolved" && t.priority === "Emergency").length || 0) + " emergency"} c="#F59E0B" bg="#FEF4E3" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
       <PmCard>
@@ -2229,7 +2262,7 @@ function LeaseModal({ st, setSt, app, onClose, toast }) {
   useEffect(() => { aiLease({ tenant: app.tenant, prop }).then(r => setAi({ loading: false, ...r })); }, []);
   const both = signed.tenant && signed.owner;
   const finalize = () => {
-    const fee = adminFeeOf(prop); const inv = { id: "INV-" + (9100 + st.invoices.length), property: prop.id, tenant: app.tenant, amount: prop.rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
+    const fee = adminFeeOf(prop); const inv = { id: "INV-" + (9100 + st.invoices.length), property: prop.id, tenant: app.tenant, tenantEmail: app.email || "", amount: prop.rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
     setSt({
       ...st,
       properties: st.properties.map(p => p.id === prop.id ? { ...p, status: "Leased" } : p),
@@ -2462,7 +2495,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "vetting") return <VettingScreen toast={toast} />;
     if (view === "feed") return <LiveFeed identity={identity} />;
     if (view === "crm") return <PipelineCRM identity={identity} toast={toast} />;
-    if (view === "reports") return <ReportsScreen identity={identity} toast={toast} />;
+    if (view === "reports") return activeRole === "agent" ? <AgentAnalytics identity={identity} go={setView} /> : <ReportsScreen identity={identity} toast={toast} />;
     if (view === "payments") return <PaymentsScreen toast={toast} />;
     if (view === "ai") return <AIStudio identity={identity} toast={toast} seed={aiSeed} />;
     if (view === "docs") return <DocumentsScreen identity={identity} toast={toast} />;
@@ -2580,6 +2613,7 @@ const usd = (v) => "$" + Number(v || 0).toLocaleString("en-US");
 const CUR_OF = { Nigeria: "₦", UK: "£", US: "$" };
 
 function swSeed() {
+  if (isPurged()) return { listings: [], deals: [], matches: [] };
   return {
     listings: [
       { id: "SW-01", owner: "Girard Client A", city: "Lagos", country: "Nigeria", currency: "₦", value: 480000000, type: "5-Bed Detached Duplex", seeking: "London or Manchester, UK", verified: true, hue: 205 },
@@ -2943,6 +2977,7 @@ function LiveFeed({ identity }) {
 const CRM_COLS = ["Lead", "Qualifying", "Negotiation", "Agreed", "Completed"];
 const CRM_KIND_C = { Application: "#2F6FB0", Offer: "#E0A106", Swap: "var(--gold-2)", Lead: "var(--navy)" };
 function crmSeed() {
+  if (isPurged()) return { cards: [] };
   const pm = pmLoad(); const sw = swLoad(); const cards = [];
   pm.applications.forEach((a, i) => { const p = pm.properties.find(x => x.id === a.property); cards.push({ id: "C-A" + (i + 1), name: a.tenant, kind: "Application", market: "Nigeria", detail: (p ? p.area : "") + " · " + money(a.income), stage: a.status === "Approved" ? 3 : a.status === "Rejected" ? 4 : 1 }); });
   sw.deals.forEach((d, i) => cards.push({ id: "C-S" + (i + 1), name: d.a + " ⇄ " + d.b, kind: "Swap", market: d.aCountry, detail: "Cash " + usd(d.cash), stage: d.stage >= 11 ? 4 : d.stage >= 6 ? 3 : 2 }));
@@ -2989,6 +3024,63 @@ function MiniFunnel({ data }) {
     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "var(--muted)", marginBottom: 3 }}><span>{d.label}</span><b style={{ color: "var(--ink)" }}>{d.v}</b></div>
     <div style={{ height: 14, background: "var(--ivory)", borderRadius: 4, overflow: "hidden" }}><div style={{ width: w + "%", height: "100%", background: "linear-gradient(90deg, var(--navy), var(--gold))" }} /></div>
   </div>; })}</div>;
+}
+function AgentAnalytics({ identity, go }) {
+  const me = ((identity && identity.email) || "").toLowerCase();
+  const pm = pmLoad(); const crm = crmLoad(); const w = agentLoad(); const enq = enqLoad();
+  // My listings: what this agent put up. Falls back to nothing rather than
+  // showing someone else's book.
+  const mine = (pm.properties || []).filter(p => (p.ownerEmail || "").toLowerCase() === me);
+  const listed = mine.length;
+  const let_ = mine.filter(p => p.status === "Leased").length;
+  const items = (enq.items || []);
+  const viewings = items.filter(e => e.type === "Viewing").length;
+  const enquiries = items.length;
+  const openEnq = items.filter(e => e.status === "New" || e.status === "Open").length;
+  const conv = enquiries ? Math.round((let_ / enquiries) * 100) : 0;
+  // Commission: Girard pays the agent on completed deals.
+  const deals = (w.deals || []);
+  const earned = deals.reduce((t, d) => t + (d.value || 0), 0);
+  const thisMonth = deals.filter(d => String(d.date || "").slice(0, 7) === new Date().toISOString().slice(0, 7)).reduce((t, d) => t + (d.value || 0), 0);
+  // Pipeline: anything not yet completed is still live money.
+  const live = (crm.cards || []).filter(c => c.stage < 4);
+  const pipelineValue = mine.filter(p => p.status !== "Leased").reduce((t, p) => t + (p.rent || 0), 0);
+  const byStage = CRM_COLS.map((c, i) => ({ m: c, v: (crm.cards || []).filter(x => x.stage === i).length }));
+  const enqByType = ["Viewing", "Enquiry", "Offer"].map(t => ({ name: t, v: items.filter(e => e.type === t).length })).filter(x => x.v > 0);
+  return <div>
+    <H2 title="Analytics" sub="Your listings, enquiries and earnings" />
+    <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16, marginBottom: 16 }}>
+      <CStat icon={Building2} label="My listings" value={String(listed)} sub={let_ + " let"} c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={Mail} label="Enquiries" value={String(enquiries)} sub={openEnq + " awaiting reply"} c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={CalendarDays} label="Viewings" value={String(viewings)} sub="Booked through Girard" c="#F59E0B" bg="#FEF3E2" />
+      <CStat icon={TrendingUp} label="Conversion" value={conv + "%"} sub="Enquiry to let" c="#10B981" bg="#E7F7F0" />
+    </div>
+    <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <PmCard style={{ background: "var(--navy)", color: "#fff" }}>
+        <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.6)", fontWeight: 700, letterSpacing: .4, textTransform: "uppercase" }}>Commission earned</div>
+        <div className="serif" style={{ fontSize: 34, fontWeight: 600, margin: "6px 0 2px" }}>{money(earned)}</div>
+        <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>{money(thisMonth)} this month &middot; {deals.length} completed {deals.length === 1 ? "deal" : "deals"}</div>
+        <PmBtn size="sm" kind="gold" style={{ marginTop: 14 }} onClick={() => go("wallet")}>Go to earnings</PmBtn>
+      </PmCard>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)" }}>Pipeline value</div>
+        <div className="serif" style={{ fontSize: 30, fontWeight: 600, color: "var(--ink)", margin: "6px 0 2px" }}>{money(pipelineValue)}</div>
+        <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12 }}>Annual rent on your unlet listings &middot; {live.length} live {live.length === 1 ? "item" : "items"} in your pipeline</div>
+        <PmBtn size="sm" kind="ghost" onClick={() => go("crm")}>Open pipeline</PmBtn>
+      </PmCard>
+    </div>
+    <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Pipeline by stage</div>
+        {byStage.every(x => x.v === 0) ? <div style={{ color: "var(--muted)", fontSize: 13.5 }}>Nothing in your pipeline yet.</div> : <MiniBars data={byStage} w={520} h={230} colors={CHART_COLORS} />}
+      </PmCard>
+      <PmCard>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Enquiries by type</div>
+        {enqByType.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13.5 }}>No enquiries yet.</div> : <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}><MiniDonut data={enqByType} size={140} /><Legend items={enqByType} /></div>}
+      </PmCard>
+    </div>
+    {listed === 0 && <PmCard style={{ marginTop: 16 }}><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6 }}>You have no listings on Girard yet. Once you add properties, this page shows how they are performing: enquiries, viewings, conversion and the commission you have earned.</div></PmCard>}
+  </div>;
 }
 function ReportsScreen({ identity, toast }) {
   const pm = pmLoad(); const sw = swLoad(); const crm = crmLoad();
@@ -3504,6 +3596,7 @@ async function sendWhatsApp(to, message) {
 const ENQ_KEY = "girard_enquiries_v1";
 function enqLoad() {
   try { const r = localStorage.getItem(ENQ_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  if (isPurged()) return { items: [] };
   const seed = { items: [
     { id: "ENQ-1001", type: "Viewing", propId: "PR-BOURDILLON", propTitle: "Ikoyi Project", area: "Ikoyi", name: "Chuka Obi", phone: "+2348031111111", email: "chuka@example.com", message: "", date: "2026-07-20", time: "11:00", status: "New", createdAt: Date.now() - 3600000 },
     { id: "ENQ-1002", type: "Enquiry", propId: "", propTitle: "3-Bed Flat, Lekki", area: "Lekki", name: "Aisha Bello", phone: "+2348032222222", email: "aisha@example.com", message: "Is this still available and what is the service charge?", date: "", time: "", status: "Contacted", createdAt: Date.now() - 7200000 }
@@ -3987,6 +4080,7 @@ const AGENT_KEY = "girard_agent_v1";
 const AGENT_FEE = 25000;
 function agentLoad() {
   try { const r = localStorage.getItem(AGENT_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  if (isPurged()) return { paid: false, deals: [] };
   const seed = { paid: false, deals: [
     { id: "DL-01", property: "3-Bed Flat, Lekki", type: "Let", value: 7200000, date: "2026-06-12" },
     { id: "DL-02", property: "4-Bed Duplex, Ikoyi", type: "Sale", value: 210000000, date: "2026-06-28" },
@@ -4766,6 +4860,9 @@ function InvestorOverview({ identity, go }) {
   useEffect(() => { swapLoadMine((identity && identity.email) || "guest").then(x => { if (x) setJ(x); }); }, []);
   const [deal, setDeal] = useState(null);
   const [favs, setFavs] = useState(favLoad); const [savedOnly, setSavedOnly] = useState(false);
+  // Girard has no investor-holdings record yet, so there is nothing real to
+  // report. Show blanks rather than invented performance.
+  const inv = { count: 0, invested: 0, value: 0, income: 0 };
   const [sellOpen, setSellOpen] = useState(false); const [sellName, setSellName] = useState(""); const [sellPrice, setSellPrice] = useState("");
   const toggleFav = (k) => setFavs(prev => { const n = prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]; favSave(n); return n; });
   const DEALS = [
@@ -4778,10 +4875,10 @@ function InvestorOverview({ identity, go }) {
   return <div>
     <H2 title={"Good day, " + identity.firstName} sub="Your investment portfolio at a glance" />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 18 }}>
-      <CStat icon={Banknote} label="Total invested" value={moneyC(2400000000)} sub="Across 6 assets" c="#3B82F6" bg="#EAF2FE" />
-      <CStat icon={TrendingUp} label="Portfolio value" value={moneyC(2900000000)} sub="+20.8% since entry" c="#10B981" bg="#E7F7F0" />
-      <CStat icon={Wallet} label="Net income (YTD)" value={moneyC(186000000)} sub="Rent & distributions" c="#8B5CF6" bg="#F1ECFE" />
-      <CStat icon={LineChart} label="Avg. yield" value="8.7%" sub="Prime residential" c="#F59E0B" bg="#FEF3E2" />
+      <CStat icon={Banknote} label="Total invested" value={inv.count ? moneyC(inv.invested) : "\u2014"} sub={inv.count ? "Across " + inv.count + " " + (inv.count === 1 ? "asset" : "assets") : "No investments recorded"} c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={TrendingUp} label="Portfolio value" value={inv.count ? moneyC(inv.value) : "\u2014"} sub={inv.count ? "Current valuation" : "Nothing to value yet"} c="#10B981" bg="#E7F7F0" />
+      <CStat icon={Wallet} label="Net income (YTD)" value={inv.count ? moneyC(inv.income) : "\u2014"} sub={inv.count ? "Rent & distributions" : "No income recorded"} c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={LineChart} label="Avg. yield" value={inv.count && inv.invested ? ((inv.income / inv.invested) * 100).toFixed(1) + "%" : "\u2014"} sub={inv.count ? "Income over cost" : "Awaiting first investment"} c="#F59E0B" bg="#FEF3E2" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }} className="pm-grid2">
       <PmCard>
@@ -4797,8 +4894,9 @@ function InvestorOverview({ identity, go }) {
     </div>
     <PmCard style={{ marginTop: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 2 }}>Portfolio activity</div>
-      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 4 }}>Recent income and updates across your assets. Tap any item for detail.</div>
-      {[{ t: "Rent received · Lekki buy-to-let block", a: "+₦14.2M", v: "intel", d: "2 days ago" }, { t: "Distribution · Yaba student housing", a: "+₦6.8M", v: "intel", d: "5 days ago" }, { t: "Valuation uplift · Ikoyi serviced apartments", a: "+3.1%", v: "intel", d: "1 week ago" }, { t: "New opportunity · Abuja mixed-use plot", a: "View", v: "intel", d: "1 week ago" }].map((r, i) => <button key={i} onClick={() => go(r.v)} style={{ width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "11px 0", background: "none", border: "none", borderTop: "1px solid var(--cream-line)", cursor: "pointer" }}><div><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 13.5 }}>{r.t}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{r.d}</div></div><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontWeight: 700, color: r.a.startsWith("+") ? "#1F9D57" : "var(--gold-2)", fontSize: 13.5 }}>{r.a}</span><ChevronRight size={15} color="var(--muted)" /></div></button>)}
+      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 4 }}>Recent income and updates across your assets.</div>
+      {!inv.count && <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, padding: "10px 0" }}>No activity yet. Once Girard records an investment for you, rent, distributions and valuation changes appear here.</div>}
+      {(inv.count ? [] : []).map((r, i) => <button key={i} onClick={() => go(r.v)} style={{ width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "11px 0", background: "none", border: "none", borderTop: "1px solid var(--cream-line)", cursor: "pointer" }}><div><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 13.5 }}>{r.t}</div><div style={{ fontSize: 12, color: "var(--muted)" }}>{r.d}</div></div><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontWeight: 700, color: r.a.startsWith("+") ? "#1F9D57" : "var(--gold-2)", fontSize: 13.5 }}>{r.a}</span><ChevronRight size={15} color="var(--muted)" /></div></button>)}
     </PmCard>
     <PmCard style={{ marginTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
