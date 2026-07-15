@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.5</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.6</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1644,6 +1644,22 @@ async function demoPurge(st) {
     tickets: []
   };
 }
+// Wipe the lot: sample records AND anything created while testing. Used once,
+// before real customers arrive. Sign-in accounts are not touched.
+async function fullReset() {
+  if (supabase) {
+    try {
+      await supabase.from("invoices").delete().neq("id", "");
+      await supabase.from("properties").delete().neq("id", "");
+      await supabase.from("banks").delete().neq("email", "");
+    } catch (e) {}
+  }
+  try {
+    localStorage.setItem(PURGED_KEY, "1");
+    [PM_KEY, SW_KEY, CRM_KEY, SUP_KEY, REM_KEY, ENQ_KEY, AGENT_KEY, DOCS_KEY, NOTIF_KEY, PAYMENTS_KEY, FAVP_KEY, "girard_bank_v1", "girard_swapjourney_v1", "girard_swapfiled_v1", "girard_audit_v1", "girard_favs_v1", "girard_blocks_v1", "girard_users_v1"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  } catch (e) {}
+  return { properties: [], applications: [], leases: [], invoices: [], jobs: [], units: [], tickets: [], vendors: [] };
+}
 async function sharedLoad() {
   if (!supabase) return null;
   try {
@@ -1792,24 +1808,43 @@ const H2 = ({ title, sub, right }) => <div style={{ display: "flex", justifyCont
 function DemoDataCard({ st, setSt, toast }) {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
-  const props = (st.properties || []).filter(isDemoProp).length;
-  const invs = (st.invoices || []).filter(isDemoInv).length;
-  const apps = (st.applications || []).filter(isDemoApp).length;
-  const total = props + invs + apps;
-  const run = async () => {
-    if (confirm.trim().toUpperCase() !== "CLEAR") { toast("Type CLEAR to confirm", "danger"); return; }
-    setBusy(true);
-    const next = await demoPurge(st);
-    setSt(next); setBusy(false); setConfirm("");
-    toast("Sample data removed. Your workspace now shows real listings only.", "success");
+  const [mode, setMode] = useState("sample");
+  const counts = {
+    properties: (st.properties || []).length,
+    invoices: (st.invoices || []).length,
+    applications: (st.applications || []).length,
+    tickets: (st.tickets || []).length,
+    enquiries: (() => { try { return (enqLoad().items || []).length; } catch (e) { return 0; } })(),
+    pipeline: (() => { try { return (crmLoad().cards || []).length; } catch (e) { return 0; } })(),
+    swaps: (() => { try { const w = swLoad(); return (w.listings || []).length + (w.deals || []).length; } catch (e) { return 0; } })(),
+    payoutAccounts: (() => { try { return Object.keys(bankLoad()).length; } catch (e) { return 0; } })()
   };
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const word = mode === "sample" ? "CLEAR" : "RESET EVERYTHING";
+  const run = async () => {
+    if (confirm.trim().toUpperCase() !== word) { toast("Type " + word + " to confirm", "danger"); return; }
+    setBusy(true);
+    const next = mode === "sample" ? await demoPurge(st) : await fullReset();
+    setSt(next); setBusy(false); setConfirm("");
+    toast(mode === "sample" ? "Sample data removed." : "Everything removed. Girard is now empty and ready for real customers.", "success");
+  };
+  const Row = ({ k, v }) => <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "4px 0", color: v ? "var(--ink)" : "var(--muted)" }}><span>{k}</span><b>{v}</b></div>;
   return <PmCard style={{ marginTop: 16 }}>
-    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Sample data</div>
-    {total === 0 ? <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>No sample data left. Everything here is real.</div> : <>
-      <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, marginBottom: 12 }}>Girard ships with sample listings so the app is not empty while you set it up. Before real customers use it, clear them out. This removes <b>{props} sample {props === 1 ? "property" : "properties"}</b>, <b>{invs} sample {invs === 1 ? "invoice" : "invoices"}</b> and <b>{apps} sample {apps === 1 ? "application" : "applications"}</b>, on this device and in the database. Real listings (and anything you or a landlord added) are not touched. This cannot be undone.</div>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Data in the system</div>
+    <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55, marginBottom: 12 }}>Everything Girard currently holds on this device and in the database. Sign-in accounts are never touched.</div>
+    <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "10px 14px", marginBottom: 14 }}>
+      <Row k="Properties" v={counts.properties} /><Row k="Invoices" v={counts.invoices} /><Row k="Applications" v={counts.applications} /><Row k="Maintenance tickets" v={counts.tickets} /><Row k="Enquiries" v={counts.enquiries} /><Row k="Pipeline items" v={counts.pipeline} /><Row k="Swap records" v={counts.swaps} /><Row k="Payout accounts" v={counts.payoutAccounts} />
+    </div>
+    {total === 0 ? <div style={{ fontSize: 13, color: "#1F9D57", fontWeight: 700 }}>Nothing left. Girard is empty and ready for real customers.</div> : <>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {[["sample", "Sample data only"], ["all", "Everything, including our test data"]].map(([k, l]) => <button key={k} onClick={() => { setMode(k); setConfirm(""); }} style={{ padding: "7px 12px", borderRadius: 999, border: "1px solid " + (mode === k ? "var(--gold)" : "var(--cream-line)"), background: mode === k ? "var(--gold-soft)" : "transparent", color: "var(--ink)", fontWeight: 600, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>{l}</button>)}
+      </div>
+      <div style={{ background: mode === "all" ? "rgba(208,69,59,.08)" : "var(--ivory)", border: "1px solid " + (mode === "all" ? "rgba(208,69,59,.25)" : "var(--cream-line)"), borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55, marginBottom: 12 }}>
+        {mode === "sample" ? "Removes only the sample records Girard ships with. Anything you or a landlord added is kept." : "Removes every property, invoice, application, enquiry, pipeline item, swap record and payout account, on this device and in the database, including everything created while testing. Sign-in accounts and Paystack subaccounts are not affected. This cannot be undone."}
+      </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-        <div style={{ flex: 1, minWidth: 200 }}><PmField label={"Type CLEAR to confirm"} value={confirm} onChange={setConfirm} placeholder="CLEAR" /></div>
-        <PmBtn kind="ghost" icon={Trash2} onClick={run} disabled={busy}>{busy ? "Clearing\u2026" : "Clear sample data"}</PmBtn>
+        <div style={{ flex: 1, minWidth: 220 }}><PmField label={"Type " + word + " to confirm"} value={confirm} onChange={setConfirm} placeholder={word} /></div>
+        <PmBtn kind={mode === "all" ? "gold" : "ghost"} icon={Trash2} onClick={run} disabled={busy}>{busy ? "Clearing\u2026" : (mode === "sample" ? "Clear sample data" : "Reset everything")}</PmBtn>
       </div>
     </>}
   </PmCard>;
