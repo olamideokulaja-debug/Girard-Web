@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.6</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 7.7</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -3441,35 +3441,54 @@ function AdminUsers({ toast }) {
    =================================================================== */
 
 function FinancialsScreen() {
-  const pm = pmLoad(); const sw = swLoad();
-  const rentCollected = pm.invoices.filter(i => i.status === "Paid").reduce((s, i) => s + i.amount, 0) + 486000000;
-  const swapFees = sw.deals.length * 4500000 + 31500000;
-  const subs = 9200000;
-  const services = 6400000;
-  const total = rentCollected + swapFees + subs + services;
-  const trend = [{ m: "Feb", v: 62 }, { m: "Mar", v: 71 }, { m: "Apr", v: 68 }, { m: "May", v: 84 }, { m: "Jun", v: 96 }, { m: "Jul", v: 108 }];
+  // Real money only: what Paystack has actually taken, and rent actually paid.
+  const pm = pmLoad();
+  const [pays, setPays] = useState([]);
+  useEffect(() => { let on = true; paymentsFetch().then(x => { if (on) setPays(x || []); }); return () => { on = false; }; }, []);
+  const ok = (pays || []).filter(x => (x.status || "success") === "success");
+  const sumOf = (purpose) => ok.filter(x => x.purpose === purpose).reduce((t, x) => t + Number(x.amount || 0), 0);
+  // On rent, Girard's revenue is the 5% administrative fee, not the whole rent.
+  const rentCollected = (pm.invoices || []).filter(i => i.status === "Paid").reduce((t, i) => t + (i.adminFee || 0), 0);
+  const swapFees = sumOf("swap");
+  const agentFees = sumOf("agent");
+  const subs = sumOf("subscription");
+  const services = sumOf("job");
+  const total = rentCollected + swapFees + subs + services + agentFees;
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const trend = (() => {
+    const now = new Date(); const out = [];
+    for (let k = 5; k >= 0; k--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+      const tag = d.toISOString().slice(0, 7);
+      const v = ok.filter(x => String(x.paid_at || "").slice(0, 7) === tag).reduce((t, x) => t + Number(x.amount || 0), 0);
+      out.push({ m: monthNames[d.getMonth()], v: Math.round(v / 1e6) });
+    }
+    return out;
+  })();
+  const hasTrend = trend.some(x => x.v > 0);
   const bySource = [
-    { name: "Rent management", v: Math.round(rentCollected / 1e6), c: "#3B82F6" },
+    { name: "Admin fees (rent)", v: Math.round(rentCollected / 1e6), c: "#3B82F6" },
     { name: "Swap fees", v: Math.round(swapFees / 1e6), c: "#F59E0B" },
     { name: "Subscriptions", v: Math.round(subs / 1e6), c: "#8B5CF6" },
-    { name: "Support services", v: Math.round(services / 1e6), c: "#10B981" }
-  ];
+    { name: "Support services", v: Math.round(services / 1e6), c: "#10B981" },
+    { name: "Agent fees", v: Math.round(agentFees / 1e6), c: "#EC4899" }
+  ].filter(x => x.v > 0);
+  const SRC = { subscription: "Subscription", swap: "Swap fee", agent: "Agent fee", rent: "Rent", job: "Service" };
   const txns = [
-    ...pm.invoices.slice(0, 4).map(i => ({ id: i.id, src: "Rent", who: i.tenant, amt: i.amount, status: i.status })),
-    { id: "SUB-2201", src: "Subscription", who: "Agent · Professional", amt: 4000000, status: "Paid" },
-    { id: "SWP-4410", src: "Swap fee", who: "DL-01 completion", amt: 4500000, status: "Paid" }
-  ];
+    ...ok.slice(0, 6).map(x => ({ id: x.reference || x.id, src: SRC[x.purpose] || "Payment", who: x.target || x.email || "\u2014", amt: Number(x.amount || 0), status: "Paid" })),
+    ...(pm.invoices || []).filter(i => i.status === "Paid").slice(0, 4).map(i => ({ id: i.id, src: "Rent", who: i.tenant, amt: i.amount, status: i.status }))
+  ].slice(0, 8);
   return <div>
     <H2 title="Financials & revenue" sub="Aggregated across management, swaps, subscriptions and services" right={<PmBtn kind="ghost" icon={FileText}>Export</PmBtn>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
-      <CStat icon={TrendingUp} label="Total revenue" value={money(total)} sub="▲ 12.6% YTD" c="#3B82F6" bg="#EAF2FE" />
-      <CStat icon={CreditCard} label="Subscriptions (MRR)" value={money(subs)} sub="Recurring / month" c="#8B5CF6" bg="#F1ECFE" />
-      <CStat icon={Wallet} label="Rent collected" value={money(rentCollected)} sub="Management" c="#10B981" bg="#E7F7F0" />
-      <CStat icon={Handshake} label="Swap fees" value={money(swapFees)} sub="Completed deals" c="#F59E0B" bg="#FEF4E3" />
+      <CStat icon={TrendingUp} label="Total revenue" value={money(total)} sub={total ? "Confirmed payments" : "No revenue yet"} c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={CreditCard} label="Subscriptions" value={money(subs)} sub={subs ? "Memberships paid" : "None yet"} c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={Wallet} label="Admin fees (5%)" value={money(rentCollected)} sub={rentCollected ? "Girard share of rent" : "None yet"} c="#10B981" bg="#E7F7F0" />
+      <CStat icon={Handshake} label="Swap fees" value={money(swapFees)} sub={swapFees ? "Registrations paid" : "None yet"} c="#F59E0B" bg="#FEF4E3" />
     </div>
     <PmCard style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>Revenue trend</div><span style={{ fontSize: 12, color: "var(--muted)" }}>₦ millions · last 6 months</span></div>
-      <MiniArea data={trend} w={1060} h={240} color="#059669" fill="#10B981" />
+      {hasTrend ? <MiniArea data={trend} w={1060} h={240} color="#059669" fill="#10B981" /> : <div style={{ color: "var(--muted)", fontSize: 13.5, padding: "34px 0", textAlign: "center" }}>No revenue recorded yet. This fills in as payments come through Paystack.</div>}
     </PmCard>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 16 }} className="pm-grid2">
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Revenue by source (₦M)</div><div style={{ display: "flex", alignItems: "center", gap: 16 }}><MiniDonut data={bySource} size={160} /><Legend items={bySource} /></div></PmCard>
