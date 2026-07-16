@@ -830,7 +830,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.6</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.7</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1038,7 +1038,7 @@ function bankSet(email, bank) {
   try { auditLog("Payout account set", key + " \u2192 " + (bank.bankName || "") + " \u2022\u2022\u2022\u2022" + String(bank.bankAcctNo || "").slice(-4), key); } catch (e) {}
   try { const m = bankLoad(); m[key] = bank; localStorage.setItem("girard_bank_v1", JSON.stringify(m)); } catch (e) {}
   if (supabase) {
-    supabase.from("banks").upsert([{ email: key, bank_name: bank.bankName || "", acct_name: bank.bankAcctName || "", acct_no: bank.bankAcctNo || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", updated_at: new Date().toISOString() }], { onConflict: "email" }).then(() => {}, () => {});
+    supabase.from("banks").upsert([{ email: key, bank_name: bank.bankName || "", acct_name: bank.bankAcctName || "", acct_no: bank.bankAcctNo || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvn_verified: !!bank.bvnVerified, check_status: bank.checkStatus || null, check_message: bank.checkMessage || null, updated_at: new Date().toISOString() }], { onConflict: "email" }).then(() => {}, () => {});
     if (bank.subaccount || bank.split_code) {
       // Keep this landlord's listings on their current payout account, so rent
       // still splits correctly if they change their bank details later.
@@ -1053,7 +1053,7 @@ async function bankSync(email) {
   try {
     const { data, error } = await supabase.from("banks").select("*").eq("email", email.toLowerCase().trim()).maybeSingle();
     if (error || !data) return null;
-    const bank = { bankName: data.bank_name || "", bankAcctName: data.acct_name || "", bankAcctNo: data.acct_no || "", subaccount: data.subaccount || "", split_code: data.split_code || "" };
+    const bank = { bankName: data.bank_name || "", bankAcctName: data.acct_name || "", bankAcctNo: data.acct_no || "", subaccount: data.subaccount || "", split_code: data.split_code || "", bvnVerified: !!data.bvn_verified, checkStatus: data.check_status || null, checkMessage: data.check_message || null };
     try { const m = bankLoad(); m[email.toLowerCase().trim()] = bank; localStorage.setItem("girard_bank_v1", JSON.stringify(m)); } catch (e) {}
     return bank;
   } catch (e) { return null; }
@@ -2610,7 +2610,7 @@ function WorkspaceSoon({ identity }) {
 const NAV = {
   owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["adminreq", "Admin requests", UserCog], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   investor: [["work", "Dashboard", LayoutDashboard], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
 };
@@ -2663,7 +2663,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const [activeRole, setActiveRole] = useState(identity0.role);
   const identity = { ...identity0, role: activeRole };
   let nav = NAV[activeRole] || NAV.agent; if (activeRole === "admin" && !isSuperAdmin(identity.email)) nav = nav.filter(x => x[0] !== "financials" && x[0] !== "adminreq");
-  if (activeRole === "admin" && !isApprovedAdmin(identity.email)) nav = nav.filter(x => x[0] !== "audit");
+  if (activeRole === "admin" && !isApprovedAdmin(identity.email)) nav = nav.filter(x => x[0] !== "audit" && x[0] !== "payouts");
   const [view, setView] = useState(nav[0][0]);
   const [aiSeed, setAiSeed] = useState(null);
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem("girard_theme") || "light"; } catch (e) { return "light"; } });
@@ -2709,6 +2709,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "plans") return <PricingScreen identity={identity} toast={toast} />;
     if (view === "settings") return <SettingsScreen identity={identity} toast={toast} onSignOut={onSignOut} onSwitchRole={onSwitchRole} />;
     if (view === "users") return <AdminUsers toast={toast} />;
+    if (view === "payouts") return isApprovedAdmin(identity.email) ? <PayoutApprovalsScreen identity={identity} toast={toast} /> : <div><H2 title="Payout approvals" sub="Restricted" /><PmCard><div style={{ fontSize: 14, color: "var(--ink)" }}>Girard staff only.</div></PmCard></div>;
     if (view === "adminreq") return isSuperAdmin(identity.email) ? <AdminRequestsScreen identity={identity} toast={toast} /> : <div><H2 title="Admin requests" sub="Restricted" /><PmCard><div style={{ display: "flex", gap: 10 }}><Lock size={18} color="var(--gold-2)" /><div style={{ fontSize: 14, color: "var(--ink)", lineHeight: 1.6 }}>Only the platform owner can approve administrators.</div></div></PmCard></div>;
     if (view === "financials") return isSuperAdmin(identity.email) ? <FinancialsScreen /> : <div><H2 title="Financials" sub="Restricted" /><PmCard><div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><Lock size={18} color="var(--gold-2)" style={{ marginTop: 2, flexShrink: 0 }} /><div style={{ fontSize: 14, color: "var(--ink)", lineHeight: 1.6 }}>Company financials are visible to Super Admins only. Ask a Super Admin to grant access.</div></div></PmCard></div>;
     if (view === "signups") return <SignupsScreen />;
@@ -3726,6 +3727,60 @@ function FinancialsScreen() {
   </div>;
 }
 
+function PayoutApprovalsScreen({ identity, toast }) {
+  const [rows, setRows] = useState([]); const [busy, setBusy] = useState(true);
+  const [open, setOpen] = useState(null); const [reason, setReason] = useState("");
+  const load = async () => {
+    setBusy(true);
+    if (!supabase) { setRows([]); setBusy(false); return; }
+    try { const { data, error } = await supabase.from("banks").select("*").order("updated_at", { ascending: false }); setRows((error || !data) ? [] : data); } catch (e) { setRows([]); }
+    setBusy(false);
+  };
+  useEffect(() => { load(); }, []);
+  const decide = async (row, approve) => {
+    if (approve && reason.trim().length < 10) { toast("Say what you checked. This is the record if it is ever questioned.", "danger"); return; }
+    try {
+      await supabase.from("banks").update({ bvn_verified: approve, override_by: approve ? identity.email : null, override_reason: approve ? reason.trim() : null, override_at: new Date().toISOString(), check_status: approve ? "Approved by hand" : "Rejected" }).eq("email", row.email);
+      auditLog(approve ? "Payout approved by hand" : "Payout rejected", row.email + " \u00b7 " + (row.bank_name || "") + " \u2022\u2022\u2022\u2022" + String(row.acct_no || "").slice(-4) + " \u00b7 by " + identity.email + (approve ? " \u00b7 reason: " + reason.trim() : ""), identity.email);
+      toast(approve ? "Approved. This landlord can now receive rent." : "Rejected.", approve ? "success" : undefined);
+      setOpen(null); setReason(""); load();
+    } catch (e) { toast("Could not save that decision", "danger"); }
+  };
+  const pending = rows.filter(r => !r.bvn_verified);
+  return <div>
+    <H2 title="Payout approvals" sub={pending.length ? pending.length + " awaiting review" : "Nothing awaiting review"} right={<PmBtn kind="ghost" icon={Loader2} onClick={load}>Reload</PmBtn>} />
+    <PmCard style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>Girard checks with the bank that a payout account belongs to the person listing the property. Nigerian banks often hold an out-of-date BVN against older accounts, so an honest landlord can fail this check through no fault of their own. Until an account is verified, <b>no rent can be paid on their properties</b>. Approve by hand only after you have seen their ID and title document, and confirmed the account name matches. Every approval is recorded against your name, permanently.</div>
+    </PmCard>
+    {busy ? <PmCard><div style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--muted)", fontSize: 13.5 }}><Loader2 size={14} className="spin" /> Loading\u2026</div></PmCard>
+      : rows.length === 0 ? <PmCard><div style={{ textAlign: "center", padding: 26, color: "var(--muted)" }}><BadgeCheck size={24} style={{ marginBottom: 10, opacity: .5 }} /><div style={{ fontWeight: 700, color: "var(--ink)" }}>No payout accounts yet</div></div></PmCard>
+      : <div style={{ display: "grid", gap: 12 }}>{rows.map(r => <PmCard key={r.email} style={{ borderLeft: "3px solid " + (r.bvn_verified ? "#1F9D57" : "#D0453B") }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div style={{ minWidth: 240 }}>
+            <div style={{ fontWeight: 700, color: "var(--ink)" }}>{r.acct_name || r.email}</div>
+            <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.6 }}>{r.email}<br />{r.bank_name} &middot; {String(r.acct_no || "").replace(/.(?=.{4})/g, "\u2022")}</div>
+            <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: r.bvn_verified ? "rgba(31,157,87,.14)" : "rgba(208,69,59,.12)", color: r.bvn_verified ? "#1F9D57" : "#D0453B" }}>{r.bvn_verified ? (r.override_by ? "Approved by hand" : "BVN matched") : "Cannot be paid"}</span>
+              {r.check_status && <span style={{ fontSize: 11.5, color: "var(--muted)" }}>{r.check_status}</span>}
+            </div>
+            {r.check_message && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8, lineHeight: 1.5, fontStyle: "italic" }}>{r.check_message}</div>}
+            {r.override_by && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>Approved by {r.override_by}{r.override_reason ? " \u2014 " + r.override_reason : ""}</div>}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>{r.bvn_verified
+            ? <PmBtn size="sm" kind="ghost" onClick={() => decide(r, false)}>Revoke</PmBtn>
+            : <PmBtn size="sm" onClick={() => { setOpen(open === r.email ? null : r.email); setReason(""); }}>Review</PmBtn>}</div>
+        </div>
+        {open === r.email && <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--cream-line)" }}>
+          <div style={{ fontSize: 12.5, color: "var(--ink)", lineHeight: 1.6, marginBottom: 10 }}>Before approving: call them on the number they listed, confirm the account name matches their ID, and confirm the title document names the same person. Approving lets rent flow to this account.</div>
+          <PmField label="What did you check?" value={reason} onChange={setReason} placeholder="e.g. Called, saw NIN and C of O, names match, bank confirmed old BVN on record" />
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            <PmBtn size="sm" kind="gold" icon={BadgeCheck} onClick={() => decide(r, true)}>Approve payouts</PmBtn>
+            <PmBtn size="sm" kind="ghost" onClick={() => { setOpen(null); setReason(""); }}>Cancel</PmBtn>
+          </div>
+        </div>}
+      </PmCard>)}</div>}
+  </div>;
+}
 function AdminRequestsScreen({ identity, toast }) {
   const [rows, setRows] = useState([]); const [busy, setBusy] = useState(true);
   const load = async () => {
@@ -5902,8 +5957,18 @@ function PayoutAccountCard({ identity, toast }) {
     setBusy(true);
     const r = await createSubaccount({ name, bankName: bk, acctNo: no, email, bvn });
     setBusy(false);
-    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "", bvnVerified: !!r.bvn_verified }); setOk(r.bvn_verified ? "BVN matched. Payout account verified and saved as " + (r.account_name || name) + "." : "Payout account saved."); return; }
-    if (r && r.configured && !r.ok) { setErr(r.error || "Paystack could not verify that account."); if (r.bvn_mismatch) { try { auditLog("BVN mismatch blocked", email + " tried to register an account not linked to their BVN", email); } catch (e) {} } return; }
+    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "", bvnVerified: !!r.bvn_verified, checkStatus: r.bvn_verified ? "Matched" : "Not checked" }); setOk(r.bvn_verified ? "BVN matched. Payout account verified and saved as " + (r.account_name || name) + "." : "Payout account saved."); return; }
+    if (r && r.configured && !r.ok) {
+      setErr(r.error || "Paystack could not verify that account.");
+      if (r.bvn_mismatch) {
+        // Keep the details and flag them for Girard. Banks often hold a stale
+        // BVN, so this may be their record, not the landlord's honesty.
+        bankSet(email, { bankName: bk, bankAcctName: name, bankAcctNo: no, bvnVerified: false, checkStatus: "Mismatch", checkMessage: r.error || "" });
+        try { auditLog("BVN mismatch", email + " \u00b7 " + bk + " \u2022\u2022\u2022\u2022" + no.slice(-4) + " \u00b7 " + (r.error || ""), email); } catch (e) {}
+        setErr((r.error || "") + " Girard has been notified and can review this by hand if your bank holds an out-of-date BVN. Contact support@girardpropertylimited.com with your ID and title document.");
+      }
+      return;
+    }
     if (!r || !r.configured) { setErr("Girard cannot reach Paystack. PAYSTACK_SECRET_KEY may not be set in Vercel, or the site has not been redeployed since it was added."); return; }
     bankSet(email, { bankName: bk, bankAcctName: name, bankAcctNo: no });
     setOk("Payout account saved.");

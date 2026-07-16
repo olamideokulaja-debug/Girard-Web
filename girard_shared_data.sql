@@ -168,3 +168,24 @@ create policy "admin_req decide" on public.admin_requests
   for update to authenticated
   using (lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com')
   with check (lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com');
+
+-- -------------------------------------------------------------------
+-- 7. PAYOUT VERIFICATION OVERRIDES
+--    Nigerian banks often hold a stale BVN against an older account, so an
+--    honest landlord can fail the automatic check. Rather than block their
+--    income for a bank's record-keeping, Girard staff may approve them by
+--    hand after seeing ID and title. Every override is attributed and logged.
+-- -------------------------------------------------------------------
+alter table public.banks add column if not exists bvn_verified boolean default false;
+alter table public.banks add column if not exists check_status text;      -- Matched | Mismatch | Not checked
+alter table public.banks add column if not exists check_message text;     -- Paystack's exact words
+alter table public.banks add column if not exists override_by text;       -- who approved by hand
+alter table public.banks add column if not exists override_reason text;
+alter table public.banks add column if not exists override_at timestamptz;
+
+-- Girard staff may see and decide on payout accounts awaiting review.
+drop policy if exists "banks own row" on public.banks;
+create policy "banks own row" on public.banks
+  for all to authenticated
+  using (lower(email) = lower(coalesce(auth.jwt() ->> 'email','')) or lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com')
+  with check (lower(email) = lower(coalesce(auth.jwt() ->> 'email','')) or lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com');
