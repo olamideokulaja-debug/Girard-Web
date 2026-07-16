@@ -829,7 +829,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.5</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.7</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -974,6 +974,32 @@ const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate
 const ADMIN_DOMAIN = "girardpropertylimited.com";
 function isApprovedAdmin(email) { const e = (email || "").toLowerCase().trim(); return e.endsWith("@" + ADMIN_DOMAIN) || !!FOUNDERS[e]; }
 function isSuperAdmin(email) { const e = (email || "").toLowerCase().trim(); return !!FOUNDERS[e]; }
+// Admin access: staff on the Girard domain are automatic. Anyone else must be
+// approved by Girard before they can enter the admin workspace.
+async function adminStatus(email) {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from("admin_requests").select("status").eq("email", (email || "").toLowerCase().trim()).maybeSingle();
+    return (error || !data) ? null : data.status;
+  } catch (e) { return null; }
+}
+async function adminRequest(email, name) {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from("admin_requests").upsert([{ email: (email || "").toLowerCase().trim(), name: name || "", status: "Pending", updated_at: new Date().toISOString() }], { onConflict: "email" });
+    if (error) return false;
+    // Let the owner know without them having to watch the screen.
+    try {
+      await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        to: { email: "olamideokulaja@girardpropertylimited.com" },
+        channels: ["email"],
+        subject: "Admin access requested \u2014 Girard",
+        message: email + " has asked for administrator access to Girard.\n\nApprove or decline in the app: Platform Admin \u2192 Admin requests."
+      }) });
+    } catch (e) {}
+    return true;
+  } catch (e) { return false; }
+}
 function bankLoad() { try { return JSON.parse(localStorage.getItem("girard_bank_v1") || "{}"); } catch (e) { return {}; } }
 function bankFor(email) { const m = bankLoad(); return m[(email || "").toLowerCase().trim()] || null; }
 const GIRARD_FEE_PCT = 5;
@@ -1243,11 +1269,23 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
     if (isSignup && !agree) { setErr("Please accept the Terms of Use and Privacy Policy to continue."); return; }
     if (!email || !password) { setErr("Please enter your email and password."); return; }
     if (isSignup && password.length < 6) { setErr("Password must be at least 6 characters."); return; }
-    if (isSignup && role === "admin" && !isApprovedAdmin(email)) { setErr("Admin access is limited to approved @girardpropertylimited.com accounts."); return; }
+
     if (isSignup && (role === "owner" || role === "agent") && !isApprovedAdmin(email) && (!acctName.trim() || acctNo.length < 10)) { setErr("Please add your settlement bank account (account name and 10-digit number)."); return; }
     setBusy(true);
     try {
       const res = isSignup ? await authSignUp(email, password, role) : await authSignIn(email, password);
+      // Admin is gated: Girard staff pass automatically, everyone else needs approval.
+      if (role === "admin" && res && res.email && !isApprovedAdmin(res.email)) {
+        const st = await adminStatus(res.email);
+        if (st !== "Approved") {
+          if (st === "Declined") { setErr("Your request for admin access was declined. Contact Girard if you think this is wrong."); setBusy(false); return; }
+          const sent = st === "Pending" ? true : await adminRequest(res.email, res.email.split("@")[0]);
+          setErr(st === "Pending"
+            ? "Your request for admin access is with Girard. You will be told once it is approved."
+            : (sent ? "Admin access needs Girard's approval. Your request has been sent." : "Admin access is limited to approved accounts. Please contact Girard."));
+          setBusy(false); return;
+        }
+      }
       if (isSignup && res && res.email && (role === "owner" || role === "agent") && !isApprovedAdmin(res.email)) {
         bankSet(res.email, { bankName, bankAcctName: acctName, bankAcctNo: acctNo });
         createSubaccount({ name: acctName, bankName, acctNo, email: res.email }).then(r => { if (r && r.configured && r.ok) bankSet(res.email, { bankName, bankAcctName: r.account_name || acctName, bankAcctNo: acctNo, subaccount: r.subaccount_code, split_code: r.split_code || "" }); });
@@ -2472,7 +2510,7 @@ function WorkspaceSoon({ identity }) {
 const NAV = {
   owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["adminreq", "Admin requests", UserCog], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   investor: [["work", "Dashboard", LayoutDashboard], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
 };
@@ -2524,7 +2562,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const canSwitch = identity0.allAccess;
   const [activeRole, setActiveRole] = useState(identity0.role);
   const identity = { ...identity0, role: activeRole };
-  let nav = NAV[activeRole] || NAV.agent; if (activeRole === "admin" && !isSuperAdmin(identity.email)) nav = nav.filter(x => x[0] !== "financials");
+  let nav = NAV[activeRole] || NAV.agent; if (activeRole === "admin" && !isSuperAdmin(identity.email)) nav = nav.filter(x => x[0] !== "financials" && x[0] !== "adminreq");
   const [view, setView] = useState(nav[0][0]);
   const [aiSeed, setAiSeed] = useState(null);
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem("girard_theme") || "light"; } catch (e) { return "light"; } });
@@ -2570,6 +2608,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "plans") return <PricingScreen identity={identity} toast={toast} />;
     if (view === "settings") return <SettingsScreen identity={identity} toast={toast} onSignOut={onSignOut} onSwitchRole={onSwitchRole} />;
     if (view === "users") return <AdminUsers toast={toast} />;
+    if (view === "adminreq") return isSuperAdmin(identity.email) ? <AdminRequestsScreen identity={identity} toast={toast} /> : <div><H2 title="Admin requests" sub="Restricted" /><PmCard><div style={{ display: "flex", gap: 10 }}><Lock size={18} color="var(--gold-2)" /><div style={{ fontSize: 14, color: "var(--ink)", lineHeight: 1.6 }}>Only the platform owner can approve administrators.</div></div></PmCard></div>;
     if (view === "financials") return isSuperAdmin(identity.email) ? <FinancialsScreen /> : <div><H2 title="Financials" sub="Restricted" /><PmCard><div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><Lock size={18} color="var(--gold-2)" style={{ marginTop: 2, flexShrink: 0 }} /><div style={{ fontSize: 14, color: "var(--ink)", lineHeight: 1.6 }}>Company financials are visible to Super Admins only. Ask a Super Admin to grant access.</div></div></PmCard></div>;
     if (view === "signups") return <SignupsScreen />;
     if (view === "reminders") return <RentRemindersScreen toast={toast} />;
@@ -3586,6 +3625,42 @@ function FinancialsScreen() {
   </div>;
 }
 
+function AdminRequestsScreen({ identity, toast }) {
+  const [rows, setRows] = useState([]); const [busy, setBusy] = useState(true);
+  const load = async () => {
+    setBusy(true);
+    if (!supabase) { setRows([]); setBusy(false); return; }
+    try { const { data, error } = await supabase.from("admin_requests").select("*").order("created_at", { ascending: false }); setRows((error || !data) ? [] : data); } catch (e) { setRows([]); }
+    setBusy(false);
+  };
+  useEffect(() => { load(); }, []);
+  const decide = async (row, status) => {
+    if (!supabase) return;
+    try {
+      await supabase.from("admin_requests").update({ status, decided_by: identity.email, updated_at: new Date().toISOString() }).eq("email", row.email);
+      toast(status === "Approved" ? row.email + " can now sign in as an administrator." : "Request declined.", status === "Approved" ? "success" : undefined);
+      load();
+    } catch (e) { toast("Could not save that decision", "danger"); }
+  };
+  const pending = rows.filter(r => r.status === "Pending");
+  return <div>
+    <H2 title="Admin requests" sub={pending.length ? pending.length + " awaiting your decision" : "Nobody is waiting"} right={<PmBtn kind="ghost" icon={Loader2} onClick={load}>Reload</PmBtn>} />
+    <PmCard style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>Anyone with a <b>@girardpropertylimited.com</b> address gets administrator access automatically. Everyone else who asks for it appears here, and cannot enter the admin workspace until you approve them.</div>
+    </PmCard>
+    {busy ? <PmCard><div style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--muted)", fontSize: 13.5 }}><Loader2 size={14} className="spin" /> Loading\u2026</div></PmCard>
+      : rows.length === 0 ? <PmCard><div style={{ textAlign: "center", padding: 26, color: "var(--muted)" }}><ShieldCheck size={24} style={{ marginBottom: 10, opacity: .5 }} /><div style={{ fontWeight: 700, color: "var(--ink)" }}>No requests</div><div style={{ fontSize: 13.5, marginTop: 6 }}>Requests for administrator access will appear here for you to approve.</div></div></PmCard>
+      : <PmCard pad={0} style={{ overflow: "hidden" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead><tr style={{ background: "var(--ivory-2)" }}>{["Email", "Requested", "Status", "Decision"].map(h => <th key={h} style={{ textAlign: "left", padding: "11px 16px", fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
+        <tbody>{rows.map(r => <tr key={r.email} style={{ borderTop: "1px solid var(--cream-line)" }}>
+          <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--ink)", fontSize: 13.5 }}>{r.email}</td>
+          <td style={{ padding: "12px 16px", fontSize: 12.5, color: "var(--muted)" }}>{r.created_at ? new Date(r.created_at).toLocaleDateString() : "\u2014"}</td>
+          <td style={{ padding: "12px 16px" }}><span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: r.status === "Approved" ? "rgba(31,157,87,.14)" : r.status === "Declined" ? "rgba(208,69,59,.12)" : "var(--gold-soft)", color: r.status === "Approved" ? "#1F9D57" : r.status === "Declined" ? "#D0453B" : "var(--gold-2)" }}>{r.status}</span></td>
+          <td style={{ padding: "12px 16px" }}>{r.status === "Pending" ? <div style={{ display: "flex", gap: 8 }}><PmBtn size="sm" onClick={() => decide(r, "Approved")}>Approve</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => decide(r, "Declined")}>Decline</PmBtn></div> : <PmBtn size="sm" kind="ghost" onClick={() => decide(r, r.status === "Approved" ? "Declined" : "Approved")}>{r.status === "Approved" ? "Revoke" : "Approve"}</PmBtn>}</td>
+        </tr>)}</tbody>
+      </table></PmCard>}
+  </div>;
+}
 function SignupsScreen() {
   const usr = usrLoad();
   const users = usr.users || [];
