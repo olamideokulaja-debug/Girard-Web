@@ -830,7 +830,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.5</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.6</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -5892,16 +5892,21 @@ function PayoutAccountCard({ identity, toast }) {
   const cur = bankFor(email) || {};
   const [name, setName] = useState(cur.bankAcctName || ""); const [no, setNo] = useState(cur.bankAcctNo || ""); const [bk, setBk] = useState(cur.bankName || NG_BANKS[0][0]); const [bvn, setBvn] = useState("");
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
   const save = async () => {
-    if (!name.trim() || no.length < 10) { toast("Enter the account name and 10-digit number", "danger"); return; }
-    if (bvn.replace(/[^0-9]/g, "").length !== 11) { toast("Enter your 11-digit BVN. Girard checks that this account belongs to you.", "danger"); return; }
+    setErr(""); setOk("");
+    if (!name.trim()) { setErr("Enter the account name, exactly as your bank has it."); return; }
+    if (no.replace(/[^0-9]/g, "").length !== 10) { setErr("The account number must be 10 digits. You have entered " + no.replace(/[^0-9]/g, "").length + "."); return; }
+    if (bvn.replace(/[^0-9]/g, "").length !== 11) { setErr("Your BVN must be 11 digits. You have entered " + bvn.replace(/[^0-9]/g, "").length + ". Dial *565*0# on the phone linked to your bank account to get it."); return; }
     setBusy(true);
     const r = await createSubaccount({ name, bankName: bk, acctNo: no, email, bvn });
     setBusy(false);
-    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "", bvnVerified: !!r.bvn_verified }); toast(r.bvn_verified ? "BVN matched. Payout account verified and saved." : "Payout account saved.", "success"); return; }
-    if (r && r.configured && !r.ok) { toast(r.error || "Paystack could not verify that account", "danger"); if (r.bvn_mismatch) { try { auditLog("BVN mismatch blocked", email + " tried to register an account not linked to their BVN", email); } catch (e) {} } return; }
+    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "", bvnVerified: !!r.bvn_verified }); setOk(r.bvn_verified ? "BVN matched. Payout account verified and saved as " + (r.account_name || name) + "." : "Payout account saved."); return; }
+    if (r && r.configured && !r.ok) { setErr(r.error || "Paystack could not verify that account."); if (r.bvn_mismatch) { try { auditLog("BVN mismatch blocked", email + " tried to register an account not linked to their BVN", email); } catch (e) {} } return; }
+    if (!r || !r.configured) { setErr("Girard cannot reach Paystack. PAYSTACK_SECRET_KEY may not be set in Vercel, or the site has not been redeployed since it was added."); return; }
     bankSet(email, { bankName: bk, bankAcctName: name, bankAcctNo: no });
-    toast("Payout account saved", "success");
+    setOk("Payout account saved.");
   };
   return <PmCard>
     <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 9, background: "#EAF2FE", display: "grid", placeItems: "center" }}><Banknote size={18} color="#3B82F6" /></div><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Payout account</div><div style={{ fontSize: 12.5, color: "var(--muted)" }}>Where your rent and earnings settle</div></div></div>
@@ -5910,7 +5915,9 @@ function PayoutAccountCard({ identity, toast }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2"><PmField label="Account number" value={no} onChange={v => setNo(v.replace(/[^0-9]/g, "").slice(0, 10))} placeholder="10-digit NUBAN" /><PmSelect label="Bank" value={bk} onChange={setBk} options={NG_BANKS.map(x => x[0])} /></div>
       <PmField label="BVN" value={bvn} onChange={v => setBvn(v.replace(/[^0-9]/g, "").slice(0, 11))} placeholder="11 digits" />
       <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.55 }}>Girard checks with your bank that this account belongs to you. If it does not, rent cannot be collected for your properties. Your BVN is used for this check only and is not stored.</div>
-      <div><PmBtn kind="gold" onClick={save} disabled={busy}>{busy ? "Verifying…" : "Save payout account"}</PmBtn></div>
+      {err && <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.3)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "var(--ink)", lineHeight: 1.55, display: "flex", gap: 8, alignItems: "flex-start" }}><AlertTriangle size={15} color="#D0453B" style={{ flexShrink: 0, marginTop: 2 }} /><span>{err}</span></div>}
+      {ok && <div style={{ background: "rgba(31,157,87,.08)", border: "1px solid rgba(31,157,87,.3)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "var(--ink)", lineHeight: 1.55, display: "flex", gap: 8, alignItems: "flex-start" }}><CheckCircle2 size={15} color="#1F9D57" style={{ flexShrink: 0, marginTop: 2 }} /><span>{ok}</span></div>}
+      <div><PmBtn kind="gold" onClick={save} disabled={busy}>{busy ? "Checking with your bank…" : "Save payout account"}</PmBtn></div>
       <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>Girard verifies this account with Paystack and settles rent to it directly. Girard's 5% administrative fee is routed automatically in the same transaction.</div>
       <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.55, display: "flex", gap: 7, alignItems: "flex-start" }}><Clock size={13} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} /><span>Your <b>first payout</b> to a new account is held by Paystack until they verify it. This is a one-off check. It also applies again if you change these details later, so only update them when you need to.</span></div>
     </div>
