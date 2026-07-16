@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   const KEY = process.env.PAYSTACK_SECRET_KEY;
   if (!KEY) { res.status(200).json({ configured: false }); return; }
 
-  const { business_name, settlement_bank, account_number, percentage_charge, email } = req.body || {};
+  const { business_name, settlement_bank, account_number, percentage_charge, email, bvn } = req.body || {};
   if (!business_name || !settlement_bank || !account_number) {
     res.status(200).json({ configured: true, ok: false, error: "Missing business_name, settlement_bank or account_number" });
     return;
@@ -34,6 +34,33 @@ export default async function handler(req, res) {
   const isTest = String(KEY).startsWith("sk_test");
 
   try {
+    // The account must actually belong to the person who gave us the BVN.
+    // Without this, a fraudster can list someone else's property and point the
+    // rent at their own account. Live keys only: Paystack cannot match in test.
+    let bvnMatched = false;
+    if (!isTest) {
+      if (!bvn || String(bvn).replace(/[^0-9]/g, "").length !== 11) {
+        res.status(200).json({ configured: true, ok: false, error: "A valid 11-digit BVN is required to receive rent through Girard." });
+        return;
+      }
+      try {
+        const mr = await fetch("https://api.paystack.co/bank/match_bvn?account_number=" + encodeURIComponent(account_number) + "&bank_code=" + encodeURIComponent(settlement_bank) + "&bvn=" + encodeURIComponent(String(bvn).replace(/[^0-9]/g, "")), { headers: hdr });
+        const md = await mr.json();
+        const ok = md && md.status && md.data && (md.data.is_blacklisted === false || md.data.is_blacklisted === undefined) && (md.data.account_number === true || md.data.account_number === "true" || md.data.bvn === true);
+        if (!md || !md.status) {
+          res.status(200).json({ configured: true, ok: false, error: (md && md.message) || "Paystack could not check that BVN against the account." });
+          return;
+        }
+        if (!ok) {
+          res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, error: "That bank account is not linked to that BVN. Girard can only pay rent into an account belonging to the person listing the property." });
+          return;
+        }
+        bvnMatched = true;
+      } catch (e) {
+        res.status(200).json({ configured: true, ok: false, error: "Could not reach Paystack to check the BVN. Please try again." });
+        return;
+      }
+    }
     let resolvedName = business_name;
     if (!isTest) {
       // Resolve the account first so we never create a subaccount against a wrong number.
@@ -90,7 +117,7 @@ export default async function handler(req, res) {
     } catch (e) { /* subaccount alone is enough to split; split_code is a bonus */ }
 
     res.status(200).json({
-      configured: true, ok: true, test_mode: isTest,
+      configured: true, ok: true, test_mode: isTest, bvn_verified: !isTest,
       subaccount_code,
       split_code,
       account_name: resolvedName

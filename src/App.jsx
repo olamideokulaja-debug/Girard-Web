@@ -596,8 +596,10 @@ function Landing({ onStart, onSignIn }) {
             <div className="rise">
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 22 }}>Digital management &amp; cross-border swaps</div>
               <h1 className="serif hero-h">
-                The future is <span style={{ fontStyle: "italic", color: "var(--gold)" }}>here...</span>
+                Building <span style={{ fontStyle: "italic", color: "var(--gold)" }}>tomorrow,</span><br />
+                powered by <span style={{ fontStyle: "italic", color: "var(--gold)" }}>technology.</span>
               </h1>
+              <div className="serif" style={{ fontSize: "clamp(20px,2.2vw,28px)", fontWeight: 500, color: "var(--gold)", fontStyle: "italic", marginTop: 14, letterSpacing: .2 }}>The future is here...</div>
               <p style={{ fontSize: 17.5, color: "rgba(255,255,255,.76)", marginTop: 24, maxWidth: 520, lineHeight: 1.65, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>
                 Girard Property Limited is a premier real estate development and asset management company, elevating the standards of luxury, urban living and sustainable property investment across Nigeria, now on one governed platform for management, cross-border swaps, intelligence and concierge services.
               </p>
@@ -828,7 +830,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.3</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.5</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1023,11 +1025,11 @@ function bankFor(email) { const m = bankLoad(); return m[(email || "").toLowerCa
 const GIRARD_FEE_PCT = 5;
 // True once real Paystack keys are in use. Guards test-only tooling.
 function isLiveKeys() { return String(PAYSTACK_KEY || "").startsWith("pk_live"); }
-async function createSubaccount({ name, bankName, acctNo, email }) {
+async function createSubaccount({ name, bankName, acctNo, email, bvn }) {
   const code = (NG_BANKS.find(x => x[0] === bankName) || [])[1];
   if (!code) return { configured: true, ok: false, error: "Unknown bank" };
   try {
-    const r = await fetch("/api/paystack-subaccount", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ business_name: name, settlement_bank: code, account_number: acctNo, percentage_charge: GIRARD_FEE_PCT, email }) });
+    const r = await fetch("/api/paystack-subaccount", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ business_name: name, settlement_bank: code, account_number: acctNo, percentage_charge: GIRARD_FEE_PCT, email, bvn }) });
     return await r.json();
   } catch (e) { return { configured: false }; }
 }
@@ -2164,7 +2166,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
       if (!docs.length) { toast("Upload the title document before submitting", "danger"); return; }
     }
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, subaccount: bank.subaccount || "", split_code: bank.split_code || "", ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, description: desc };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -2528,7 +2530,15 @@ function PayModal({ inv, st, email, onClose, onPaid }) {
   const sub = splitAcctOf(prop);
   const splitCode = splitCodeOf(prop);
   const fee = inv.adminFee || 0;
+  // A landlord whose account is not proven to be theirs cannot be paid through
+  // Girard. Blocking the split alone would be worse: the money would simply
+  // land with Girard instead of being stopped.
+  const bvnOk = !prop || prop.girardManaged || prop.uploadedByGirard || prop.bvnVerified;
   return <PmModal title="Pay rent" onClose={onClose}>
+    {!bvnOk && <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.3)", borderRadius: 9, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: "var(--ink)", lineHeight: 1.6, display: "flex", gap: 9, alignItems: "flex-start" }}>
+      <Lock size={16} color="#D0453B" style={{ flexShrink: 0, marginTop: 2 }} />
+      <div><b>Payment is blocked on this property.</b> Girard has not been able to confirm that the landlord's bank account belongs to them. Until that check passes, no rent can be paid here. Do not pay this landlord by transfer or cash outside Girard: this is exactly the situation where fraud happens. Contact Girard if you believe this is wrong.</div>
+    </div>}
     <div style={{ background: "var(--ivory)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", fontSize: 13 }}><span>Rent</span><span>{money(inv.amount)}</span></div>
       {inv.lateFee && <div style={{ display: "flex", justifyContent: "space-between", color: "#D0453B", fontSize: 13, marginTop: 4 }}><span>Late fee</span><span>{money(inv.lateFee)}</span></div>}
@@ -2540,7 +2550,7 @@ function PayModal({ inv, st, email, onClose, onPaid }) {
     {(sub || splitCode) && <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>Paystack settles this payment directly to the landlord, and routes Girard's 5% administrative fee to Girard, in the same transaction.</div>}
     <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Payment gateway</label>
     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["Paystack", "Flutterwave"].map(g => <button key={g} onClick={() => setGw(g)} style={{ flex: 1, border: "1px solid " + (gw === g ? "var(--gold)" : "var(--cream-line)"), background: gw === g ? "var(--gold-soft)" : "transparent", color: gw === g ? "var(--gold-2)" : "var(--muted)", borderRadius: 8, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>{g}</button>)}</div>
-    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} disabled={loading || (prop && !prop.girardManaged && !checked)} onClick={() => { setLoading(true); if (gw === "Paystack") { payWithPaystack({ email, amountNaira: total, label: "Rent " + inv.id, purpose: "rent", target: inv.id, subaccount: sub, split_code: splitCode, onSuccess: () => { setLoading(false); onPaid(); }, onCancel: () => setLoading(false) }); } else { setTimeout(onPaid, 1200); } }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
+    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} disabled={loading || !bvnOk || (prop && !prop.girardManaged && !checked)} onClick={() => { setLoading(true); if (gw === "Paystack") { payWithPaystack({ email, amountNaira: total, label: "Rent " + inv.id, purpose: "rent", target: inv.id, subaccount: sub, split_code: splitCode, onSuccess: () => { setLoading(false); onPaid(); }, onCancel: () => setLoading(false) }); } else { setTimeout(onPaid, 1200); } }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
   </PmModal>;
 }
 
@@ -5880,15 +5890,16 @@ function EsignModal({ doc, onClose, toast }) {
 function PayoutAccountCard({ identity, toast }) {
   const email = (identity && identity.email) || "";
   const cur = bankFor(email) || {};
-  const [name, setName] = useState(cur.bankAcctName || ""); const [no, setNo] = useState(cur.bankAcctNo || ""); const [bk, setBk] = useState(cur.bankName || NG_BANKS[0][0]);
+  const [name, setName] = useState(cur.bankAcctName || ""); const [no, setNo] = useState(cur.bankAcctNo || ""); const [bk, setBk] = useState(cur.bankName || NG_BANKS[0][0]); const [bvn, setBvn] = useState("");
   const [busy, setBusy] = useState(false);
   const save = async () => {
     if (!name.trim() || no.length < 10) { toast("Enter the account name and 10-digit number", "danger"); return; }
+    if (bvn.replace(/[^0-9]/g, "").length !== 11) { toast("Enter your 11-digit BVN. Girard checks that this account belongs to you.", "danger"); return; }
     setBusy(true);
-    const r = await createSubaccount({ name, bankName: bk, acctNo: no, email });
+    const r = await createSubaccount({ name, bankName: bk, acctNo: no, email, bvn });
     setBusy(false);
-    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "" }); toast("Payout account verified and saved. Rent will settle directly to you.", "success"); return; }
-    if (r && r.configured && !r.ok) { toast(r.error || "Paystack could not verify that account", "danger"); return; }
+    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "", bvnVerified: !!r.bvn_verified }); toast(r.bvn_verified ? "BVN matched. Payout account verified and saved." : "Payout account saved.", "success"); return; }
+    if (r && r.configured && !r.ok) { toast(r.error || "Paystack could not verify that account", "danger"); if (r.bvn_mismatch) { try { auditLog("BVN mismatch blocked", email + " tried to register an account not linked to their BVN", email); } catch (e) {} } return; }
     bankSet(email, { bankName: bk, bankAcctName: name, bankAcctNo: no });
     toast("Payout account saved", "success");
   };
@@ -5897,6 +5908,8 @@ function PayoutAccountCard({ identity, toast }) {
     <div style={{ display: "grid", gap: 10 }}>
       <PmField label="Account name" value={name} onChange={setName} placeholder="Account holder name" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2"><PmField label="Account number" value={no} onChange={v => setNo(v.replace(/[^0-9]/g, "").slice(0, 10))} placeholder="10-digit NUBAN" /><PmSelect label="Bank" value={bk} onChange={setBk} options={NG_BANKS.map(x => x[0])} /></div>
+      <PmField label="BVN" value={bvn} onChange={v => setBvn(v.replace(/[^0-9]/g, "").slice(0, 11))} placeholder="11 digits" />
+      <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.55 }}>Girard checks with your bank that this account belongs to you. If it does not, rent cannot be collected for your properties. Your BVN is used for this check only and is not stored.</div>
       <div><PmBtn kind="gold" onClick={save} disabled={busy}>{busy ? "Verifying…" : "Save payout account"}</PmBtn></div>
       <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>Girard verifies this account with Paystack and settles rent to it directly. Girard's 5% administrative fee is routed automatically in the same transaction.</div>
       <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.55, display: "flex", gap: 7, alignItems: "flex-start" }}><Clock size={13} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} /><span>Your <b>first payout</b> to a new account is held by Paystack until they verify it. This is a one-off check. It also applies again if you change these details later, so only update them when you need to.</span></div>

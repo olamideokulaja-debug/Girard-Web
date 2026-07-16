@@ -119,3 +119,52 @@ alter table public.market_intel enable row level security;
 drop policy if exists "intel read" on public.market_intel;
 create policy "intel read" on public.market_intel for select to anon, authenticated using (true);
 -- No write policy on purpose: only the service-role job may write.
+
+-- -------------------------------------------------------------------
+-- 5. APP SETTINGS (shared switches, e.g. "we are live, never seed samples")
+-- -------------------------------------------------------------------
+create table if not exists public.app_settings (
+  key        text primary key,
+  value      jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.app_settings enable row level security;
+drop policy if exists "settings read" on public.app_settings;
+create policy "settings read" on public.app_settings for select to anon, authenticated using (true);
+drop policy if exists "settings write" on public.app_settings;
+create policy "settings write" on public.app_settings for all to authenticated
+  using (lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com')
+  with check (lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com');
+
+-- -------------------------------------------------------------------
+-- 6. ADMIN ACCESS REQUESTS
+--    @girardpropertylimited.com accounts get admin access automatically.
+--    Anyone else asking for admin lands here as "Pending" until approved.
+-- -------------------------------------------------------------------
+create table if not exists public.admin_requests (
+  email      text primary key,
+  name       text,
+  status     text default 'Pending',   -- Pending | Approved | Declined
+  decided_by text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table public.admin_requests enable row level security;
+
+-- You may see and raise your own request.
+drop policy if exists "admin_req own" on public.admin_requests;
+create policy "admin_req own" on public.admin_requests
+  for select to authenticated
+  using (lower(email) = lower(coalesce(auth.jwt() ->> 'email','')) or lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com');
+
+drop policy if exists "admin_req insert" on public.admin_requests;
+create policy "admin_req insert" on public.admin_requests
+  for insert to authenticated
+  with check (lower(email) = lower(coalesce(auth.jwt() ->> 'email','')));
+
+-- Only Girard staff may approve or decline.
+drop policy if exists "admin_req decide" on public.admin_requests;
+create policy "admin_req decide" on public.admin_requests
+  for update to authenticated
+  using (lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com')
+  with check (lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com');

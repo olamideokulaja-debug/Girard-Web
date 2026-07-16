@@ -145,3 +145,38 @@ create policy "banks own row" on public.banks
 --   3. Confirm Girard staff really are only ever on @girardpropertylimited.com
 --      addresses, since is_girard_admin() trusts that domain.
 -- -------------------------------------------------------------------
+
+-- ===================================================================
+-- AUDIT LOG: Girard staff only, append-only, permanent.
+--
+-- An audit log that the people it watches can edit is not an audit log.
+-- There is deliberately NO update and NO delete policy below: with RLS on
+-- and no policy granting them, those actions are refused for everyone
+-- using the app's key, including administrators. Records can be written
+-- and read, never altered or removed.
+-- ===================================================================
+alter table public.audit enable row level security;
+
+drop policy if exists "audit read" on public.audit;
+drop policy if exists "audit write" on public.audit;
+drop policy if exists "audit insert" on public.audit;
+drop policy if exists "audit update" on public.audit;
+drop policy if exists "audit delete" on public.audit;
+drop policy if exists "audit all" on public.audit;
+drop policy if exists "Enable all for anon" on public.audit;
+
+-- Only Girard staff may read it.
+create policy "audit read" on public.audit
+  for select to authenticated
+  using (lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com');
+
+-- Anyone signed in may add a record, so their actions are captured. They
+-- cannot read the log back unless they are staff.
+create policy "audit insert" on public.audit
+  for insert to authenticated
+  with check (true);
+
+-- No update policy. No delete policy. On purpose. Do not add them.
+
+create index if not exists audit_created_idx on public.audit (created_at desc);
+create index if not exists audit_action_idx on public.audit (lower(action));
