@@ -829,7 +829,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.7</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.8</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1557,6 +1557,12 @@ function SavedProperties({ st, identity, go }) {
         </PmCard>)}
       </div>}
   </div>;
+}
+let _statusCache = null;
+async function svcStatus() {
+  if (_statusCache) return _statusCache;
+  try { const r = await fetch("/api/status"); _statusCache = await r.json(); } catch (e) { _statusCache = {}; }
+  return _statusCache;
 }
 function AiNote({ style, extra }) {
   return <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "8px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.55, display: "flex", gap: 7, alignItems: "flex-start", ...(style || {}) }}><Sparkles size={13} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} /><span>AI-generated content may contain errors and should be independently verified before use.{extra ? " " + extra : ""}</span></div>;
@@ -3755,6 +3761,8 @@ function reminderMsg(t) { const first = t.tenant.split(" ")[0]; return "Dear " +
 
 function RentRemindersScreen({ toast }) {
   const tens = isPurged() ? [] : tenancySeed();
+  const [svc, setSvc] = useState(null);
+  useEffect(() => { let on = true; svcStatus().then(x => { if (on) setSvc(x || {}); }); return () => { on = false; }; }, []);
   const [sent, setSent] = useState([]);
   const [preview, setPreview] = useState(null);
   useEffect(() => { let on = true; remFetch().then(x => { if (on) setSent(x); }); return () => { on = false; }; }, []);
@@ -3780,7 +3788,7 @@ function RentRemindersScreen({ toast }) {
     <PmCard pad={16} style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <BellRing size={18} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} />
-        <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Girard automatically emails each tenant and messages them on WhatsApp 3 months before their rent is due. To send live messages, add <b style={{ color: "var(--ink)" }}>RESEND_API_KEY</b> (email) and <b style={{ color: "var(--ink)" }}>TWILIO_ACCOUNT_SID</b>, <b style={{ color: "var(--ink)" }}>TWILIO_AUTH_TOKEN</b>, <b style={{ color: "var(--ink)" }}>TWILIO_WHATSAPP_FROM</b> (WhatsApp) in Vercel. Until then, reminders are scheduled and logged.</div>
+        <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Girard emails each tenant and messages them on WhatsApp 3 months before their rent is due. {svc === null ? "Checking which channels are live\u2026" : (svc.email && svc.whatsapp) ? <b style={{ color: "#1F9D57" }}>Email and WhatsApp are live: reminders will send.</b> : svc.email ? <><b style={{ color: "#1F9D57" }}>Email is live.</b> WhatsApp is not connected yet, so add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_WHATSAPP_FROM in Vercel and redeploy.</> : svc.whatsapp ? <><b style={{ color: "#1F9D57" }}>WhatsApp is live.</b> Email is not connected yet, so add RESEND_API_KEY in Vercel and redeploy.</> : <>Neither channel is connected yet, so reminders are scheduled and logged only. Add <b style={{ color: "var(--ink)" }}>RESEND_API_KEY</b> (email) or <b style={{ color: "var(--ink)" }}>TWILIO_ACCOUNT_SID</b>, <b style={{ color: "var(--ink)" }}>TWILIO_AUTH_TOKEN</b>, <b style={{ color: "var(--ink)" }}>TWILIO_WHATSAPP_FROM</b> (WhatsApp) in Vercel, then redeploy.</>}</div>
       </div>
     </PmCard>
     <PmCard pad={0} style={{ overflow: "hidden" }}>
