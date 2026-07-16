@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.0</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.2</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -2717,7 +2717,7 @@ const STAGE_DESC = [
 
 async function aiValue({ type, city, country, value }) {
   const cur = CUR_OF[country] || "₦";
-  const local = +String(value).replace(/\D/g, "") || (country === "Nigeria" ? 300000000 : country === "UK" ? 450000 : 550000);
+  const local = +String(value).replace(/\D/g, "") || 0;
   const proxy = await aiProxy(`In one sentence, justify a market value near ${cur}${local.toLocaleString()} for a ${type || "property"} in ${city || "the area"}, ${country}. No preamble.`);
   return { local, usd: toUSD(local, cur), cur, rationale: proxy.ok ? proxy.text : `Based on comparable ${(type || "property").toLowerCase()} sales in ${city || country}, this value sits within the local market range.`, offline: !proxy.ok };
 }
@@ -2876,9 +2876,9 @@ function SwapDeals({ sw, setSw, identity, toast }) {
   return <div>
     <H2 title={identity.role === "admin" ? "Swap pipeline" : "My swaps"} sub="Every active cross-border deal and its current stage" />
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-      <PmStat icon={Handshake} label="Initiated" value={String(sw.deals.length + 5)} />
+      <PmStat icon={Handshake} label="Initiated" value={String(sw.deals.length)} />
       <PmStat icon={Clock} label="In progress" value={String(sw.deals.filter(d => d.stage < 11).length)} tone="#E0A106" />
-      <PmStat icon={CheckCircle2} label="Completed" value="4" />
+      <PmStat icon={CheckCircle2} label="Completed" value={String(sw.deals.filter(d => d.stage >= 11).length)} />
     </div>
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {sw.deals.map(d => <PmCard key={d.id}>
@@ -2983,6 +2983,7 @@ const FEED_KINDS = {
   price: { label: "Price update", icon: LineChart, c: "var(--muted)" }
 };
 function seedFeed() {
+  if (isPurged()) return [];
   const pm = pmLoad(); const sw = swLoad();
   const ev = [];
   pm.properties.slice(0, 6).forEach((p, i) => ev.push({ kind: "instruction", market: "Nigeria", text: p.title + " listed in " + p.area, price: money(p.rent) + "/yr", mins: 3 + i * 7 }));
@@ -3209,7 +3210,7 @@ function ReportsScreen({ identity, toast }) {
 const INTEL = {
   Nigeria: {
     cur: "₦",
-    kpis: [{ l: "Avg price growth (12m)", v: "+8.4%", t: "#1F9D57" }, { l: "Avg gross yield", v: "6.2%", t: "var(--muted)" }, { l: "Active listings", v: "1,240", t: "var(--muted)" }, { l: "Planning approvals (Q)", v: "312", t: "var(--muted)" }],
+    kpis: [{ l: "Avg price growth (12m)", v: "—", t: "var(--muted)" }, { l: "Avg gross yield", v: "—", t: "var(--muted)" }, { l: "Active listings", v: "1,240", t: "var(--muted)" }, { l: "Planning approvals (Q)", v: "312", t: "var(--muted)" }],
     priceTrend: [{ m: "Q1", v: 100 }, { m: "Q2", v: 103 }, { m: "Q3", v: 106 }, { m: "Q4", v: 105 }, { m: "Q1", v: 109 }, { m: "Q2", v: 112 }],
     yields: [{ m: "Lekki", v: 6.8 }, { m: "Ikoyi", v: 5.4 }, { m: "Yaba", v: 7.1 }, { m: "Ikeja", v: 6.5 }, { m: "Ajah", v: 7.6 }],
     planning: ["Lekki: 240-unit mixed-use scheme approved", "Eko Atlantic: phase 3 infrastructure filing lodged", "Yaba: tech-district densification consultation opened"],
@@ -3218,7 +3219,7 @@ const INTEL = {
   },
   UK: {
     cur: "£",
-    kpis: [{ l: "Avg price growth (12m)", v: "+3.1%", t: "#1F9D57" }, { l: "Avg gross yield", v: "5.1%", t: "var(--muted)" }, { l: "Active listings", v: "3,880", t: "var(--muted)" }, { l: "Planning approvals (Q)", v: "1,204", t: "var(--muted)" }],
+    kpis: [{ l: "Avg price growth (12m)", v: "—", t: "var(--muted)" }, { l: "Avg gross yield", v: "—", t: "var(--muted)" }, { l: "Active listings", v: "3,880", t: "var(--muted)" }, { l: "Planning approvals (Q)", v: "1,204", t: "var(--muted)" }],
     priceTrend: [{ m: "Q1", v: 100 }, { m: "Q2", v: 101 }, { m: "Q3", v: 102 }, { m: "Q4", v: 102 }, { m: "Q1", v: 103 }, { m: "Q2", v: 103 }],
     yields: [{ m: "Manch", v: 6.2 }, { m: "Bristol", v: 5.5 }, { m: "B'ham", v: 6.0 }, { m: "London", v: 4.2 }, { m: "Leeds", v: 6.4 }],
     planning: ["Manchester: 1,000-home regeneration approved", "London Zone 2: tall-building policy consultation", "Bristol: harbourside mixed-use scheme resubmitted"],
@@ -3227,7 +3228,7 @@ const INTEL = {
   },
   US: {
     cur: "$",
-    kpis: [{ l: "Avg price growth (12m)", v: "+4.7%", t: "#1F9D57" }, { l: "Avg gross yield", v: "5.8%", t: "var(--muted)" }, { l: "Active listings", v: "6,420", t: "var(--muted)" }, { l: "Permits (Q)", v: "2,910", t: "var(--muted)" }],
+    kpis: [{ l: "Avg price growth (12m)", v: "—", t: "var(--muted)" }, { l: "Avg gross yield", v: "—", t: "var(--muted)" }, { l: "Active listings", v: "6,420", t: "var(--muted)" }, { l: "Permits (Q)", v: "2,910", t: "var(--muted)" }],
     priceTrend: [{ m: "Q1", v: 100 }, { m: "Q2", v: 102 }, { m: "Q3", v: 103 }, { m: "Q4", v: 104 }, { m: "Q1", v: 104 }, { m: "Q2", v: 105 }],
     yields: [{ m: "Austin", v: 6.3 }, { m: "Atlanta", v: 6.9 }, { m: "Miami", v: 5.6 }, { m: "NYC", v: 4.1 }, { m: "Dallas", v: 6.7 }],
     planning: ["Austin: mixed-use tower permit issued", "Miami: waterfront resilience overlay adopted", "Atlanta: transit-oriented rezoning advanced"],
@@ -3591,7 +3592,7 @@ function SignupsScreen() {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
       <CStat icon={UserPlus} label="Total users" value={total.toLocaleString()} sub={total ? thisMonth + " joined this month" : "No accounts yet"} c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={TrendingUp} label="New this month" value={String(thisMonth)} sub={thisMonth ? "New accounts" : "None yet"} c="#10B981" bg="#E7F7F0" />
-      <CStat icon={CheckCircle2} label="Activation rate" value="71%" sub="Active / verified" c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={CheckCircle2} label="Activation rate" value={total ? Math.round((users.filter(u => u.status === "Active").length / total) * 100) + "%" : "\u2014"} sub={total ? "Active / total" : "No accounts yet"} c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={ShieldCheck} label="Verified" value={String(verified)} sub={verified ? "KYC complete" : "None yet"} c="#F59E0B" bg="#FEF4E3" />
     </div>
     <PmCard style={{ marginBottom: 16 }}>
@@ -3624,6 +3625,7 @@ function SignupsScreen() {
 
 function fmtDate(d) { return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
 function tenancySeed() {
+  if (isPurged()) return [];
   const base = new Date();
   const mk = (id, name, email, phone, prop, area, rent, mAhead) => { const due = new Date(base); due.setMonth(due.getMonth() + mAhead); const rem = new Date(due); rem.setMonth(rem.getMonth() - 3); return { id, tenant: name, email, phone, property: prop, area, rent, due: due.toISOString(), remind: rem.toISOString() }; };
   return [
@@ -3651,7 +3653,7 @@ async function remMark(t) {
 function reminderMsg(t) { const first = t.tenant.split(" ")[0]; return "Dear " + first + ", this is a reminder from Girard Property Limited that the rent for " + t.property + " (" + money(t.rent) + ") is due on " + fmtDate(t.due) + ". As this falls due in three months, we kindly ask that you begin making arrangements. For any questions, contact us on +234 906 000 1234. — Girard Property Limited"; }
 
 function RentRemindersScreen({ toast }) {
-  const tens = tenancySeed();
+  const tens = isPurged() ? [] : tenancySeed();
   const [sent, setSent] = useState([]);
   const [preview, setPreview] = useState(null);
   useEffect(() => { let on = true; remFetch().then(x => { if (on) setSent(x); }); return () => { on = false; }; }, []);
@@ -3967,6 +3969,7 @@ function EnquiriesScreen({ toast }) {
    Ikoyi Project — unit-by-unit sales board (40 units)
    =================================================================== */
 function unitSeed() {
+  if (isPurged()) return [];
   const units = [];
   for (let floor = 3; floor <= 22; floor++) {
     for (let u = 0; u < 2; u++) {
@@ -3988,6 +3991,7 @@ function unitSave(s) { try { localStorage.setItem(UNIT_KEY, JSON.stringify(s)); 
 function unitToRow(u) { return { id: u.id, floor: u.floor, unit: u.unit, beds: u.beds, label: u.label, size: u.size, price: u.price, status: u.status, buyer: u.buyer || null, phone: u.phone || null }; }
 function unitRowToRec(r) { return { id: r.id, floor: r.floor, unit: r.unit, beds: r.beds, label: r.label, size: r.size, price: r.price, status: r.status, buyer: r.buyer || "", phone: r.phone || "" }; }
 async function unitsFetch() {
+  if (isPurged()) { if (supabase) { try { const { data, error } = await supabase.from("units").select("*").order("floor", { ascending: true }); if (!error && data) return data.map(unitRowToRec); } catch (e) {} } return []; }
   if (supabase) { try { let { data, error } = await supabase.from("units").select("*").order("floor", { ascending: true }); if (!error && data && data.length === 0) { const seed = unitSeed(); await supabase.from("units").insert(seed.map(unitToRow)); return seed; } if (!error && data) return data.map(unitRowToRec); } catch (e) {} }
   return unitLoad();
 }
@@ -4808,6 +4812,7 @@ const JOB_PROPS = [
 const JOB_EST = { "Plumbing": 45000, "Electrical": 60000, "HVAC / air-conditioning": 120000, "Cleaning": 35000, "Security": 80000, "Painting & finishing": 150000, "General maintenance": 50000 };
 function jobsLoad() {
   try { const r = localStorage.getItem(JOBS_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  if (isPurged()) return { items: [] };
   const seed = { items: [
     { id: "JB-2001", propTitle: "Ikoyi Project", girardOwned: true, category: "Electrical", desc: "Inverter not switching over", vendorName: "ElectroPro NG", status: "Completed", estimate: 60000, finalCost: 72000, paidBy: "Girard", rating: 0, ratedOk: null, review: "", createdAt: "2026-06-28" },
     { id: "JB-2002", propTitle: "Client Flat, Yaba", girardOwned: false, category: "Plumbing", desc: "Leaking faucet, master bath", vendorName: "SwiftFix Services", status: "Rated", estimate: 45000, finalCost: 40000, paidBy: "Client", rating: 5, ratedOk: true, review: "Fast and neat.", createdAt: "2026-07-01" }
@@ -4818,6 +4823,7 @@ function jobsSave(s) { try { localStorage.setItem(JOBS_KEY, JSON.stringify(s)); 
 function jobRecToRow(j) { return { id: j.id, prop_title: j.propTitle, girard_owned: j.girardOwned, category: j.category, descr: j.desc, vendor_name: j.vendorName || null, status: j.status, estimate: j.estimate, final_cost: j.finalCost, paid_by: j.paidBy, rating: j.rating || 0, rated_ok: j.ratedOk, review: j.review || null, created_on: j.createdAt }; }
 function jobRowToRec(r) { return { id: r.id, propTitle: r.prop_title, girardOwned: r.girard_owned, category: r.category, desc: r.descr, vendorName: r.vendor_name, status: r.status, estimate: r.estimate, finalCost: r.final_cost, paidBy: r.paid_by, rating: r.rating, ratedOk: r.rated_ok, review: r.review, createdAt: r.created_on }; }
 async function jobsFetch() {
+  if (isPurged()) { if (supabase) { try { const { data, error } = await supabase.from("jobs").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(jobRowToRec); } catch (e) {} } return []; }
   if (supabase) { try { const { data, error } = await supabase.from("jobs").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(jobRowToRec); } catch (e) {} }
   return jobsLoad().items;
 }
@@ -5007,7 +5013,7 @@ function InvestorOverview({ identity, go }) {
       <PmCard>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Market snapshot</div>
         <MiniArea data={idx} w={280} h={90} color="#3B82F6" fill="#3B82F620" />
-        <div style={{ display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" }}>{[["Prime yield", "8.7%"], ["Rental growth", "+6.1%"], ["FX (₦/$)", "~1,650"]].map(([k, v]) => <div key={k}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)" }}>{v}</div></div>)}</div>
+        <div style={{ display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" }}>{[["Prime yield", "\u2014"], ["Rental growth", "\u2014"], ["FX (\u20a6/$)", "\u2014"]].map(([k, v]) => <div key={k}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)" }}>{v}</div></div>)}</div>
       </PmCard>
     </div>
     <PmCard style={{ marginTop: 16 }}>
@@ -5343,7 +5349,8 @@ function AuditScreen() {
 
 /* ========================= TENANT PORTAL ========================= */
 function rentKey(e) { return "girard_rent_" + (e || "guest"); }
-function rentLoad(e) { try { const r = localStorage.getItem(rentKey(e)); if (r) return JSON.parse(r); } catch (x) {} const seed = { items: [{ id: "RENT-1", period: "Year 1 · 2025/26", amount: 4500000, status: "Paid", due: "2025-08-01" }, { id: "RENT-2", period: "Year 2 renewal · 2026/27", amount: 4500000, status: "Due", due: "2026-08-01" }] }; try { localStorage.setItem(rentKey(e), JSON.stringify(seed)); } catch (x) {} return seed; }
+function rentLoad(e) {
+  if (isPurged()) return { items: [] }; try { const r = localStorage.getItem(rentKey(e)); if (r) return JSON.parse(r); } catch (x) {} const seed = { items: [{ id: "RENT-1", period: "Year 1 · 2025/26", amount: 4500000, status: "Paid", due: "2025-08-01" }, { id: "RENT-2", period: "Year 2 renewal · 2026/27", amount: 4500000, status: "Due", due: "2026-08-01" }] }; try { localStorage.setItem(rentKey(e), JSON.stringify(seed)); } catch (x) {} return seed; }
 function rentSave(e, s) { try { localStorage.setItem(rentKey(e), JSON.stringify(s)); } catch (x) {} }
 function msgKey(e) { return "girard_msgs_" + (e || "guest"); }
 function msgLoadLocal(e) { try { const r = localStorage.getItem(msgKey(e)); if (r) return JSON.parse(r); } catch (x) {} return { items: [] }; }
@@ -5360,7 +5367,15 @@ async function msgFetch(email) {
 
 function TenantPortal({ identity, toast, section, go }) {
   const email = identity.email || "guest";
-  const tenancy = { property: "2-Bed Apartment, Lekki Phase 1", area: "Lekki Phase 1", rent: 4500000, start: "1 Aug 2025", end: "31 Jul 2026" };
+  const tenancy = (() => {
+    try {
+      const pm = pmLoad(); const first = ((identity.firstName || identity.name || "") + "").split(" ")[0].toLowerCase();
+      const ls = (pm.leases || []).find(l => (l.tenant || "").toLowerCase().includes(first));
+      const pr = ls ? (pm.properties || []).find(x => x.id === ls.property) : null;
+      if (pr) return { property: pr.title, area: pr.area, rent: pr.rent || 0, start: ls.date || "\u2014", end: "\u2014" };
+    } catch (e) {}
+    return { property: "No tenancy yet", area: "\u2014", rent: 0, start: "\u2014", end: "\u2014" };
+  })();
   const [rent, setRentRaw] = useState(() => rentLoad(email));
   const [showTerm, setShowTerm] = useState(false); const [ackRent, setAckRent] = useState(false); const [termDate, setTermDate] = useState("");
   const setRent = n => { setRentRaw(n); rentSave(email, n); };
@@ -5389,9 +5404,9 @@ function TenantPortal({ identity, toast, section, go }) {
       <CStat icon={Wrench} label="Open repairs" value={String(repairs.filter(r => r.status !== "Rated" && r.status !== "Completed").length)} sub="In progress" c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={CalendarDays} label="Lease ends" value={tenancy.end} sub="Renewal available" c="#10B981" bg="#E7F7F0" />
     </div>
-    <PmCard style={{ marginBottom: 16, borderLeft: "3px solid var(--gold)" }}>
+    {tenancy.rent > 0 && <PmCard style={{ marginBottom: 16, borderLeft: "3px solid var(--gold)" }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><BellRing size={18} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} /><div style={{ flex: 1 }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>Rent review notice</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.55, marginTop: 3, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Your rent will change from {money(tenancy.rent)} to {money(Math.round(tenancy.rent * 1.1))} (a 10% review) effective 1 Aug 2026. This notice is served with 3 months' notice, as agreed in your tenancy.</div>{ackRent ? <div style={{ marginTop: 8, color: "#1F9D57", fontWeight: 700, fontSize: 13 }}>Acknowledged â</div> : <PmBtn size="sm" style={{ marginTop: 10 }} onClick={() => { setAckRent(true); toast("Rent review acknowledged."); }}>Acknowledge</PmBtn>}</div></div>
-    </PmCard>
+    </PmCard>}
     <PmCard style={{ marginBottom: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Ending your tenancy</div>
       <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10, lineHeight: 1.5 }}>Give notice to end your tenancy. Girard will confirm the notice period and next steps.</div>
