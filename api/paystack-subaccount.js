@@ -47,9 +47,18 @@ export default async function handler(req, res) {
         const mr = await fetch("https://api.paystack.co/bank/match_bvn?account_number=" + encodeURIComponent(account_number) + "&bank_code=" + encodeURIComponent(settlement_bank) + "&bvn=" + encodeURIComponent(String(bvn).replace(/[^0-9]/g, "")), { headers: hdr });
         const md = await mr.json();
         if (!md || md.status !== true) {
-          // Paystack could not perform the check at all. Do not call that a
-          // mismatch: it is a different problem and the person is not at fault.
-          res.status(200).json({ configured: true, ok: false, error: "Paystack could not check that BVN: " + ((md && md.message) || "no response") + ". Please try again shortly." });
+          const msg = (md && md.message) || "";
+          // Paystack answers a genuine mismatch with status:false and a message
+          // saying so. That is a real verdict, not a technical failure, and must
+          // not be reported as "try again".
+          if (/does not match|not match|mismatch|invalid bvn|bvn is invalid/i.test(msg)) {
+            res.status(200).json({
+              configured: true, ok: false, bvn_mismatch: true,
+              error: "Paystack says this bank account is not linked to that BVN, so Girard cannot pay rent into it. Check that the account number is the one tied to this BVN, and that the BVN is yours. If your bank holds an old BVN against this account, contact your bank to correct it. Paystack's exact words: \u201c" + msg + "\u201d"
+            });
+            return;
+          }
+          res.status(200).json({ configured: true, ok: false, error: "Paystack could not check that BVN right now: " + (msg || "no response") + ". Please try again shortly." });
           return;
         }
         const d = md.data || {};
