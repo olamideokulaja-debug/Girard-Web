@@ -458,8 +458,25 @@ function Landing({ onStart, onSignIn }) {
     return () => io.disconnect();
   }, []);
 
+  const [liveProps, setLiveProps] = useState(() => { try { return isPurged() ? [] : (pmLoad().properties || []); } catch (e) { return []; } });
+  useEffect(() => {
+    let dead = false;
+    (async () => { const sh = await sharedLoad(); if (!dead && sh && sh.properties) setLiveProps(sh.properties); })();
+    return () => { dead = true; };
+  }, []);
+
   const rotated = [...R.listings.slice(offset), ...R.listings.slice(0, offset)];
-  const instr = R.instr[tick % R.instr.length];
+  // Real listings only. If Girard has none live, the strip says so rather than
+  // cycling scripted "new instruction" lines.
+  const liveInstr = (() => {
+    try {
+      const ps = (liveProps || []).filter(p => p.status === "Available" || p.status === "Leased");
+      if (!ps.length) return null;
+      const p = ps[tick % ps.length];
+      return "Now listed: " + p.title + (p.area ? " in " + p.area : "");
+    } catch (e) { return null; }
+  })();
+  const instr = liveInstr || (isPurged() ? "New listings appear here as they go live" : R.instr[tick % R.instr.length]);
 
   return (
     <div>
@@ -812,7 +829,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.4</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.5</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
