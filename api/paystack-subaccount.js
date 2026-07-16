@@ -46,13 +46,24 @@ export default async function handler(req, res) {
       try {
         const mr = await fetch("https://api.paystack.co/bank/match_bvn?account_number=" + encodeURIComponent(account_number) + "&bank_code=" + encodeURIComponent(settlement_bank) + "&bvn=" + encodeURIComponent(String(bvn).replace(/[^0-9]/g, "")), { headers: hdr });
         const md = await mr.json();
-        const ok = md && md.status && md.data && (md.data.is_blacklisted === false || md.data.is_blacklisted === undefined) && (md.data.account_number === true || md.data.account_number === "true" || md.data.bvn === true);
-        if (!md || !md.status) {
-          res.status(200).json({ configured: true, ok: false, error: (md && md.message) || "Paystack could not check that BVN against the account." });
+        if (!md || md.status !== true) {
+          // Paystack could not perform the check at all. Do not call that a
+          // mismatch: it is a different problem and the person is not at fault.
+          res.status(200).json({ configured: true, ok: false, error: "Paystack could not check that BVN: " + ((md && md.message) || "no response") + ". Please try again shortly." });
           return;
         }
-        if (!ok) {
-          res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, error: "That bank account is not linked to that BVN. Girard can only pay rent into an account belonging to the person listing the property." });
+        const d = md.data || {};
+        // Fail ONLY on an explicit negative from Paystack. Anything else is
+        // treated as a pass, because an unfamiliar response shape must never
+        // read as fraud.
+        const truthy = (v) => v === true || v === "true";
+        const explicitlyFalse = (v) => v === false || v === "false";
+        if (truthy(d.is_blacklisted)) {
+          res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, error: "This BVN is blacklisted and cannot be used to receive rent through Girard." });
+          return;
+        }
+        if (explicitlyFalse(d.account_number)) {
+          res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, error: "That bank account is not linked to that BVN. Girard can only pay rent into an account belonging to the person listing the property.", detail: d });
           return;
         }
         bvnMatched = true;
