@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.3</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.4</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1668,6 +1668,27 @@ async function fullReset() {
     Object.keys(localStorage).filter(k => k.indexOf("girard_") === 0 && k !== PURGED_KEY && k !== "girard_session" && k !== "girard_consent").forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
   } catch (e) {}
   return { properties: [], applications: [], leases: [], invoices: [], jobs: [], units: [], tickets: [], vendors: [] };
+}
+async function liveFlagSet() {
+  if (!supabase) return;
+  try { await supabase.from("app_settings").upsert([{ key: "purged", value: true, updated_at: new Date().toISOString() }], { onConflict: "key" }); } catch (e) {}
+}
+// "Live" belongs to the business, not to one browser: any device that has not
+// been purged would otherwise seed samples and push them back to everyone.
+async function liveFlagSync() {
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase.from("app_settings").select("value").eq("key", "purged").maybeSingle();
+    const on = !error && data && (data.value === true || data.value === "true");
+    if (on && !isPurged()) {
+      try {
+        localStorage.setItem(PURGED_KEY, "1");
+        Object.keys(localStorage).filter(k => k.indexOf("girard_") === 0 && k !== PURGED_KEY && k !== "girard_session" && k !== "girard_consent").forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+      } catch (e) {}
+      return true;
+    }
+    return false;
+  } catch (e) { return false; }
 }
 async function sharedLoad() {
   if (!supabase) return null;
@@ -2996,6 +3017,7 @@ function LiveFeed({ identity }) {
   const [events, setEvents] = useState(seedFeed);
   const [sel, setSel] = useState(null);
   useEffect(() => {
+    if (isPurged()) return;   // never invent marketplace activity once live
     const id = setInterval(() => {
       const e = LIVE_POOL[Math.floor(Math.random() * LIVE_POOL.length)];
       setEvents(x => [{ ...e, mins: 0, _id: Math.random() }, ...x].slice(0, 40));
@@ -3005,7 +3027,8 @@ function LiveFeed({ identity }) {
   const list = events.filter(e => market === "All" || e.market === market);
   return <div>
     <H2 title="Live feed" sub="Instructions, swaps, offers and lets across your markets" right={<div style={{ width: 180 }}><PmSelect value={market} onChange={setMarket} options={["All", "Nigeria", "UK", "US"]} /></div>} />
-    <PmCard pad={0} style={{ overflow: "hidden" }}>
+    {list.length === 0 && <PmCard><div style={{ textAlign: "center", padding: 30, color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6 }}><Bell size={24} style={{ marginBottom: 10, opacity: .5 }} /><div style={{ fontWeight: 700, color: "var(--ink)" }}>No activity yet</div><div style={{ marginTop: 6 }}>New instructions, swaps, offers and lets will appear here as they happen.</div></div></PmCard>}
+    {list.length > 0 && <PmCard pad={0} style={{ overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 18px", borderBottom: "1px solid var(--cream-line)", color: "#1F9D57", fontWeight: 700, fontSize: 12.5 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: "#1F9D57", animation: "pulse 1.6s infinite" }} /> Live · updating in real time</div>
       {list.map((e, i) => { const K = FEED_KINDS[e.kind]; return <div key={e._id || i} onClick={() => setSel(e)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderBottom: i < list.length - 1 ? "1px solid var(--cream-line)" : "none", background: e.mins === 0 ? "var(--gold-soft)" : "transparent", transition: "background .5s", cursor: "pointer" }}>
         <div style={{ width: 38, height: 38, borderRadius: 9, background: K.c + "1f", color: K.c, display: "grid", placeItems: "center", flexShrink: 0 }}><K.icon size={18} /></div>
@@ -3014,7 +3037,7 @@ function LiveFeed({ identity }) {
         <a href={waLink(OFFICE_WA, "Hello Girard Communications, I would like to act on this marketplace item: " + e.text + (e.price ? " (" + e.price + ")" : "") + ".")} target="_blank" rel="noreferrer" onClick={ev => ev.stopPropagation()} className="btn-line on-ivory" style={{ flexShrink: 0, fontSize: 12, padding: "6px 11px", whiteSpace: "nowrap", gap: 5 }}><MessageSquare size={13} /> Contact Girard</a>
         <ChevronRight size={16} color="var(--muted)" style={{ flexShrink: 0 }} />
       </div>; })}
-    </PmCard>
+    </PmCard>}
     {sel && <PmModal title={FEED_KINDS[sel.kind].label} onClose={() => setSel(null)}><div style={{ fontSize: 14.5, color: "var(--ink)", lineHeight: 1.6, marginBottom: 14 }}>{sel.text}</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>{[["Type", FEED_KINDS[sel.kind].label], ["Market", sel.market], ["When", ago(sel.mins)], ["Value", sel.price || "\u2014"]].map(([k, v]) => <div key={k} style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .4 }}>{k}</div><div style={{ fontSize: 13.5, color: "var(--ink)", marginTop: 3 }}>{v}</div></div>)}</div><div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>This is a live marketplace event. Girard Communications can put you in touch and take it forward.</div><a href={waLink(OFFICE_WA, "Hello Girard Communications, I would like to act on this marketplace item: " + sel.text + (sel.price ? " (" + sel.price + ")" : "") + ".")} target="_blank" rel="noreferrer" className="btn-gold" style={{ width: "100%", justifyContent: "center" }}><MessageSquare size={15} /> Contact Girard Communications</a></PmModal>}
     <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
   </div>;
