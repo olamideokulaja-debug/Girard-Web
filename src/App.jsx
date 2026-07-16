@@ -830,7 +830,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.7</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.8</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -2533,11 +2533,21 @@ function PayModal({ inv, st, email, onClose, onPaid }) {
   // A landlord whose account is not proven to be theirs cannot be paid through
   // Girard. Blocking the split alone would be worse: the money would simply
   // land with Girard instead of being stopped.
-  const bvnOk = !prop || prop.girardManaged || prop.uploadedByGirard || prop.bvnVerified;
+  // Only an explicit mismatch blocks. A check Girard could not complete is our
+  // problem, not the tenant's, and the tenant still has to confirm they have
+  // seen the property before paying.
+  const ob = prop && prop.ownerEmail ? bankFor(prop.ownerEmail) : null;
+  const mismatch = !!(ob && ob.checkStatus === "Mismatch");
+  const unchecked = !!(ob && ob.checkStatus === "Check unavailable");
+  const bvnOk = !prop || prop.girardManaged || prop.uploadedByGirard || !mismatch;
   return <PmModal title="Pay rent" onClose={onClose}>
     {!bvnOk && <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.3)", borderRadius: 9, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: "var(--ink)", lineHeight: 1.6, display: "flex", gap: 9, alignItems: "flex-start" }}>
       <Lock size={16} color="#D0453B" style={{ flexShrink: 0, marginTop: 2 }} />
-      <div><b>Payment is blocked on this property.</b> Girard has not been able to confirm that the landlord's bank account belongs to them. Until that check passes, no rent can be paid here. Do not pay this landlord by transfer or cash outside Girard: this is exactly the situation where fraud happens. Contact Girard if you believe this is wrong.</div>
+      <div><b>Payment is blocked on this property.</b> The landlord's bank confirmed that their payout account is not linked to the identity they gave Girard. Until that is resolved, no rent can be paid here. <b>Do not pay this landlord by transfer or cash outside Girard</b>: this is exactly the situation where fraud happens. Contact Girard if you believe this is wrong.</div>
+    </div>}
+    {bvnOk && unchecked && <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "11px 13px", marginBottom: 12, fontSize: 12.5, color: "var(--ink)", lineHeight: 1.6, display: "flex", gap: 8, alignItems: "flex-start" }}>
+      <AlertTriangle size={15} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} />
+      <div>Girard has not yet been able to complete its bank check on this landlord. Please be especially careful: see the property, and satisfy yourself it exists and is available, before paying.</div>
     </div>}
     <div style={{ background: "var(--ivory)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", fontSize: 13 }}><span>Rent</span><span>{money(inv.amount)}</span></div>
@@ -5957,7 +5967,7 @@ function PayoutAccountCard({ identity, toast }) {
     setBusy(true);
     const r = await createSubaccount({ name, bankName: bk, acctNo: no, email, bvn });
     setBusy(false);
-    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "", bvnVerified: !!r.bvn_verified, checkStatus: r.bvn_verified ? "Matched" : "Not checked" }); setOk(r.bvn_verified ? "BVN matched. Payout account verified and saved as " + (r.account_name || name) + "." : "Payout account saved."); return; }
+    if (r && r.configured && r.ok) { bankSet(email, { bankName: bk, bankAcctName: r.account_name || name, bankAcctNo: no, subaccount: r.subaccount_code, split_code: r.split_code || "", bvnVerified: !!r.bvn_verified, checkStatus: r.bvn_verified ? "Matched" : (r.check === "unavailable" ? "Check unavailable" : "Not checked"), checkMessage: r.check_message || null }); if (r.check === "unavailable") { try { auditLog("BVN check unavailable", email + " \u00b7 " + (r.check_message || "") + " \u00b7 queued for review", email); } catch (e) {} } setOk(r.bvn_verified ? "BVN matched. Payout account verified and saved as " + (r.account_name || name) + "." : "Payout account saved. Girard could not complete the bank check just now (" + (r.check_message || "service unavailable") + "), so your account is with our team for a quick review. This is not a problem with your details."); return; }
     if (r && r.configured && !r.ok) {
       setErr(r.error || "Paystack could not verify that account.");
       if (r.bvn_mismatch) {

@@ -37,7 +37,16 @@ export default async function handler(req, res) {
     // The account must actually belong to the person who gave us the BVN.
     // Without this, a fraudster can list someone else's property and point the
     // rent at their own account. Live keys only: Paystack cannot match in test.
+    //
+    // Three outcomes, and the difference matters:
+    //   matched     -> verified, rent can flow
+    //   mismatch    -> refused outright. This is the fraud control.
+    //   unavailable -> Paystack could not answer (no balance, outage, not
+    //                  enabled). NOT the landlord's fault, so we create the
+    //                  account unverified and send it to Girard for review,
+    //                  rather than freezing an honest person's income.
     let bvnMatched = false;
+    let checkNote = "";
     if (!isTest) {
       if (!bvn || String(bvn).replace(/[^0-9]/g, "").length !== 11) {
         res.status(200).json({ configured: true, ok: false, error: "A valid 11-digit BVN is required to receive rent through Girard." });
@@ -46,41 +55,38 @@ export default async function handler(req, res) {
       try {
         const mr = await fetch("https://api.paystack.co/bank/match_bvn?account_number=" + encodeURIComponent(account_number) + "&bank_code=" + encodeURIComponent(settlement_bank) + "&bvn=" + encodeURIComponent(String(bvn).replace(/[^0-9]/g, "")), { headers: hdr });
         const md = await mr.json();
-        if (!md || md.status !== true) {
-          const msg = (md && md.message) || "";
-          // Paystack answers a genuine mismatch with status:false and a message
-          // saying so. That is a real verdict, not a technical failure, and must
-          // not be reported as "try again".
-          if (/does not match|not match|mismatch|invalid bvn|bvn is invalid/i.test(msg)) {
-            res.status(200).json({
-              configured: true, ok: false, bvn_mismatch: true,
-              error: "Paystack says this bank account is not linked to that BVN, so Girard cannot pay rent into it. Check that the account number is the one tied to this BVN, and that the BVN is yours. If your bank holds an old BVN against this account, contact your bank to correct it. Paystack's exact words: \u201c" + msg + "\u201d"
-            });
-            return;
-          }
-          res.status(200).json({ configured: true, ok: false, error: "Paystack could not check that BVN right now: " + (msg || "no response") + ". Please try again shortly." });
-          return;
-        }
-        const d = md.data || {};
-        // Fail ONLY on an explicit negative from Paystack. Anything else is
-        // treated as a pass, because an unfamiliar response shape must never
-        // read as fraud.
+        const msg = (md && md.message) || "";
         const truthy = (v) => v === true || v === "true";
         const explicitlyFalse = (v) => v === false || v === "false";
-        if (truthy(d.is_blacklisted)) {
-          res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, error: "This BVN is blacklisted and cannot be used to receive rent through Girard." });
+
+        if (md && md.status === true) {
+          const d = md.data || {};
+          if (truthy(d.is_blacklisted)) {
+            res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, check: "mismatch", error: "This BVN is blacklisted and cannot be used to receive rent through Girard." });
+            return;
+          }
+          if (explicitlyFalse(d.account_number)) {
+            res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, check: "mismatch", error: "Paystack says this bank account is not linked to that BVN, so Girard cannot pay rent into it. Paystack's exact words: \u201c" + msg + "\u201d" });
+            return;
+          }
+          bvnMatched = true;
+        } else if (/does not match|mismatch|invalid bvn|bvn is invalid/i.test(msg)) {
+          // A real verdict from Paystack. Refuse.
+          res.status(200).json({
+            configured: true, ok: false, bvn_mismatch: true, check: "mismatch",
+            error: "Paystack says this bank account is not linked to that BVN, so Girard cannot pay rent into it. Check the account number is the one tied to this BVN. If your bank holds an old BVN against this account, contact your bank. Paystack's exact words: \u201c" + msg + "\u201d"
+          });
           return;
+        } else {
+          // Balance, outage, throttling, not enabled, anything unrecognised:
+          // Paystack could not answer. Flag it, do not blame the landlord.
+          checkNote = msg || "no response";
         }
-        if (explicitlyFalse(d.account_number)) {
-          res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, error: "That bank account is not linked to that BVN. Girard can only pay rent into an account belonging to the person listing the property.", detail: d });
-          return;
-        }
-        bvnMatched = true;
       } catch (e) {
-        res.status(200).json({ configured: true, ok: false, error: "Could not reach Paystack to check the BVN. Please try again." });
-        return;
+        checkNote = "Could not reach Paystack";
       }
     }
+
     let resolvedName = business_name;
     if (!isTest) {
       // Resolve the account first so we never create a subaccount against a wrong number.
@@ -137,7 +143,10 @@ export default async function handler(req, res) {
     } catch (e) { /* subaccount alone is enough to split; split_code is a bonus */ }
 
     res.status(200).json({
-      configured: true, ok: true, test_mode: isTest, bvn_verified: !isTest,
+      configured: true, ok: true, test_mode: isTest,
+      bvn_verified: !isTest && bvnMatched,
+      check: isTest ? "skipped" : (bvnMatched ? "matched" : "unavailable"),
+      check_message: checkNote || null,
       subaccount_code,
       split_code,
       account_name: resolvedName
