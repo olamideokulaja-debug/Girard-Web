@@ -812,7 +812,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.2</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.3</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1648,40 +1648,26 @@ async function demoPurge(st) {
 // Wipe the lot: sample records AND anything created while testing. Used once,
 // before real customers arrive. Sign-in accounts are not touched.
 async function fullReset() {
+  // Everything: sample records AND everything created while testing, including
+  // real test payments. Sign-in accounts are not touched.
   if (supabase) {
-    try {
-      await supabase.from("invoices").delete().neq("id", "");
-      await supabase.from("properties").delete().neq("id", "");
-      await supabase.from("banks").delete().neq("email", "");
-    } catch (e) {}
+    // Every table the app reads. Clearing all of them is the point: leaving one
+    // behind is what kept "deleted" data reappearing on the dashboards.
+    const tables = ["invoices", "properties", "banks", "payments", "documents", "notifications", "audit", "enquiries", "messages", "swaps", "jobs", "units", "reports", "blocks", "subscriptions", "withdrawals", "agents", "partners", "reminders", "tickets", "leases", "applications"];
+    for (const t of tables) {
+      try { await supabase.from(t).delete().not("id", "is", null); } catch (e) {}
+      try { await supabase.from(t).delete().neq("id", ""); } catch (e) {}
+      try { await supabase.from(t).delete().neq("email", ""); } catch (e) {}
+      try { await supabase.from(t).delete().neq("who", ""); } catch (e) {}
+      try { await supabase.from(t).delete().neq("reference", ""); } catch (e) {}
+    }
   }
   await liveFlagSet();
   try {
     localStorage.setItem(PURGED_KEY, "1");
-    [PM_KEY, SW_KEY, CRM_KEY, SUP_KEY, REM_KEY, ENQ_KEY, AGENT_KEY, DOCS_KEY, NOTIF_KEY, PAYMENTS_KEY, FAVP_KEY, "girard_bank_v1", "girard_swapjourney_v1", "girard_swapfiled_v1", "girard_audit_v1", "girard_favs_v1", "girard_blocks_v1", "girard_users_v1"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+    Object.keys(localStorage).filter(k => k.indexOf("girard_") === 0 && k !== PURGED_KEY && k !== "girard_session" && k !== "girard_consent").forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
   } catch (e) {}
   return { properties: [], applications: [], leases: [], invoices: [], jobs: [], units: [], tickets: [], vendors: [] };
-}
-async function liveFlagSet() {
-  if (!supabase) return;
-  try { await supabase.from("app_settings").upsert([{ key: "purged", value: true, updated_at: new Date().toISOString() }], { onConflict: "key" }); } catch (e) {}
-}
-// Any device that has not been purged would otherwise seed samples and push
-// them back into the shared database. This makes "live" travel with the account.
-async function liveFlagSync() {
-  if (!supabase) return false;
-  try {
-    const { data, error } = await supabase.from("app_settings").select("value").eq("key", "purged").maybeSingle();
-    const on = !error && data && (data.value === true || data.value === "true");
-    if (on && !isPurged()) {
-      try {
-        localStorage.setItem(PURGED_KEY, "1");
-        [PM_KEY, SW_KEY, CRM_KEY, SUP_KEY, REM_KEY, ENQ_KEY, AGENT_KEY, USR_KEY].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
-      } catch (e) {}
-      return true;
-    }
-    return false;
-  } catch (e) { return false; }
 }
 async function sharedLoad() {
   if (!supabase) return null;
