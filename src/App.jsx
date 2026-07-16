@@ -596,8 +596,7 @@ function Landing({ onStart, onSignIn }) {
             <div className="rise">
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 22 }}>Digital management &amp; cross-border swaps</div>
               <h1 className="serif hero-h">
-                Building <span style={{ fontStyle: "italic", color: "var(--gold)" }}>tomorrow,</span><br />
-                powered by <span style={{ fontStyle: "italic", color: "var(--gold)" }}>technology.</span>
+                The future is <span style={{ fontStyle: "italic", color: "var(--gold)" }}>here...</span>
               </h1>
               <p style={{ fontSize: 17.5, color: "rgba(255,255,255,.76)", marginTop: 24, maxWidth: 520, lineHeight: 1.65, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>
                 Girard Property Limited is a premier real estate development and asset management company, elevating the standards of luxury, urban living and sustainable property investment across Nigeria, now on one governed platform for management, cross-border swaps, intelligence and concierge services.
@@ -829,7 +828,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 8.8</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.3</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -862,7 +861,7 @@ async function payWithPaystack({ email, amountNaira, label, purpose, target, sub
           key: PAYSTACK_KEY, email: email || "customer@girardpropertylimited.com", amount, currency: "NGN", ref: reference,
           ...(split_code ? { split_code } : subaccount ? { subaccount, bearer: "subaccount" } : {}),
           metadata: { purpose: purpose || "payment", target: target || email || "", custom_fields: [{ display_name: "Purpose", variable_name: "purpose", value: label || "Girard payment" }] },
-          callback: function (res) { payRecord({ reference: res.reference, purpose, target, amount: amountNaira, status: "success", subaccount: subaccount || null, split_code: split_code || null }); onSuccess && onSuccess(res.reference); },
+          callback: function (res) { payRecord({ reference: res.reference, purpose, target, amount: amountNaira, status: "success", subaccount: subaccount || null, split_code: split_code || null }); auditLog("Payment received", purpose + " \u00b7 " + label + " \u00b7 " + amountNaira + " \u00b7 ref " + res.reference, email); onSuccess && onSuccess(res.reference); },
           onClose: function () { onCancel && onCancel(); }
         });
         handler.openIframe(); return;
@@ -872,7 +871,26 @@ async function payWithPaystack({ email, amountNaira, label, purpose, target, sub
   payRecord({ reference, purpose, target, amount: amountNaira, status: "recorded" });
   onSuccess && onSuccess(reference);
 }
-const NG_BANKS = [["Access Bank", "044"], ["Guaranty Trust Bank", "058"], ["Zenith Bank", "057"], ["United Bank for Africa", "033"], ["First Bank of Nigeria", "011"], ["Fidelity Bank", "070"], ["Union Bank", "032"], ["Sterling Bank", "232"], ["Stanbic IBTC", "221"], ["Wema Bank", "035"], ["Kuda", "50211"], ["Opay", "999992"], ["Palmpay", "999991"]];
+const NG_BANKS = [
+  ["Access Bank", "044"], ["Access Bank (Diamond)", "063"], ["ALAT by Wema", "035A"], ["Citibank Nigeria", "023"],
+  ["Ecobank Nigeria", "050"], ["Fidelity Bank", "070"], ["First Bank of Nigeria", "011"], ["First City Monument Bank", "214"],
+  ["Globus Bank", "00103"], ["Guaranty Trust Bank", "058"], ["Heritage Bank", "030"], ["Jaiz Bank", "301"],
+  ["Keystone Bank", "082"], ["Lotus Bank", "303"], ["Optimus Bank", "107"], ["Parallex Bank", "104"],
+  ["Polaris Bank", "076"], ["PremiumTrust Bank", "105"], ["Providus Bank", "101"], ["Signature Bank", "106"],
+  ["Stanbic IBTC Bank", "221"], ["Standard Chartered Bank", "068"], ["Sterling Bank", "232"], ["SunTrust Bank", "100"],
+  ["Titan Trust Bank", "102"], ["Union Bank of Nigeria", "032"], ["United Bank for Africa", "033"], ["Unity Bank", "215"],
+  ["Wema Bank", "035"], ["Zenith Bank", "057"],
+  ["Kuda Bank", "50211"], ["Moniepoint MFB", "50515"], ["Opay", "999992"], ["Palmpay", "999991"],
+  ["PayCom (Opay)", "999992"], ["Rubies MFB", "125"], ["Sparkle Microfinance Bank", "51310"], ["VFD Microfinance Bank", "566"],
+  ["Fairmoney Microfinance Bank", "51318"], ["Carbon", "565"], ["Mint MFB", "50304"], ["Rand Merchant Bank", "502"],
+  ["Coronation Merchant Bank", "559"], ["FSDH Merchant Bank", "601"], ["Greenwich Merchant Bank", "562"], ["Nova Merchant Bank", "060"],
+  ["Taj Bank", "302"], ["Abbey Mortgage Bank", "404"], ["Above Only MFB", "51204"], ["Accion Microfinance Bank", "602"],
+  ["Bowen Microfinance Bank", "50931"], ["CEMCS Microfinance Bank", "50823"], ["Eyowo", "50126"], ["Firmus MFB", "51314"],
+  ["Hasal Microfinance Bank", "50383"], ["Ibile Microfinance Bank", "51244"], ["Infinity MFB", "50457"], ["Lagos Building Investment Company", "90052"],
+  ["Links MFB", "50549"], ["Mayfair MFB", "50563"], ["Nirsal Microfinance Bank", "50211"], ["Page MFBank", "560"],
+  ["Parkway - ReadyCash", "311"], ["Petra Microfinance Bank", "50746"], ["Safe Haven MFB", "51113"], ["Stellas MFB", "51253"],
+  ["TCF MFB", "51211"], ["Unical MFB", "50871"]
+].sort((a, b) => a[0].localeCompare(b[0]));
 async function paystackTransfer({ amount, account_number, bank_code, name, reason }) {
   try { const r = await fetch("/api/paystack-transfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount, account_number, bank_code, name, reason }) }); return await r.json(); } catch (e) { return { configured: false }; }
 }
@@ -1015,6 +1033,7 @@ async function createSubaccount({ name, bankName, acctNo, email }) {
 }
 function bankSet(email, bank) {
   const key = (email || "").toLowerCase().trim();
+  try { auditLog("Payout account set", key + " \u2192 " + (bank.bankName || "") + " \u2022\u2022\u2022\u2022" + String(bank.bankAcctNo || "").slice(-4), key); } catch (e) {}
   try { const m = bankLoad(); m[key] = bank; localStorage.setItem("girard_bank_v1", JSON.stringify(m)); } catch (e) {}
   if (supabase) {
     supabase.from("banks").upsert([{ email: key, bank_name: bank.bankName || "", acct_name: bank.bankAcctName || "", acct_no: bank.bankAcctNo || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", updated_at: new Date().toISOString() }], { onConflict: "email" }).then(() => {}, () => {});
@@ -1564,6 +1583,15 @@ async function svcStatus() {
   try { const r = await fetch("/api/status"); _statusCache = await r.json(); } catch (e) { _statusCache = {}; }
   return _statusCache;
 }
+// Girard settles rent straight to the landlord and never holds it, so there is
+// nothing to claw back. Tenants must be told this plainly, before they pay.
+function FacilitatorWarning({ prop, style, compact }) {
+  if (prop && prop.girardManaged) return null;
+  return <div style={{ background: "rgba(208,69,59,.06)", border: "1px solid rgba(208,69,59,.28)", borderRadius: 9, padding: compact ? "9px 12px" : "12px 14px", fontSize: compact ? 12 : 12.5, color: "var(--ink)", lineHeight: 1.6, display: "flex", gap: 9, alignItems: "flex-start", ...(style || {}) }}>
+    <AlertTriangle size={compact ? 14 : 16} color="#D0453B" style={{ flexShrink: 0, marginTop: 2 }} />
+    <div><b>Not managed by Girard. Girard is simply a platform.</b> Girard introduces you to the landlord and does not own, inspect, warrant or control this property. <b>Before you pay anything, visit the property, confirm it exists, confirm it is still available, and confirm the person letting it has the right to let it.</b> Rent settles directly to the landlord, not to Girard, so Girard cannot recover money you pay. <b>Girard accepts no liability or responsibility whatsoever</b> for this property, this landlord, or any loss arising from this transaction.{compact ? "" : " Have your own lawyer check title before you part with funds."}</div>
+  </div>;
+}
 function AiNote({ style, extra }) {
   return <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "8px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.55, display: "flex", gap: 7, alignItems: "flex-start", ...(style || {}) }}><Sparkles size={13} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} /><span>AI-generated content may contain errors and should be independently verified before use.{extra ? " " + extra : ""}</span></div>;
 }
@@ -1723,6 +1751,7 @@ async function fullReset() {
       try { await supabase.from(t).delete().neq("reference", ""); } catch (e) {}
     }
   }
+  try { await auditLog("Full data reset", "Every record cleared from the platform", (typeof window !== "undefined" && localStorage.getItem("girard_session")) || "unknown"); } catch (e) {}
   await liveFlagSet();
   try {
     localStorage.setItem(PURGED_KEY, "1");
@@ -2055,7 +2084,14 @@ function PropertiesScreen({ st, setSt, identity }) {
   const [sel, setSel] = useState(null);
   const [favs, toggleFav] = useFavProps();
   const list = st.properties.filter(p => area === "All" || p.area === area);
-  const verify = (id) => { const next = { ...st, properties: st.properties.map(p => p.id === id ? { ...p, status: "Available", verified: true } : p) }; setSt(next); setSel(null); };
+  const verify = (id) => {
+    const pr = st.properties.find(p => p.id === id);
+    // The single most important action on the platform: this is what puts a
+    // listing in front of tenants. Who did it, and when, must be on record.
+    try { auditLog("Listing approved", (pr ? pr.title + " \u00b7 " + (pr.kyc ? pr.kyc.fullName + " \u00b7 " + pr.kyc.propAddress : (pr.ownerEmail || "")) : id) + " \u00b7 approved by " + identity.email, identity.email); } catch (e) {}
+    const next = { ...st, properties: st.properties.map(p => p.id === id ? { ...p, status: "Available", verified: true, verifiedBy: identity.email, verifiedAt: new Date().toISOString() } : p) };
+    setSt(next); setSel(null);
+  };
   return <div>
     <H2 title="Properties" sub={list.length + " of " + st.properties.length + " shown"} right={<div style={{ width: 200 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
@@ -2070,6 +2106,16 @@ function PropertiesScreen({ st, setSt, identity }) {
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
       <HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || poolPhoto(sel.id)} />
+      {isAdmin && sel.kyc && <PmCard style={{ marginTop: 14, borderLeft: "3px solid var(--gold)" }}>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Verification submitted by the lister</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }} className="pm-grid2">
+          {[["Full name", sel.kyc.fullName], ["Acting as", sel.kyc.capacity], ["Phone", sel.kyc.phone], ["Alt. phone", sel.kyc.altPhone || "\u2014"], ["Their address", sel.kyc.address], ["Property address", sel.kyc.propAddress], ["NIN / BVN", sel.kyc.nin || "\u2014"], ["Title", sel.kyc.titleType + (sel.kyc.titleRef ? " \u00b7 " + sel.kyc.titleRef : "")], ["Documents", (sel.docs || 0) + " uploaded"], ["Account", sel.ownerEmail || "\u2014"]].map(([k, v]) => <div key={k}><div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .3 }}>{k}</div><div style={{ fontSize: 13, color: "var(--ink)", wordBreak: "break-word" }}>{v || "\u2014"}</div></div>)}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.55, marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--cream-line)" }}>Call the number, confirm the address matches the title document, and confirm they have the right to let it. Only approve once you have checked. Approving is what puts this in front of tenants.</div>
+        {sel.status === "Pending Verification" && <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+          <a href={waLink(sel.kyc.phone, "Hello " + (sel.kyc.fullName || "") + ", this is Girard Property about the listing you submitted at " + (sel.kyc.propAddress || "") + ".")} target="_blank" rel="noreferrer" className="btn-line on-ivory" style={{ fontSize: 12.5, padding: "8px 12px", gap: 6 }}><Phone size={13} /> Call on WhatsApp</a>
+        </div>}
+      </PmCard>}
       {sel.featured && <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["Units", sel.units], ["Max height", sel.height], ["Plot", sel.plot]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 110, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 17 }}>{v}</div></div>)}</div>
         <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{sel.blurb}</p>
@@ -2090,6 +2136,8 @@ function PropertiesScreen({ st, setSt, identity }) {
 function AddPropertyScreen({ st, setSt, toast, identity }) {
   const [f, setF] = useState({ type: PM_TYPES[0], area: PM_AREAS[0], beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No" });
   const PHOTO_CATS = ["Front view", "Rear view", "Living room", "Kitchen", "Bedroom", "Bathroom", "Other"];
+  // Girard verifies a real person against a real property before it goes live.
+  const [kyc, setKyc] = useState({ fullName: "", phone: "", altPhone: "", address: "", propAddress: "", nin: "", capacity: "Owner", titleType: "Certificate of Occupancy", titleRef: "" });
   const [photoTags, setPhotoTags] = useState([]);
   const tagAt = (i) => photoTags[i] || PHOTO_CATS[i] || "Other";
   const uploadedByGirard = isApprovedAdmin(identity && identity.email);
@@ -2107,8 +2155,16 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
   const submit = () => {
     const bank = bankFor(identity && identity.email) || {};
     if (!uploadedByGirard && !bank.bankAcctNo) { toast("Register a settlement bank account on your profile (Data & privacy) first", "danger"); return; }
+    if (!uploadedByGirard) {
+      if (!kyc.fullName.trim() || kyc.phone.replace(/[^0-9]/g, "").length < 10) { toast("Add your full name and a phone number Girard can reach you on", "danger"); return; }
+      if (!kyc.address.trim()) { toast("Add your own residential or office address", "danger"); return; }
+      if (!kyc.propAddress.trim()) { toast("Add the full address of the property", "danger"); return; }
+      if (!kyc.nin.replace(/[^0-9]/g, "").trim() || kyc.nin.replace(/[^0-9]/g, "").length < 11) { toast("Add your NIN or BVN (11 digits). Girard verifies every lister.", "danger"); return; }
+      if (!kyc.titleRef.trim()) { toast("Add the title document reference", "danger"); return; }
+      if (!docs.length) { toast("Upload the title document before submitting", "danger"); return; }
+    }
     const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, subaccount: bank.subaccount || "", split_code: bank.split_code || "", ownerEmail: (identity && identity.email) || "", description: desc };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, subaccount: bank.subaccount || "", split_code: bank.split_code || "", ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -2122,6 +2178,28 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v, term: TERM_OPTS[v][0] })} options={["Long let", "Short let", "Holiday stay / serviced"]} />
         <PmSelect label={f.letType === "Long let" ? "Acceptable length of stay" : "Lease period"} value={f.term} onChange={v => setF({ ...f, term: v })} options={TERM_OPTS[f.letType]} />
         <PmSelect label="Rent managed by Girard?" value={f.managed} onChange={v => setF({ ...f, managed: v })} options={["No", "Yes"]} />
+        {!uploadedByGirard && <>
+          <div style={{ borderTop: "1px solid var(--cream-line)", paddingTop: 14, marginTop: 4 }}>
+            <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>Verification details</div>
+            <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55, marginTop: 4 }}>Girard checks these before your listing goes live. Nothing is published until we have verified you and the property. This protects tenants from fraudulent listings, and protects you from being impersonated.</div>
+          </div>
+          <PmField label="Your full name (as on your ID)" value={kyc.fullName} onChange={v => setKyc({ ...kyc, fullName: v })} placeholder="Full legal name" />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+            <PmField label="Phone number" value={kyc.phone} onChange={v => setKyc({ ...kyc, phone: v })} placeholder="+234..." />
+            <PmField label="Alternative phone (optional)" value={kyc.altPhone} onChange={v => setKyc({ ...kyc, altPhone: v })} placeholder="+234..." />
+          </div>
+          <PmField label="Your address" value={kyc.address} onChange={v => setKyc({ ...kyc, address: v })} placeholder="Your residential or office address" />
+          <PmField label="Full address of the property" value={kyc.propAddress} onChange={v => setKyc({ ...kyc, propAddress: v })} placeholder="Street, area, city" />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+            <PmSelect label="You are the" value={kyc.capacity} onChange={v => setKyc({ ...kyc, capacity: v })} options={["Owner", "Agent acting for the owner", "Family member / trustee", "Company representative"]} />
+            <PmField label="NIN or BVN" value={kyc.nin} onChange={v => setKyc({ ...kyc, nin: v.replace(/[^0-9]/g, "").slice(0, 11) })} placeholder="11 digits" />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+            <PmSelect label="Title document" value={kyc.titleType} onChange={v => setKyc({ ...kyc, titleType: v })} options={["Certificate of Occupancy", "Deed of Assignment", "Governor's Consent", "Registered Conveyance", "Excision / Gazette", "Power of Attorney", "Other"]} />
+            <PmField label="Title reference number" value={kyc.titleRef} onChange={v => setKyc({ ...kyc, titleRef: v })} placeholder="e.g. C of O number" />
+          </div>
+          <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>Upload the title document below, under Photos &amp; documents. Listing a property you have no right to let, or that is already taken, is fraud and Girard will report it.</div>
+        </>}
         {uploadedByGirard ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>Girard account: no administrative fee applies. Rent settles to Girard.</div> : (myBank && myBank.bankAcctNo ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}><b style={{ color: "var(--ink)" }}>Rent settlement:</b> {myBank.bankAcctName} · {myBank.bankName} ••••{String(myBank.bankAcctNo).slice(-4)}. A 5% administrative fee applies and is settled to Girard once, before closing. Rent {f.managed === "Yes" ? "is collected into Girard's managed account." : "settles directly to your registered account."}</div> : <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.25)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>No settlement bank account is registered to your profile. Add one under <b>Data &amp; privacy</b> so rent can settle to you.</div>)}
         <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Amenities</label><div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{PM_AMEN.map(a => <button key={a} onClick={() => toggle(a)} style={{ border: "1px solid " + (f.amenities.includes(a) ? "var(--gold)" : "var(--cream-line)"), background: f.amenities.includes(a) ? "var(--gold-soft)" : "transparent", color: f.amenities.includes(a) ? "var(--gold-2)" : "var(--muted)", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{a}</button>)}</div></div>
         <PmBtn kind="navy" icon={Sparkles} onClick={rec}>Get AI rent recommendation</PmBtn>
@@ -2191,6 +2269,7 @@ function TenantFind({ st, setSt, identity, toast }) {
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
       <HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || poolPhoto(sel.id)} />
+      <div style={{ marginTop: 14 }}><FacilitatorWarning prop={sel} compact /></div>
       {sel.featured && <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["Units", sel.units], ["Max height", sel.height], ["Plot", sel.plot]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 110, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 17 }}>{v}</div></div>)}</div>
         <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{sel.blurb}</p>
@@ -2388,6 +2467,7 @@ function LeaseModal({ st, setSt, app, onClose, toast }) {
   useEffect(() => { aiLease({ tenant: app.tenant, prop }).then(r => setAi({ loading: false, ...r })); }, []);
   const both = signed.tenant && signed.owner;
   const finalize = () => {
+    try { auditLog("Lease finalised", prop.title + " \u00b7 tenant " + app.tenant + " \u00b7 rent " + prop.rent + " \u00b7 fee " + adminFeeOf(prop), app.email || "system"); } catch (e) {}
     const fee = adminFeeOf(prop); const inv = { id: "INV-" + (9100 + st.invoices.length), property: prop.id, tenant: app.tenant, tenantEmail: app.email || "", amount: prop.rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
     setSt({
       ...st,
@@ -2407,6 +2487,7 @@ function LeaseModal({ st, setSt, app, onClose, toast }) {
       </div>)}
     </div>
     {(() => { const fee = adminFeeOf(prop); const ob = prop.ownerEmail ? bankFor(prop.ownerEmail) : null; const rentTo = prop.girardManaged ? "Girard managed account" : (ob && ob.bankAcctNo ? (ob.bankName || "landlord account") + " ••••" + String(ob.bankAcctNo).slice(-4) : "the landlord’s registered account"); return <div style={{ marginTop: 16, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Settlement before closing</div><div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "4px 0" }}><span style={{ color: "var(--muted)" }}>Advance rent (annual) → {rentTo}</span><b style={{ color: "var(--ink)" }}>{money(prop.rent)}</b></div>{fee > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "4px 0" }}><span style={{ color: "var(--muted)" }}>Girard administrative fee (5%) → Girard account</span><b style={{ color: "var(--ink)" }}>{money(fee)}</b></div>}<div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", borderTop: "1px solid var(--cream-line)", marginTop: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)" }}>Total before closing</span><b className="serif" style={{ fontSize: 17, color: "var(--ink)" }}>{money(prop.rent + fee)}</b></div><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.5 }}>{fee > 0 ? ("The 5% administrative fee is settled to Girard. Rent settles to " + rentTo + ".") : "Girard-uploaded property: no administrative fee applies."}</div></div>; })()}
+    {!prop.girardManaged && <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55, marginTop: 12 }}>By finalising, you confirm this property exists, is available, and that you have the right to let it. Girard facilitates this letting and does not guarantee it. Knowingly letting a property that is unavailable is fraud.</div>}
     <PmBtn kind="gold" icon={CheckCircle2} disabled={!both} style={{ marginTop: 16 }} onClick={finalize}>Finalise and store lease</PmBtn>
   </PmModal>;
 }
@@ -2441,6 +2522,7 @@ function RentScreen({ st, setSt, identity, toast }) {
 function PayModal({ inv, st, email, onClose, onPaid }) {
   const [gw, setGw] = useState("Paystack");
   const [loading, setLoading] = useState(false);
+  const [checked, setChecked] = useState(false);
   const total = inv.amount + (inv.lateFee || 0);
   const prop = st ? propOf(st, inv.property) : null;
   const sub = splitAcctOf(prop);
@@ -2453,10 +2535,12 @@ function PayModal({ inv, st, email, onClose, onPaid }) {
       {fee > 0 && <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", fontSize: 13, marginTop: 4 }}><span>Includes Girard administrative fee (5%)</span><span>{money(fee)}</span></div>}
       <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "var(--ink)", fontSize: 17, marginTop: 8, borderTop: "1px solid var(--cream-line)", paddingTop: 8 }}><span>Total</span><span>{money(total)}</span></div>
     </div>
+    {prop && !prop.girardManaged && <><FacilitatorWarning prop={prop} style={{ marginBottom: 12 }} />
+      <label style={{ display: "flex", gap: 9, alignItems: "flex-start", marginBottom: 14, cursor: "pointer" }}><input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ marginTop: 3, accentColor: "var(--gold)" }} /><span style={{ fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>I confirm I have seen this property, that it exists and is available, and that I understand Girard does not hold this money and cannot recover it.</span></label></>}
     {(sub || splitCode) && <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>Paystack settles this payment directly to the landlord, and routes Girard's 5% administrative fee to Girard, in the same transaction.</div>}
     <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Payment gateway</label>
     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["Paystack", "Flutterwave"].map(g => <button key={g} onClick={() => setGw(g)} style={{ flex: 1, border: "1px solid " + (gw === g ? "var(--gold)" : "var(--cream-line)"), background: gw === g ? "var(--gold-soft)" : "transparent", color: gw === g ? "var(--gold-2)" : "var(--muted)", borderRadius: 8, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>{g}</button>)}</div>
-    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} onClick={() => { setLoading(true); if (gw === "Paystack") { payWithPaystack({ email, amountNaira: total, label: "Rent " + inv.id, purpose: "rent", target: inv.id, subaccount: sub, split_code: splitCode, onSuccess: () => { setLoading(false); onPaid(); }, onCancel: () => setLoading(false) }); } else { setTimeout(onPaid, 1200); } }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
+    <PmBtn kind="gold" icon={loading ? Loader2 : CreditCard} disabled={loading || (prop && !prop.girardManaged && !checked)} onClick={() => { setLoading(true); if (gw === "Paystack") { payWithPaystack({ email, amountNaira: total, label: "Rent " + inv.id, purpose: "rent", target: inv.id, subaccount: sub, split_code: splitCode, onSuccess: () => { setLoading(false); onPaid(); }, onCancel: () => setLoading(false) }); } else { setTimeout(onPaid, 1200); } }} style={{ width: "100%", justifyContent: "center" }}>{loading ? "Processing…" : "Pay " + money(total) + " via " + gw}</PmBtn>
   </PmModal>;
 }
 
@@ -2569,6 +2653,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const [activeRole, setActiveRole] = useState(identity0.role);
   const identity = { ...identity0, role: activeRole };
   let nav = NAV[activeRole] || NAV.agent; if (activeRole === "admin" && !isSuperAdmin(identity.email)) nav = nav.filter(x => x[0] !== "financials" && x[0] !== "adminreq");
+  if (activeRole === "admin" && !isApprovedAdmin(identity.email)) nav = nav.filter(x => x[0] !== "audit");
   const [view, setView] = useState(nav[0][0]);
   const [aiSeed, setAiSeed] = useState(null);
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem("girard_theme") || "light"; } catch (e) { return "light"; } });
@@ -2629,7 +2714,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "ai") return <AIStudio identity={identity} toast={toast} seed={aiSeed} />;
     if (view === "docs") return <DocumentsScreen identity={identity} toast={toast} />;
     if (view === "moderation") return <ModerationScreen toast={toast} />;
-    if (view === "audit") return <AuditScreen />;
+    if (view === "audit") return isApprovedAdmin(identity.email) ? <AuditScreen /> : <div><H2 title="Activity log" sub="Restricted" /><PmCard><div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><Lock size={18} color="var(--gold-2)" style={{ marginTop: 2, flexShrink: 0 }} /><div style={{ fontSize: 14, color: "var(--ink)", lineHeight: 1.6 }}>The activity log is visible to Girard staff only.</div></div></PmCard></div>;
     if (view === "inbox") return <MessagesInbox identity={identity} toast={toast} />;
     if (view === "askai") return <AskAI {...P} />;
     if (view === "privacy") return <PrivacyScreen identity={identity} toast={toast} />;
@@ -3644,6 +3729,7 @@ function AdminRequestsScreen({ identity, toast }) {
     if (!supabase) return;
     try {
       await supabase.from("admin_requests").update({ status, decided_by: identity.email, updated_at: new Date().toISOString() }).eq("email", row.email);
+      auditLog("Admin access " + status.toLowerCase(), row.email + " " + status.toLowerCase() + " by " + identity.email, identity.email);
       toast(status === "Approved" ? row.email + " can now sign in as an administrator." : "Request declined.", status === "Approved" ? "success" : undefined);
       load();
     } catch (e) { toast("Could not save that decision", "danger"); }
@@ -4003,7 +4089,7 @@ function PublicListings({ onSignIn }) {
   </section>;
 }
 
-const ENQ_STATUS = ["New", "Contacted", "Viewing booked", "Closed"];
+const ENQ_STATUS = ["New", "Contacted", "Viewing booked", "Closed", "Property already taken"];
 async function reportsFetch() {
   if (supabase) { try { const { data, error } = await supabase.from("reports").select("*").order("created_at", { ascending: false }); if (!error && data) return data; } catch (e) {} }
   try { return JSON.parse(localStorage.getItem(REPORTS_KEY) || "[]"); } catch (e) { return []; }
@@ -4044,7 +4130,26 @@ function EnquiriesScreen({ toast }) {
   const [bTick, setBTick] = useState(0);
   const [loading, setLoading] = useState(true);
   useEffect(() => { let on = true; enqFetch().then(x => { if (on) { setItems(x); setLoading(false); } }); return () => { on = false; }; }, []);
-  const setStatus = (id, status) => { setItems(items.map(x => x.id === id ? { ...x, status } : x)); enqSetStatusRemote(id, status); toast("Marked " + status.toLowerCase()); };
+  const setStatus = (id, status) => {
+    const it = items.find(x => x.id === id);
+    try { auditLog("Enquiry " + status.toLowerCase(), (it ? it.propTitle + " \u00b7 " + it.name : id), "enquiries"); } catch (e) {}
+    setItems(items.map(x => x.id === id ? { ...x, status } : x));
+    enqSetStatusRemote(id, status);
+    // A landlord who let the property elsewhere must take it off the market,
+    // or it keeps drawing enquiries and rent for something unavailable.
+    if (status === "Property already taken" && it && it.propId) {
+      try {
+        const pm = pmLoad();
+        const next = { ...pm, properties: (pm.properties || []).map(p => p.id === it.propId ? { ...p, status: "Leased", takenOffPlatform: true } : p) };
+        pmSave(next);
+        const pr = next.properties.find(p => p.id === it.propId);
+        if (pr) propUpsert(pr);
+        toast("Marked taken. " + (pr ? pr.title : "The listing") + " is now off the market, so nobody else can enquire or pay for it.", "success");
+      } catch (e) { toast("Marked taken"); }
+      return;
+    }
+    toast("Marked " + status.toLowerCase());
+  };
   const newCount = items.filter(x => x.status === "New").length;
   const viewings = items.filter(x => x.type === "Viewing").length;
   return <div>
@@ -5437,15 +5542,35 @@ function NotifBell({ identity }) {
 function AuditScreen() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { let on = true; auditFetch().then(x => { if (on) { setItems(x); setLoading(false); } }); return () => { on = false; }; }, []);
+  const [q, setQ] = useState("");
+  const [kind, setKind] = useState("All");
+  const load = () => { setLoading(true); auditFetch().then(x => { setItems(x || []); setLoading(false); }); };
+  useEffect(() => { load(); }, []);
+  const kinds = ["All", ...Array.from(new Set((items || []).map(x => (x.action || "").split(" ")[0]).filter(Boolean)))];
+  const needle = q.trim().toLowerCase();
+  const shown = (items || []).filter(x => {
+    if (kind !== "All" && !(x.action || "").startsWith(kind)) return false;
+    if (!needle) return true;
+    return ((x.action || "") + " " + (x.detail || "") + " " + (x.actor || "")).toLowerCase().includes(needle);
+  });
   return <div>
-    <H2 title="Activity log" sub="A record of key actions across the platform" />
+    <H2 title="Activity log" sub={loading ? "Loading\u2026" : shown.length + " of " + items.length + " records"} right={<PmBtn kind="ghost" icon={Loader2} onClick={load}>Reload</PmBtn>} />
+    <PmCard style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ flex: 1, minWidth: 220, position: "relative" }}>
+          <Search size={15} color="var(--muted)" style={{ position: "absolute", left: 11, top: 11 }} />
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by person, action, property, reference\u2026" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px 9px 34px", fontSize: 13.5, fontFamily: "inherit", color: "var(--ink)" }} />
+        </div>
+        <div style={{ width: 190 }}><PmSelect value={kind} onChange={setKind} options={kinds} /></div>
+      </div>
+      <div style={{ display: "flex", gap: 7, alignItems: "flex-start", marginTop: 10, fontSize: 12, color: "var(--muted)", lineHeight: 1.55 }}><Lock size={13} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} /><span>This log is permanent. Records can be added but never edited or deleted, by anyone, including administrators. Visible to Girard staff only.</span></div>
+    </PmCard>
     <PmCard pad={0} style={{ overflow: "hidden" }}>
       {loading ? <div style={{ padding: 22, color: "var(--muted)" }}>Loading…</div>
-        : items.length === 0 ? <div style={{ padding: 22, color: "var(--muted)" }}>No activity recorded yet. Approvals, payouts and interventions will appear here.</div>
+        : shown.length === 0 ? <div style={{ padding: 22, color: "var(--muted)" }}>{items.length ? "Nothing matches that search." : "No activity recorded yet. Approvals, payouts and interventions will appear here."}</div>
         : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
           <thead><tr style={{ background: "var(--ivory)" }}>{["Action", "Detail", "By", "When"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
-          <tbody>{items.map(a => <tr key={a.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
+          <tbody>{shown.map(a => <tr key={a.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
             <td style={{ padding: "11px 16px", fontWeight: 600, color: "var(--ink)", fontSize: 13 }}>{a.action}</td>
             <td style={{ padding: "11px 16px", fontSize: 13, color: "var(--muted)" }}>{a.detail || "—"}</td>
             <td style={{ padding: "11px 16px", fontSize: 12.5, color: "var(--muted)" }}>{a.actor || "—"}</td>
@@ -5535,7 +5660,7 @@ function TenantPortal({ identity, toast, section, go }) {
         </div>
       </div>
     </PmCard>)}</div>
-    <PmCard style={{ marginTop: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Bank transfer details</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.7, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Account name: Girard Property Limited<br />Bank: Zenith Bank · Account: 1010101010<br />Use your name as the reference, then tap "I paid by transfer" above. Girard confirms within 24 hours.</div></PmCard>
+    <PmCard style={{ marginTop: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Bank transfer details</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.7 }}>Account name: <b style={{ color: "var(--ink)" }}>Girard Property Estate Limited</b><br />Bank: <b style={{ color: "var(--ink)" }}>GTBank</b><br />Naira account: <b style={{ color: "var(--ink)" }}>0748459989</b><br />Dollar account: <b style={{ color: "var(--ink)" }}>0757446194</b><br /><span style={{ fontSize: 12.5 }}>Use your name as the reference, then tap &quot;I paid by transfer&quot; above. Girard confirms within 24 hours.</span></div></PmCard>
     <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Online payments are recorded now and go live once Paystack is connected.</div>
   </div>;
 
