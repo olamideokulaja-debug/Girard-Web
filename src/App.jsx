@@ -830,7 +830,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 9.8</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 10.2</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1023,6 +1023,16 @@ async function adminRequest(email, name) {
 function bankLoad() { try { return JSON.parse(localStorage.getItem("girard_bank_v1") || "{}"); } catch (e) { return {}; } }
 function bankFor(email) { const m = bankLoad(); return m[(email || "").toLowerCase().trim()] || null; }
 const GIRARD_FEE_PCT = 5;
+// Listing is free on purpose: inventory is what makes the marketplace work, and
+// the money is the 5% commission, not a listing charge. Prominence is the paid
+// extra, and it is always optional so it can never block a listing.
+const FEATURE_FEE = 25000;
+// A sale never passes through Paystack: it completes by transfer, through
+// lawyers. Girard invoices its 5% when the sale closes, so the platform tracks
+// what is expected and what has actually been collected.
+const SALE_COMMISSION_PCT = 5;
+const saleCommission = (price) => Math.round((Number(price) || 0) * (SALE_COMMISSION_PCT / 100));
+const FEATURE_DAYS = 30;
 // True once real Paystack keys are in use. Guards test-only tooling.
 function isLiveKeys() { return String(PAYSTACK_KEY || "").startsWith("pk_live"); }
 async function createSubaccount({ name, bankName, acctNo, email, bvn }) {
@@ -1542,7 +1552,41 @@ export default function App() {
    =================================================================== */
 
 const PM_AREAS = ["Lekki", "Ikoyi", "Victoria Island", "Yaba", "Surulere", "Ikeja", "Magodo", "Ajah", "Gbagada", "Maryland"];
-const PM_TYPES = ["Apartment", "Terraced Duplex", "Semi-Detached Duplex", "Detached Duplex", "Studio", "Penthouse", "Bungalow"];
+// Girard lists across borders, so a country comes first and the second level
+// changes with it. Countries without a built-in list take free text.
+const COUNTRIES = ["Nigeria", "United Kingdom", "United States", "Canada", "United Arab Emirates", "Ghana", "Kenya", "South Africa", "Ireland", "Portugal", "Spain", "Turkey", "Other"];
+const GEO_REGIONS = {
+  "Nigeria": ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"],
+  "United Kingdom": ["Greater London", "South East", "South West", "East of England", "East Midlands", "West Midlands", "Yorkshire & Humber", "North West", "North East", "Scotland", "Wales", "Northern Ireland"],
+  "United States": ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"],
+  "Canada": ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland & Labrador", "Nova Scotia", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan"],
+  "United Arab Emirates": ["Abu Dhabi", "Dubai", "Sharjah", "Ajman", "Umm Al Quwain", "Ras Al Khaimah", "Fujairah"],
+  "Ghana": ["Greater Accra", "Ashanti", "Western", "Central", "Eastern", "Northern", "Volta"],
+  "Kenya": ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Kiambu"],
+  "South Africa": ["Gauteng", "Western Cape", "KwaZulu-Natal", "Eastern Cape", "Free State"],
+  "Ireland": ["Dublin", "Cork", "Galway", "Limerick"]
+};
+const regionsFor = (c) => GEO_REGIONS[c] || null;
+const regionLabel = (c) => c === "Nigeria" ? "State" : (c === "United States" || c === "Canada") ? "State / Province" : c === "United Kingdom" ? "Region" : c === "United Arab Emirates" ? "Emirate" : "State / Region";
+const NG_STATES = ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"];
+// A human reference people can quote on the phone. Random, not sequential, so
+// two people listing at the same moment cannot be given the same one.
+function postedAgo(iso) {
+  if (!iso) return "";
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (isNaN(d)) return "";
+  return d <= 0 ? "Posted today" : d === 1 ? "Posted yesterday" : d < 30 ? "Posted " + d + " days ago" : "Posted " + new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+function makeRef() {
+  const y = new Date().getFullYear().toString().slice(-2);
+  const n = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+  return "GP-" + y + "-" + n;
+}
+const PM_TYPES = ["Apartment", "Terraced Duplex", "Semi-Detached Duplex", "Detached Duplex", "Studio", "Penthouse", "Bungalow", "Land", "Commercial", "Office space", "Shop / Retail", "Warehouse", "Block of flats", "Hotel / Serviced"]
+const LISTING_INTENT = ["To let", "For sale"];
+// Land has no bedrooms and needs different documents from a house.
+const LAND_TYPES = ["Land", "Warehouse"];
+const isLandLike = (t) => LAND_TYPES.indexOf(t) >= 0;
 const PM_AMEN = ["24hr Power", "Borehole", "Parking", "Security", "Fitted Kitchen", "Gym", "Pool", "BQ", "CCTV", "Elevator"];
 const PM_STREETS = ["Admiralty Way", "Bourdillon Rd", "Adeola Odeku St", "Herbert Macaulay Way", "Bode Thomas St", "Allen Ave"];
 function baseRent(area, beds) {
@@ -1559,6 +1603,73 @@ function useFavProps() {
 }
 function FavHeart({ on, onToggle, style }) {
   return <button onClick={e => { e.stopPropagation(); onToggle(); }} title={on ? "Remove from saved" : "Save property"} aria-label={on ? "Remove from saved" : "Save property"} style={{ position: "absolute", top: 8, right: 8, zIndex: 3, width: 32, height: 32, borderRadius: 999, border: "none", background: "rgba(255,255,255,.9)", boxShadow: "0 2px 8px rgba(0,0,0,.18)", cursor: "pointer", display: "grid", placeItems: "center", ...(style || {}) }}><Heart size={16} color={on ? "#D0453B" : "#6b7280"} fill={on ? "#D0453B" : "none"} /></button>;
+}
+function SaleCommissionCard({ prop, st, setSt, identity, toast, isAdmin }) {
+  const [open, setOpen] = useState(false);
+  const [price, setPrice] = useState("");
+  const [note, setNote] = useState("");
+  if ((prop.intent || "To let") !== "For sale") return null;
+  const asking = prop.rent || 0;
+  const sold = prop.status === "Sold";
+  const record = () => {
+    const p = Math.round(+String(price).replace(/[^0-9]/g, "")) || 0;
+    if (!p) { toast("Enter the price the property actually sold for", "danger"); return; }
+    const comm = saleCommission(p);
+    const next = { ...st, properties: st.properties.map(x => x.id === prop.id ? { ...x, status: "Sold", soldPrice: p, commission: comm, soldAt: new Date().toISOString(), soldBy: identity.email, soldNote: note } : x) };
+    setSt(next);
+    payRecord({ reference: "COMM-" + (prop.ref || prop.id) + "-" + Date.now().toString().slice(-5), purpose: "commission", target: prop.ref || prop.id, amount: comm, status: "success" });
+    try { auditLog("Sale recorded", (prop.ref || prop.id) + " \u00b7 " + prop.title + " \u00b7 sold " + money(p) + " \u00b7 commission " + money(comm) + " \u00b7 by " + identity.email + (note ? " \u00b7 " + note : ""), identity.email); } catch (e) {}
+    setOpen(false); setPrice(""); setNote("");
+    toast("Sale recorded. " + money(comm) + " commission is now on the books.", "success");
+  };
+  return <PmCard style={{ marginTop: 14, borderLeft: "3px solid " + (sold ? "#1F9D57" : "var(--gold)") }}>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>{sold ? "Sale completed" : "Sale commission"}</div>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }} className="pm-grid2">
+      {[[sold ? "Sold for" : "Asking price", money(sold ? prop.soldPrice : asking)], ["Girard commission (" + SALE_COMMISSION_PCT + "%)", money(sold ? prop.commission : saleCommission(asking))]].map(([k, v]) => <div key={k} style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .3 }}>{k}</div>
+        <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)", marginTop: 2 }}>{v}</div>
+      </div>)}
+    </div>
+    {sold
+      ? <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.55 }}>Recorded by {prop.soldBy} on {new Date(prop.soldAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.{prop.soldNote ? " " + prop.soldNote : ""}</div>
+      : <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>This is what Girard expects to invoice if the property sells at the asking price. Sale money does not pass through Girard: the buyer pays the seller directly, through both parties&apos; lawyers, and Girard invoices its {SALE_COMMISSION_PCT}% separately once the sale closes.</div>}
+    {isAdmin && !sold && (open
+      ? <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--cream-line)" }}>
+        <PmField label="Final sale price" value={price} onChange={v => setPrice(v.replace(/[^0-9]/g, ""))} placeholder="What it actually sold for" />
+        <div style={{ marginTop: 8 }}><PmField label="Note (optional)" value={note} onChange={setNote} placeholder="e.g. Completed 14 Aug, invoice INV-221 raised" /></div>
+        {price && <div style={{ fontSize: 12.5, color: "var(--gold-2)", fontWeight: 700, marginTop: 8 }}>Commission to invoice: {money(saleCommission(price))}</div>}
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}><PmBtn size="sm" kind="gold" icon={CheckCircle2} onClick={record}>Record the sale</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => setOpen(false)}>Cancel</PmBtn></div>
+      </div>
+      : <PmBtn size="sm" style={{ marginTop: 12 }} onClick={() => setOpen(true)}>Record sale &amp; commission</PmBtn>)}
+  </PmCard>;
+}
+function FeatureCard({ prop, st, setSt, identity, toast }) {
+  const on = prop.featuredUntil && new Date(prop.featuredUntil).getTime() > Date.now();
+  const buy = () => {
+    payWithPaystack({
+      email: identity.email, amountNaira: FEATURE_FEE, label: "Featured listing \u00b7 " + prop.title,
+      purpose: "feature", target: prop.ref || prop.id,
+      onSuccess: () => {
+        const until = new Date(Date.now() + FEATURE_DAYS * 86400000).toISOString();
+        const next = { ...st, properties: st.properties.map(x => x.id === prop.id ? { ...x, featured: true, featuredUntil: until } : x) };
+        setSt(next);
+        try { auditLog("Featured listing purchased", (prop.ref || prop.id) + " \u00b7 " + prop.title + " \u00b7 " + FEATURE_DAYS + " days", identity.email); } catch (e) {}
+        toast("Featured for " + FEATURE_DAYS + " days. Your listing now appears first.", "success");
+      }
+    });
+  };
+  return <PmCard style={{ marginTop: 14 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
+      <div style={{ minWidth: 220, flex: 1 }}>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 3 }}>{on ? "Featured listing" : "Feature this listing"}</div>
+        <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.6 }}>{on
+          ? "Appearing first in search until " + new Date(prop.featuredUntil).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) + "."
+          : "Listing on Girard is free. For " + money(FEATURE_FEE) + " your property appears first in search for " + FEATURE_DAYS + " days, which typically means more enquiries. Entirely optional."}</div>
+      </div>
+      {!on && <PmBtn kind="gold" icon={Sparkles} onClick={buy}>Feature for {money(FEATURE_FEE)}</PmBtn>}
+      {on && <span style={{ fontSize: 11.5, fontWeight: 700, padding: "4px 11px", borderRadius: 999, background: "var(--gold-soft)", color: "var(--gold-2)", whiteSpace: "nowrap" }}>Featured</span>}
+    </div>
+  </PmCard>;
 }
 function SavedProperties({ st, identity, go }) {
   const [favs, toggle] = useFavProps();
@@ -2108,6 +2219,8 @@ function PropertiesScreen({ st, setSt, identity }) {
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
       <HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || poolPhoto(sel.id)} />
+      <SaleCommissionCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} isAdmin={isAdmin} />
+      {sel.ownerEmail && identity.email && sel.ownerEmail.toLowerCase() === identity.email.toLowerCase() && <FeatureCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} />}
       {isAdmin && sel.kyc && <PmCard style={{ marginTop: 14, borderLeft: "3px solid var(--gold)" }}>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Verification submitted by the lister</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }} className="pm-grid2">
@@ -2136,7 +2249,7 @@ function PropertiesScreen({ st, setSt, identity }) {
 
 /* ---------- ADD PROPERTY ---------- */
 function AddPropertyScreen({ st, setSt, toast, identity }) {
-  const [f, setF] = useState({ type: PM_TYPES[0], area: PM_AREAS[0], beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No" });
+  const [f, setF] = useState({ intent: "To let", type: PM_TYPES[0], area: PM_AREAS[0], country: "Nigeria", state: "Lagos", beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No", plotSize: "", titleKind: "Certificate of Occupancy" });
   const PHOTO_CATS = ["Front view", "Rear view", "Living room", "Kitchen", "Bedroom", "Bathroom", "Other"];
   // Girard verifies a real person against a real property before it goes live.
   const [kyc, setKyc] = useState({ fullName: "", phone: "", altPhone: "", address: "", propAddress: "", nin: "", capacity: "Owner", titleType: "Certificate of Occupancy", titleRef: "" });
@@ -2165,8 +2278,9 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
       if (!kyc.titleRef.trim()) { toast("Add the title document reference", "danger"); return; }
       if (!docs.length) { toast("Upload the title document before submitting", "danger"); return; }
     }
-    const id = "PR-" + (2000 + st.properties.length);
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, letType: f.letType, term: f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, description: desc };
+    const id = "PR-" + (2000 + st.properties.length) + "-" + Date.now().toString().slice(-4);
+    const ref = makeRef();
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, intent: f.intent, letType: f.intent === "For sale" ? null : f.letType, term: f.intent === "For sale" ? null : f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, ref, intent: f.intent, country: f.country, state: f.state, postedAt: new Date().toISOString(), plotSize: f.plotSize || "", titleKind: f.titleKind || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -2174,12 +2288,26 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     <H2 title="Add property" sub="List a rental and get an AI rent recommendation" />
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
       <PmCard><div style={{ display: "grid", gap: 14 }}>
-        <PmSelect label="Property type" value={f.type} onChange={v => setF({ ...f, type: v })} options={PM_TYPES} />
+        <PmSelect label="Are you letting this or selling it?" value={f.intent} onChange={v => setF({ ...f, intent: v })} options={LISTING_INTENT} />
+        <PmSelect label="Property type" value={f.type} onChange={v => setF({ ...f, type: v, beds: isLandLike(v) ? "0" : f.beds })} options={PM_TYPES} />
         <PmSelect label="Area (Lagos)" value={f.area} onChange={v => setF({ ...f, area: v })} options={PM_AREAS} />
-        <PmSelect label="Bedrooms" value={f.beds} onChange={v => setF({ ...f, beds: v })} options={["0", "1", "2", "3", "4", "5"]} />
-        <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v, term: TERM_OPTS[v][0] })} options={["Long let", "Short let", "Holiday stay / serviced"]} />
-        <PmSelect label={f.letType === "Long let" ? "Acceptable length of stay" : "Lease period"} value={f.term} onChange={v => setF({ ...f, term: v })} options={TERM_OPTS[f.letType]} />
-        <PmSelect label="Rent managed by Girard?" value={f.managed} onChange={v => setF({ ...f, managed: v })} options={["No", "Yes"]} />
+        {!isLandLike(f.type) && <PmSelect label="Bedrooms" value={f.beds} onChange={v => setF({ ...f, beds: v })} options={["0", "1", "2", "3", "4", "5"]} />}
+        {f.intent === "For sale" && <div style={{ background: "rgba(208,69,59,.06)", border: "1px solid rgba(208,69,59,.28)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.6 }}><b>Girard does not handle sale money.</b> We introduce buyers and verify what we can. The purchase price is paid through the parties&rsquo; own solicitors, never through this platform. Girard charges its fee separately and takes no part in the transfer of title.</div>}
+        {f.intent === "To let" && <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v, term: TERM_OPTS[v][0] })} options={["Long let", "Short let", "Holiday stay / serviced"]} />}
+        {f.intent === "To let" && <PmSelect label={f.letType === "Long let" ? "Acceptable length of stay" : "Lease period"} value={f.term} onChange={v => setF({ ...f, term: v })} options={TERM_OPTS[f.letType]} />}
+        <PmSelect label="Are you letting or selling?" value={f.intent} onChange={v => setF({ ...f, intent: v })} options={["To let", "For sale"]} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+          <PmSelect label="Country" value={f.country} onChange={v => setF({ ...f, country: v, state: (regionsFor(v) || [""])[0] })} options={COUNTRIES} />
+          {regionsFor(f.country)
+            ? <PmSelect label={regionLabel(f.country)} value={f.state} onChange={v => setF({ ...f, state: v })} options={regionsFor(f.country)} />
+            : <PmField label={regionLabel(f.country)} value={f.state} onChange={v => setF({ ...f, state: v })} placeholder="State, region or city" />}
+        </div>
+        {f.intent === "For sale" && <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.6 }}><b>Sales are handled by Girard directly, not through the app.</b> Buyers enquire, and Girard takes it forward with both parties&apos; lawyers. A listing fee applies to advertise, and Girard&apos;s commission is invoiced when the sale closes. No sale money passes through this platform.</div>}
+        {f.type === "Land" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+          <PmField label="Plot size" value={f.plotSize} onChange={v => setF({ ...f, plotSize: v })} placeholder="e.g. 648 sqm, or 2 plots" />
+          <PmSelect label="Title" value={f.titleKind} onChange={v => setF({ ...f, titleKind: v })} options={["Certificate of Occupancy", "Governor\u2019s Consent", "Deed of Assignment", "Excision", "Gazette", "Registered Survey", "Family Receipt", "Other"]} />
+        </div>}
+        {f.intent === "To let" && <PmSelect label="Rent managed by Girard?" value={f.managed} onChange={v => setF({ ...f, managed: v })} options={["No", "Yes"]} />}
         {!uploadedByGirard && <>
           <div style={{ borderTop: "1px solid var(--cream-line)", paddingTop: 14, marginTop: 4 }}>
             <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>Verification details</div>
@@ -2252,19 +2380,47 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
 
 /* ---------- TENANT: FIND A HOME + APPLY ---------- */
 function TenantFind({ st, setSt, identity, toast }) {
+  const [intent, setIntent] = useState("All");
+  const [ptype, setPtype] = useState("All");
   const [area, setArea] = useState("All");
   const [beds, setBeds] = useState("Any");
   const [sel, setSel] = useState(null);
   const [apply, setApply] = useState(null);
   const [favs, toggleFav] = useFavProps();
-  const list = st.properties.filter(p => p.status === "Available" && (area === "All" || p.area === area) && (beds === "Any" || (beds === "3+" ? p.beds >= 3 : p.beds === +beds)));
+  const [q, setQ] = useState("");
+  const [countryF, setCountryF] = useState("All");
+  const [stateF, setStateF] = useState("All");
+  const feat = (p) => (p.featured && (!p.featuredUntil || new Date(p.featuredUntil).getTime() > Date.now())) ? 1 : 0;
+  const list = st.properties.filter(p => p.status === "Available"
+    && (countryF === "All" || (p.country || "Nigeria") === countryF)
+    && (stateF === "All" || (p.state || "") === stateF)
+    && (intent === "All" || (p.intent || "To let") === intent)
+    && (ptype === "All" || p.type === ptype)
+    && (area === "All" || p.area === area)
+    && (beds === "Any" || p.type === "Land" || (beds === "3+" ? p.beds >= 3 : p.beds === +beds))
+    && (!q.trim() || ((p.title || "") + " " + (p.area || "") + " " + (p.address || "") + " " + (p.type || "") + " " + (p.ref || "") + " " + (p.state || "")).toLowerCase().includes(q.trim().toLowerCase()))).sort((a, b) => feat(b) - feat(a));
   return <div>
-    <H2 title="Find a home" sub={list.length + " available"} right={<div style={{ display: "flex", gap: 10 }}><div style={{ width: 160 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div><div style={{ width: 120 }}><PmSelect value={beds} onChange={setBeds} options={["Any", "1", "2", "3+"]} /></div></div>} />
+    <H2 title="Find a property" sub={list.length + " available"} />
+    <PmCard style={{ marginBottom: 16 }}>
+      <div style={{ position: "relative", marginBottom: 10 }}>
+        <Search size={15} color="var(--muted)" style={{ position: "absolute", left: 11, top: 11 }} />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by area, address or description\u2026" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px 9px 34px", fontSize: 13.5, fontFamily: "inherit", color: "var(--ink)" }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
+        <PmSelect label="Rent or buy" value={intent} onChange={setIntent} options={["All", "To let", "For sale"]} />
+        <PmSelect label="Property type" value={ptype} onChange={setPtype} options={["All", ...PM_TYPES]} />
+        <PmSelect label="Country" value={countryF} onChange={v => { setCountryF(v); setStateF("All"); }} options={["All", ...COUNTRIES]} />
+        <PmSelect label={countryF === "All" ? "State / Region" : regionLabel(countryF)} value={stateF} onChange={setStateF} options={["All", ...(regionsFor(countryF) || [])]} />
+        <PmSelect label="Area" value={area} onChange={setArea} options={["All", ...PM_AREAS]} />
+        <PmSelect label="Bedrooms" value={beds} onChange={setBeds} options={["Any", "1", "2", "3+"]} />
+      </div>
+    </PmCard>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden" }}>
         <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
         <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" photo={p.img || poolPhoto(p.id)} /></div>
-        <div style={{ padding: 14 }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
+        <div style={{ padding: 14 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{[p.state, (p.country && p.country !== "Nigeria" ? p.country : null), (p.intent || "To let")].filter(Boolean).join(" \u00b7 ")}{p.postedAt ? " \u00b7 " + postedAgo(p.postedAt) : ""}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}<span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span></div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
         </div></PmCard>)}
@@ -3677,10 +3833,12 @@ function FinancialsScreen() {
   // On rent, Girard's revenue is the 5% administrative fee, not the whole rent.
   const rentCollected = (pm.invoices || []).filter(i => i.status === "Paid").reduce((t, i) => t + (i.adminFee || 0), 0);
   const swapFees = sumOf("swap");
+  const commissions = sumOf("commission");
+  const featureFees = sumOf("feature");
   const agentFees = sumOf("agent");
   const subs = sumOf("subscription");
   const services = sumOf("job");
-  const total = rentCollected + swapFees + subs + services + agentFees;
+  const total = rentCollected + swapFees + subs + services + agentFees + commissions + featureFees;
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const trend = (() => {
     const now = new Date(); const out = [];
@@ -3698,9 +3856,11 @@ function FinancialsScreen() {
     { name: "Swap fees", v: Math.round(swapFees / 1e6), c: "#F59E0B" },
     { name: "Subscriptions", v: Math.round(subs / 1e6), c: "#8B5CF6" },
     { name: "Support services", v: Math.round(services / 1e6), c: "#10B981" },
-    { name: "Agent fees", v: Math.round(agentFees / 1e6), c: "#EC4899" }
+    { name: "Agent fees", v: Math.round(agentFees / 1e6), c: "#EC4899" },
+    { name: "Sale commission", v: Math.round(commissions / 1e6), c: "#0EA5E9" },
+    { name: "Featured listings", v: Math.round(featureFees / 1e6), c: "#A3A3A3" }
   ].filter(x => x.v > 0);
-  const SRC = { subscription: "Subscription", swap: "Swap fee", agent: "Agent fee", rent: "Rent", job: "Service" };
+  const SRC = { subscription: "Subscription", swap: "Swap fee", agent: "Agent fee", rent: "Rent", job: "Service", commission: "Sale commission", feature: "Featured listing" };
   const txns = [
     ...ok.slice(0, 6).map(x => ({ id: x.reference || x.id, src: SRC[x.purpose] || "Payment", who: x.target || x.email || "\u2014", amt: Number(x.amount || 0), status: "Paid" })),
     ...(pm.invoices || []).filter(i => i.status === "Paid").slice(0, 4).map(i => ({ id: i.id, src: "Rent", who: i.tenant, amt: i.amount, status: i.status }))
