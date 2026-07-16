@@ -189,3 +189,34 @@ create policy "banks own row" on public.banks
   for all to authenticated
   using (lower(email) = lower(coalesce(auth.jwt() ->> 'email','')) or lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com')
   with check (lower(email) = lower(coalesce(auth.jwt() ->> 'email','')) or lower(coalesce(auth.jwt() ->> 'email','')) like '%@girardpropertylimited.com');
+
+-- -------------------------------------------------------------------
+-- 8. SHORT-LET BOOKINGS
+--    Shared, because two guests on two devices must never be able to
+--    book the same nights. The unique index is the real protection.
+-- -------------------------------------------------------------------
+create table if not exists public.bookings (
+  id           text primary key,
+  property_id  text not null,
+  guest_name   text,
+  guest_email  text,
+  guest_phone  text,
+  checkin      date not null,
+  checkout     date not null,
+  nights       int,
+  nightly      bigint,
+  cleaning_fee bigint default 0,
+  deposit      bigint default 0,
+  admin_fee    bigint default 0,
+  total        bigint,
+  status       text default 'Confirmed',   -- Confirmed | Cancelled | Completed
+  reference    text,
+  created_at   timestamptz default now()
+);
+create index if not exists bookings_prop_idx on public.bookings (property_id, checkin, checkout);
+
+alter table public.bookings enable row level security;
+drop policy if exists "bookings read" on public.bookings;
+create policy "bookings read" on public.bookings for select to anon, authenticated using (true);
+drop policy if exists "bookings write" on public.bookings;
+create policy "bookings write" on public.bookings for all to authenticated using (true) with check (true);

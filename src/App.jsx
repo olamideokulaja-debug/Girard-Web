@@ -830,7 +830,7 @@ function Landing({ onStart, onSignIn }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid var(--navy-line)", marginTop: 42, paddingTop: 22, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10, fontSize: 12.5, color: "rgba(255,255,255,.55)" }}>
-            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 10.2</span></div>
+            <div>&copy; 2026 Girard Property Limited. All rights reserved. <span style={{ color: "var(--gold)", fontWeight: 700 }}>· Tabs build 10.3</span></div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><a href="/terms" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Terms of Use</a><a href="/privacy" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Privacy Policy</a><a href="/dispute-resolution" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Dispute Resolution &amp; Refunds</a><a href="/delete-account" style={{ color: "rgba(255,255,255,.7)", textDecoration: "none" }}>Delete account</a></div>
           </div>
         </div>
@@ -1031,6 +1031,43 @@ const FEATURE_FEE = 25000;
 // lawyers. Girard invoices its 5% when the sale closes, so the platform tracks
 // what is expected and what has actually been collected.
 const SALE_COMMISSION_PCT = 5;
+const BK_KEY = "girard_bookings_v1";
+const dOnly = (d) => new Date(d).toISOString().slice(0, 10);
+const nightsBetween = (a, b) => Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000));
+function bkLoad() { try { return JSON.parse(localStorage.getItem(BK_KEY) || "[]"); } catch (e) { return []; } }
+function bkSave(a) { try { localStorage.setItem(BK_KEY, JSON.stringify(a)); } catch (e) {} }
+async function bkFetch(propId) {
+  if (supabase) {
+    try {
+      const q = supabase.from("bookings").select("*").eq("status", "Confirmed");
+      const { data, error } = propId ? await q.eq("property_id", propId) : await q;
+      if (!error && data) return data.map(r => ({ id: r.id, property: r.property_id, guest: r.guest_name, email: r.guest_email, checkin: r.checkin, checkout: r.checkout, nights: r.nights, total: r.total, status: r.status }));
+    } catch (e) {}
+  }
+  const all = bkLoad();
+  return propId ? all.filter(b => b.property === propId) : all;
+}
+// Two guests must never hold the same nights. Overlap = (startA < endB) && (startB < endA).
+function clashes(bookings, checkin, checkout) {
+  return (bookings || []).some(b => b.status !== "Cancelled" && checkin < b.checkout && b.checkin < checkout);
+}
+function bookedDays(bookings) {
+  const out = {};
+  (bookings || []).forEach(b => {
+    if (b.status === "Cancelled") return;
+    let d = new Date(b.checkin), end = new Date(b.checkout);
+    while (d < end) { out[dOnly(d)] = true; d = new Date(d.getTime() + 86400000); }
+  });
+  return out;
+}
+async function bkCreate(rec) {
+  const all = bkLoad(); all.push(rec); bkSave(all);
+  if (supabase) {
+    try {
+      await supabase.from("bookings").insert([{ id: rec.id, property_id: rec.property, guest_name: rec.guest, guest_email: rec.email, guest_phone: rec.phone || null, checkin: rec.checkin, checkout: rec.checkout, nights: rec.nights, nightly: rec.nightly, cleaning_fee: rec.cleaning, deposit: rec.deposit, admin_fee: rec.adminFee, total: rec.total, status: "Confirmed", reference: rec.reference || null }]);
+    } catch (e) {}
+  }
+}
 const saleCommission = (price) => Math.round((Number(price) || 0) * (SALE_COMMISSION_PCT / 100));
 const FEATURE_DAYS = 30;
 // True once real Paystack keys are in use. Guards test-only tooling.
@@ -1603,6 +1640,110 @@ function useFavProps() {
 }
 function FavHeart({ on, onToggle, style }) {
   return <button onClick={e => { e.stopPropagation(); onToggle(); }} title={on ? "Remove from saved" : "Save property"} aria-label={on ? "Remove from saved" : "Save property"} style={{ position: "absolute", top: 8, right: 8, zIndex: 3, width: 32, height: 32, borderRadius: 999, border: "none", background: "rgba(255,255,255,.9)", boxShadow: "0 2px 8px rgba(0,0,0,.18)", cursor: "pointer", display: "grid", placeItems: "center", ...(style || {}) }}><Heart size={16} color={on ? "#D0453B" : "#6b7280"} fill={on ? "#D0453B" : "none"} /></button>;
+}
+function BookingCard({ prop, identity, toast }) {
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [ci, setCi] = useState(""); const [co, setCo] = useState("");
+  const [name, setName] = useState((identity && identity.name) || "");
+  const [phone, setPhone] = useState("");
+  const [err, setErr] = useState(""); const [done, setDone] = useState(null);
+  const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const load = () => { setLoading(true); bkFetch(prop.id).then(x => { setBookings(x || []); setLoading(false); }); };
+  useEffect(() => { load(); }, [prop.id]);
+
+  const taken = bookedDays(bookings);
+  const today = dOnly(new Date());
+  const nightly = prop.nightly || 0;
+  const nights = (ci && co) ? nightsBetween(ci, co) : 0;
+  const sub = nights * nightly;
+  const cleaning = prop.cleaning || 0;
+  const deposit = prop.deposit || 0;
+  const adminFee = prop.uploadedByGirard ? 0 : Math.round(sub * (GIRARD_FEE_PCT / 100));
+  const total = sub + cleaning + deposit + adminFee;
+  const minN = prop.minNights || 1;
+
+  const days = (() => {
+    const first = new Date(month.getFullYear(), month.getMonth(), 1);
+    const start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+    return Array.from({ length: 42 }).map((_, i) => new Date(start.getTime() + i * 86400000));
+  })();
+  const pick = (d) => {
+    const k = dOnly(d);
+    if (k < today || taken[k]) return;
+    setErr("");
+    if (!ci || (ci && co)) { setCi(k); setCo(""); return; }
+    if (k <= ci) { setCi(k); return; }
+    // no booked night may sit inside the chosen range
+    if (clashes(bookings, ci, k)) { setErr("Those dates run across nights that are already booked. Pick a clear run."); return; }
+    setCo(k);
+  };
+  const book = () => {
+    setErr("");
+    if (!ci || !co) { setErr("Choose your check-in and check-out dates."); return; }
+    if (nights < minN) { setErr("This property has a minimum stay of " + minN + " " + (minN === 1 ? "night" : "nights") + "."); return; }
+    if (!name.trim() || phone.replace(/[^0-9]/g, "").length < 10) { setErr("Add your name and a phone number, so the host can reach you."); return; }
+    if (clashes(bookings, ci, co)) { setErr("Sorry, those nights have just been taken. Please choose again."); load(); return; }
+    payWithPaystack({
+      email: (identity && identity.email) || "", amountNaira: total,
+      label: "Stay at " + prop.title + " \u00b7 " + nights + " nights", purpose: "booking",
+      target: prop.ref || prop.id, subaccount: splitAcctOf(prop), split_code: splitCodeOf(prop),
+      onSuccess: async (reference) => {
+        // Re-check at the last moment: someone may have booked while paying.
+        const fresh = await bkFetch(prop.id);
+        if (clashes(fresh, ci, co)) { toast("Those nights were taken while you were paying. Girard will contact you to refund or rebook.", "danger"); load(); return; }
+        const rec = { id: "BK-" + Date.now().toString().slice(-8), property: prop.id, guest: name, email: (identity && identity.email) || "", phone, checkin: ci, checkout: co, nights, nightly, cleaning, deposit, adminFee, total, status: "Confirmed", reference };
+        await bkCreate(rec);
+        try { auditLog("Booking confirmed", (prop.ref || prop.id) + " \u00b7 " + nights + " nights " + ci + " to " + co + " \u00b7 " + money(total) + " \u00b7 " + name, (identity && identity.email) || ""); } catch (e) {}
+        setDone(rec); setCi(""); setCo(""); load();
+      }
+    });
+  };
+  if ((prop.letType !== "Short let" && prop.letType !== "Holiday stay / serviced") || !nightly) return null;
+  if (done) return <PmCard style={{ marginTop: 14, borderLeft: "3px solid #1F9D57" }}>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Booking confirmed</div>
+    <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.65 }}>{done.nights} {done.nights === 1 ? "night" : "nights"}, {new Date(done.checkin).toLocaleDateString("en-GB", { day: "numeric", month: "long" })} to {new Date(done.checkout).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. Reference <b style={{ color: "var(--ink)" }}>{done.id}</b>. Your caution deposit of {money(done.deposit)} is returned after checkout.</div>
+  </PmCard>;
+
+  const cell = (d) => {
+    const k = dOnly(d), inMonth = d.getMonth() === month.getMonth();
+    const isTaken = !!taken[k], past = k < today;
+    const sel = k === ci || k === co, between = ci && co && k > ci && k < co;
+    return <button key={k} onClick={() => pick(d)} disabled={past || isTaken || !inMonth} style={{
+      padding: "8px 0", fontSize: 12.5, borderRadius: 7, cursor: (past || isTaken || !inMonth) ? "default" : "pointer", fontFamily: "inherit",
+      border: sel ? "none" : "1px solid var(--cream-line)",
+      background: sel ? "var(--navy)" : between ? "var(--gold-soft)" : isTaken ? "rgba(208,69,59,.09)" : "transparent",
+      color: !inMonth ? "transparent" : sel ? "#fff" : isTaken ? "#D0453B" : past ? "var(--cream-line)" : "var(--ink)",
+      textDecoration: isTaken ? "line-through" : "none", opacity: !inMonth ? 0 : 1, fontWeight: sel ? 700 : 500
+    }}>{d.getDate()}</button>;
+  };
+  return <PmCard style={{ marginTop: 14 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+      <div><span className="serif" style={{ fontSize: 22, fontWeight: 600, color: "var(--ink)" }}>{money(nightly)}</span><span style={{ fontSize: 13, color: "var(--muted)" }}> per night</span></div>
+      <div style={{ fontSize: 12, color: "var(--muted)" }}>Minimum {minN} {minN === 1 ? "night" : "nights"}</div>
+    </div>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "14px 0 8px" }}>
+      <PmBtn size="sm" kind="ghost" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>&larr;</PmBtn>
+      <b style={{ fontSize: 13.5, color: "var(--ink)" }}>{month.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</b>
+      <PmBtn size="sm" kind="ghost" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>&rarr;</PmBtn>
+    </div>
+    {loading ? <div style={{ color: "var(--muted)", fontSize: 13, padding: 12 }}>Checking availability\u2026</div> : <>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3, marginBottom: 4 }}>{["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <div key={i} style={{ textAlign: "center", fontSize: 10.5, fontWeight: 700, color: "var(--muted)" }}>{d}</div>)}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 }}>{days.map(cell)}</div>
+      <div style={{ display: "flex", gap: 14, fontSize: 11, color: "var(--muted)", marginTop: 8 }}><span><span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "rgba(208,69,59,.3)", marginRight: 5 }} />Booked</span><span><span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: "var(--navy)", marginRight: 5 }} />Your dates</span></div>
+    </>}
+    {nights > 0 && <div style={{ marginTop: 14, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: 13 }}>
+      {[[money(nightly) + " \u00d7 " + nights + " " + (nights === 1 ? "night" : "nights"), money(sub)], ...(cleaning ? [["Cleaning fee", money(cleaning)]] : []), ...(adminFee ? [["Girard administrative fee (5%)", money(adminFee)]] : []), ...(deposit ? [["Caution deposit (refundable)", money(deposit)]] : [])].map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--muted)", padding: "3px 0" }}><span>{k}</span><span>{v}</span></div>)}
+      <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--cream-line)", marginTop: 7, paddingTop: 7, fontWeight: 700, color: "var(--ink)", fontSize: 16 }}><span>Total</span><span>{money(total)}</span></div>
+      {deposit > 0 && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>{money(deposit)} of this is a refundable deposit, returned after checkout.</div>}
+    </div>}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }} className="pm-grid2">
+      <PmField label="Your name" value={name} onChange={setName} placeholder="Full name" />
+      <PmField label="Phone" value={phone} onChange={setPhone} placeholder="+234..." />
+    </div>
+    {err && <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.3)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--ink)", marginTop: 10, lineHeight: 1.5 }}>{err}</div>}
+    <PmBtn kind="gold" icon={CalendarDays} onClick={book} style={{ marginTop: 12, width: "100%", justifyContent: "center" }}>{nights ? "Book " + nights + " " + (nights === 1 ? "night" : "nights") + " \u00b7 " + money(total) : "Choose your dates"}</PmBtn>
+  </PmCard>;
 }
 function SaleCommissionCard({ prop, st, setSt, identity, toast, isAdmin }) {
   const [open, setOpen] = useState(false);
@@ -2241,7 +2382,7 @@ function PropertiesScreen({ st, setSt, identity }) {
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Type</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.type}</div></div>
       </div>
-      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{sel.amenities.map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{(sel.amenities || []).map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
       {isAdmin && sel.status === "Pending Verification" && <PmBtn kind="gold" icon={ShieldCheck} onClick={() => verify(sel.id)}>Verify and publish</PmBtn>}
     </PmModal>}
   </div>;
@@ -2249,7 +2390,7 @@ function PropertiesScreen({ st, setSt, identity }) {
 
 /* ---------- ADD PROPERTY ---------- */
 function AddPropertyScreen({ st, setSt, toast, identity }) {
-  const [f, setF] = useState({ intent: "To let", type: PM_TYPES[0], area: PM_AREAS[0], country: "Nigeria", state: "Lagos", beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No", plotSize: "", titleKind: "Certificate of Occupancy" });
+  const [f, setF] = useState({ intent: "To let", type: PM_TYPES[0], area: PM_AREAS[0], country: "Nigeria", state: "Lagos", beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No", plotSize: "", titleKind: "Certificate of Occupancy", nightly: "", cleaning: "", deposit: "", minNights: "1" });
   const PHOTO_CATS = ["Front view", "Rear view", "Living room", "Kitchen", "Bedroom", "Bathroom", "Other"];
   // Girard verifies a real person against a real property before it goes live.
   const [kyc, setKyc] = useState({ fullName: "", phone: "", altPhone: "", address: "", propAddress: "", nin: "", capacity: "Owner", titleType: "Certificate of Occupancy", titleRef: "" });
@@ -2280,7 +2421,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     }
     const id = "PR-" + (2000 + st.properties.length) + "-" + Date.now().toString().slice(-4);
     const ref = makeRef();
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, intent: f.intent, letType: f.intent === "For sale" ? null : f.letType, term: f.intent === "For sale" ? null : f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, ref, intent: f.intent, country: f.country, state: f.state, postedAt: new Date().toISOString(), plotSize: f.plotSize || "", titleKind: f.titleKind || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, description: desc };
+    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, intent: f.intent, letType: f.intent === "For sale" ? null : f.letType, term: f.intent === "For sale" ? null : f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, ref, intent: f.intent, country: f.country, state: f.state, nightly: +f.nightly || 0, cleaning: +f.cleaning || 0, deposit: +f.deposit || 0, minNights: +f.minNights || 1, postedAt: new Date().toISOString(), plotSize: f.plotSize || "", titleKind: f.titleKind || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -2307,6 +2448,18 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
           <PmField label="Plot size" value={f.plotSize} onChange={v => setF({ ...f, plotSize: v })} placeholder="e.g. 648 sqm, or 2 plots" />
           <PmSelect label="Title" value={f.titleKind} onChange={v => setF({ ...f, titleKind: v })} options={["Certificate of Occupancy", "Governor\u2019s Consent", "Deed of Assignment", "Excision", "Gazette", "Registered Survey", "Family Receipt", "Other"]} />
         </div>}
+        {f.intent === "To let" && (f.letType === "Short let" || f.letType === "Holiday stay / serviced") && <>
+          <div style={{ borderTop: "1px solid var(--cream-line)", paddingTop: 12, fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>Short-let pricing</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+            <PmField label="Price per night (\u20a6)" value={f.nightly} onChange={v => setF({ ...f, nightly: v.replace(/[^0-9]/g, "") })} placeholder="e.g. 85000" />
+            <PmField label="Minimum nights" value={f.minNights} onChange={v => setF({ ...f, minNights: v.replace(/[^0-9]/g, "") })} placeholder="1" />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+            <PmField label="Cleaning fee (\u20a6)" value={f.cleaning} onChange={v => setF({ ...f, cleaning: v.replace(/[^0-9]/g, "") })} placeholder="Charged once per stay" />
+            <PmField label="Caution deposit (\u20a6)" value={f.deposit} onChange={v => setF({ ...f, deposit: v.replace(/[^0-9]/g, "") })} placeholder="Refunded after checkout" />
+          </div>
+          <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}>The cleaning fee is charged once per stay and is not refundable. The caution deposit is held against damage and returned after checkout. Girard&apos;s 5% applies to the nightly total, not to the deposit.</div>
+        </>}
         {f.intent === "To let" && <PmSelect label="Rent managed by Girard?" value={f.managed} onChange={v => setF({ ...f, managed: v })} options={["No", "Yes"]} />}
         {!uploadedByGirard && <>
           <div style={{ borderTop: "1px solid var(--cream-line)", paddingTop: 14, marginTop: 4 }}>
@@ -2419,7 +2572,7 @@ function TenantFind({ st, setSt, identity, toast }) {
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden" }}>
         <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
         <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" photo={p.img || poolPhoto(p.id)} /></div>
-        <div style={{ padding: 14 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
+        <div style={{ padding: 14, cursor: "pointer" }} onClick={() => setSel(p)}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{[p.state, (p.country && p.country !== "Nigeria" ? p.country : null), (p.intent || "To let")].filter(Boolean).join(" \u00b7 ")}{p.postedAt ? " \u00b7 " + postedAgo(p.postedAt) : ""}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}<span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span></div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
@@ -2428,13 +2581,14 @@ function TenantFind({ st, setSt, identity, toast }) {
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
       <HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || poolPhoto(sel.id)} />
       <div style={{ marginTop: 14 }}><FacilitatorWarning prop={sel} compact /></div>
+      <BookingCard prop={sel} identity={identity} toast={toast} />
       {sel.featured && <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["Units", sel.units], ["Max height", sel.height], ["Plot", sel.plot]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 110, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 17 }}>{v}</div></div>)}</div>
         <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{sel.blurb}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
       </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--navy)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
-      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{sel.amenities.map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{(sel.amenities || []).map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
       <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn>
     </PmModal>}
     {apply && <ApplyModal st={st} setSt={setSt} identity={identity} prop={apply} onClose={() => { setApply(null); setSel(null); }} toast={toast} />}
