@@ -1,21 +1,91 @@
-// Paystack Subaccounts — used for Split Payments.
+// Paystack Subaccounts (split payments) + payout-account verification.
 //
 // Girard's model: rent is paid by the tenant, settles DIRECTLY to the landlord's
-// (or agent's) own bank account, while Girard's 5% administrative fee is routed
-// to the Girard payout account in the same transaction.
+// (or agent's) own bank account, while Girard's 5% administrative fee is routed to
+// the Girard payout account in the same transaction, via a Paystack subaccount.
 //
-// Paystack does this with a "subaccount". When a subaccount is created with
-// percentage_charge: 5, then on any transaction that names that subaccount,
-// 5% goes to the MAIN account (Girard) and 95% goes to the SUBACCOUNT (landlord).
+// WHY THIS FILE CHANGED
+// Paystack sunset its /bank/match_bvn endpoint, which we used to confirm that a
+// payout account actually belongs to the person whose BVN we hold. We now rebuild
+// that same control from two pieces we own, independent of Paystack:
+//   1. Paystack /bank/resolve   -> the name the bank holds ON THE ACCOUNT
+//   2. Dojah   /api/v1/kyc/bvn  -> whether that name matches the BVN record
+// If the account's OWN registered name matches the BVN, the account belongs to the
+// BVN holder. A fraudster cannot fake this: it is the bank's registered name that is
+// matched, not a name they typed. The BVN is used only for the match and never stored.
 //
-// POST { business_name, settlement_bank, account_number, percentage_charge?, email? }
-//   -> { configured: true, ok: true, subaccount_code: "ACCT_xxx", account_name: "..." }
+// POST { business_name, settlement_bank, account_number, percentage_charge?, email?, bvn }
+//   -> { configured, ok, bvn_verified, check, check_message, subaccount_code, split_code, account_name }
+//   (identical response shape to before, so the app needs no client changes here.)
 //
-// Requires PAYSTACK_SECRET_KEY in Vercel (sk_live_... once you are live).
-// Without it the endpoint returns { configured: false } and the app carries on
-// recording the bank details only, so nothing breaks.
+// ENV (Vercel):
+//   PAYSTACK_SECRET_KEY   sk_live_... (or sk_test_... - test mode skips all checks)
+//   DOJAH_APP_ID          Dojah app id       (dashboard -> Developers -> Configuration)
+//   DOJAH_SECRET_KEY      Dojah private key   (sent as-is, NOT as "Bearer ...")
+//   DOJAH_BASE_URL        optional; https://api.dojah.io (default) | https://sandbox.dojah.io
+// No Paystack key  -> { configured:false }, app just records bank details, nothing breaks.
+// No Dojah keys    -> check is "unavailable": the account is created but sent to the
+//                     manual Payout review queue, NEVER auto-verified. Safe by default.
+//
+// To switch provider (e.g. QoreID) later, replace bvnNameMatch() only; nothing else
+// in this file depends on Dojah.
 
 const FEE_PERCENT = 5;
+const DOJAH_BASE = process.env.DOJAH_BASE_URL || "https://api.dojah.io";
+
+// Nigerian account names arrive in either order (FIRST LAST or LAST FIRST) and often
+// carry a middle name. Return both orderings so a match on either counts - this is the
+// single biggest source of false mismatches, and we want to clear it automatically.
+function nameOrderings(fullName) {
+  const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return [];
+  const first = parts[0], last = parts[parts.length - 1];
+  return [
+    { first_name: first, last_name: last },
+    { first_name: last, last_name: first }
+  ];
+}
+
+// Ask Dojah whether the name registered on the bank account matches the BVN.
+// Returns "matched" | "mismatch" | "unavailable" plus a short note.
+async function bvnNameMatch({ bvn, fullName }) {
+  const appId = process.env.DOJAH_APP_ID;
+  const secret = process.env.DOJAH_SECRET_KEY;
+  if (!appId || !secret) return { result: "unavailable", note: "Identity check not configured" };
+
+  const orderings = nameOrderings(fullName);
+  if (!orderings.length) return { result: "unavailable", note: "Account name too short to match" };
+
+  const hdr = { AppId: appId, Authorization: secret };  // Dojah: raw key, not Bearer
+  let sawValidBvn = false;
+  let lastNote = "";
+
+  for (const o of orderings) {
+    try {
+      const url = DOJAH_BASE + "/api/v1/kyc/bvn?bvn=" + encodeURIComponent(bvn)
+        + "&first_name=" + encodeURIComponent(o.first_name)
+        + "&last_name=" + encodeURIComponent(o.last_name);
+      const r = await fetch(url, { headers: hdr });
+      const d = await r.json();
+      if (d && d.error) { lastNote = String(d.error); continue; }
+      const e = (d && d.entity) || {};
+      const bvnValid = !!(e.bvn && e.bvn.status);
+      const firstOk = !!(e.first_name && e.first_name.status);
+      const lastOk = !!(e.last_name && e.last_name.status);
+      if (bvnValid) sawValidBvn = true;
+      if (bvnValid && firstOk && lastOk) return { result: "matched", note: "" };
+    } catch (err) {
+      lastNote = "Could not reach identity service";
+    }
+  }
+
+  // The BVN is real, but the account's registered holder is not the BVN holder.
+  // That is the fraud signal: refuse.
+  if (sawValidBvn) return { result: "mismatch", note: "Account name does not match the BVN" };
+  // We never got a clean answer (bad BVN, outage, throttling). Not the landlord's
+  // fault: create the account unverified and route it to a human, do not freeze them.
+  return { result: "unavailable", note: lastNote || "Identity check unavailable" };
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") { res.status(405).json({ error: "POST only" }); return; }
@@ -29,67 +99,19 @@ export default async function handler(req, res) {
   }
 
   const hdr = { Authorization: "Bearer " + KEY, "Content-Type": "application/json" };
-  // Paystack limits LIVE bank resolves to 3/day while you are on test keys. The resolve is a
-  // safety net for real money, so run it in live mode only and skip it in test mode.
+  // Paystack limits LIVE resolves while on test keys; the whole check is a live-money
+  // safety net, so run it in live mode only and skip it in test mode.
   const isTest = String(KEY).startsWith("sk_test");
 
   try {
-    // The account must actually belong to the person who gave us the BVN.
-    // Without this, a fraudster can list someone else's property and point the
-    // rent at their own account. Live keys only: Paystack cannot match in test.
-    //
-    // Three outcomes, and the difference matters:
-    //   matched     -> verified, rent can flow
-    //   mismatch    -> refused outright. This is the fraud control.
-    //   unavailable -> Paystack could not answer (no balance, outage, not
-    //                  enabled). NOT the landlord's fault, so we create the
-    //                  account unverified and send it to Girard for review,
-    //                  rather than freezing an honest person's income.
+    let resolvedName = business_name;
     let bvnMatched = false;
     let checkNote = "";
-    if (!isTest) {
-      if (!bvn || String(bvn).replace(/[^0-9]/g, "").length !== 11) {
-        res.status(200).json({ configured: true, ok: false, error: "A valid 11-digit BVN is required to receive rent through Girard." });
-        return;
-      }
-      try {
-        const mr = await fetch("https://api.paystack.co/bank/match_bvn?account_number=" + encodeURIComponent(account_number) + "&bank_code=" + encodeURIComponent(settlement_bank) + "&bvn=" + encodeURIComponent(String(bvn).replace(/[^0-9]/g, "")), { headers: hdr });
-        const md = await mr.json();
-        const msg = (md && md.message) || "";
-        const truthy = (v) => v === true || v === "true";
-        const explicitlyFalse = (v) => v === false || v === "false";
 
-        if (md && md.status === true) {
-          const d = md.data || {};
-          if (truthy(d.is_blacklisted)) {
-            res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, check: "mismatch", error: "This BVN is blacklisted and cannot be used to receive rent through Girard." });
-            return;
-          }
-          if (explicitlyFalse(d.account_number)) {
-            res.status(200).json({ configured: true, ok: false, bvn_mismatch: true, check: "mismatch", error: "Paystack says this bank account is not linked to that BVN, so Girard cannot pay rent into it. Paystack's exact words: \u201c" + msg + "\u201d" });
-            return;
-          }
-          bvnMatched = true;
-        } else if (/does not match|mismatch|invalid bvn|bvn is invalid/i.test(msg)) {
-          // A real verdict from Paystack. Refuse.
-          res.status(200).json({
-            configured: true, ok: false, bvn_mismatch: true, check: "mismatch",
-            error: "Paystack says this bank account is not linked to that BVN, so Girard cannot pay rent into it. Check the account number is the one tied to this BVN. If your bank holds an old BVN against this account, contact your bank. Paystack's exact words: \u201c" + msg + "\u201d"
-          });
-          return;
-        } else {
-          // Balance, outage, throttling, not enabled, anything unrecognised:
-          // Paystack could not answer. Flag it, do not blame the landlord.
-          checkNote = msg || "no response";
-        }
-      } catch (e) {
-        checkNote = "Could not reach Paystack";
-      }
-    }
-
-    let resolvedName = business_name;
     if (!isTest) {
-      // Resolve the account first so we never create a subaccount against a wrong number.
+      // 1. Resolve the account number -> the name the bank holds on it. Do this first,
+      //    so we never create a subaccount against a wrong number, and so we have the
+      //    real registered name to match against the BVN.
       const vr = await fetch("https://api.paystack.co/bank/resolve?account_number=" + encodeURIComponent(account_number) + "&bank_code=" + encodeURIComponent(settlement_bank), { headers: hdr });
       const vd = await vr.json();
       if (!vd || !vd.status) {
@@ -97,15 +119,38 @@ export default async function handler(req, res) {
         return;
       }
       resolvedName = (vd.data && vd.data.account_name) || business_name;
+
+      // 2. A valid BVN is required to receive rent through Girard.
+      const cleanBvn = String(bvn || "").replace(/[^0-9]/g, "");
+      if (cleanBvn.length !== 11) {
+        res.status(200).json({ configured: true, ok: false, error: "A valid 11-digit BVN is required to receive rent through Girard." });
+        return;
+      }
+
+      // 3. Does the account's registered name match the BVN?
+      //   matched     -> verified, rent can flow
+      //   mismatch    -> refused outright (this is the fraud control), no subaccount created
+      //   unavailable -> could not check; create unverified and send for manual review
+      const m = await bvnNameMatch({ bvn: cleanBvn, fullName: resolvedName });
+      if (m.result === "mismatch") {
+        res.status(200).json({
+          configured: true, ok: false, bvn_mismatch: true, check: "mismatch",
+          error: "The name on this bank account (" + resolvedName + ") does not match the BVN provided, so Girard cannot pay rent into it. Check the account number is the one tied to this BVN. If your bank holds an old BVN against this account, contact your bank."
+        });
+        return;
+      }
+      if (m.result === "matched") bvnMatched = true;
+      else checkNote = m.note;
     }
 
+    // 4. Create the subaccount. percentage_charge: 5 means 5% of every split
+    //    transaction settles to the Girard main account, 95% to this vendor.
     const cr = await fetch("https://api.paystack.co/subaccount", {
       method: "POST", headers: hdr,
       body: JSON.stringify({
         business_name: resolvedName,
         settlement_bank,
         account_number,
-        // 5% of every split transaction goes to the Girard main account.
         percentage_charge: Number(percentage_charge) > 0 ? Number(percentage_charge) : FEE_PERCENT,
         description: "Girard Property landlord/agent settlement account",
         primary_contact_email: email || undefined
@@ -120,10 +165,9 @@ export default async function handler(req, res) {
     }
     const subaccount_code = cd.data && cd.data.subaccount_code;
 
-    // Create a split group for THIS vendor only: 95% to them, the 5% remainder
-    // settles to the Girard main account. One group per vendor is deliberate —
-    // a single group holding every vendor would split each rent payment across
-    // all of them, instead of paying the one landlord who is owed it.
+    // 5. One split group per vendor: their share to them, the 5% remainder to Girard's
+    //    main account. One group per vendor is deliberate - a shared group would split
+    //    each rent payment across every landlord instead of paying the one who is owed.
     let split_code = null;
     try {
       const share = 100 - (Number(percentage_charge) > 0 ? Number(percentage_charge) : FEE_PERCENT);

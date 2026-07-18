@@ -2848,16 +2848,21 @@ function PayModal({ inv, st, email, onClose, onPaid }) {
   // seen the property before paying.
   const ob = prop && prop.ownerEmail ? bankFor(prop.ownerEmail) : null;
   const mismatch = !!(ob && ob.checkStatus === "Mismatch");
-  const unchecked = !!(ob && ob.checkStatus === "Check unavailable");
-  const bvnOk = !prop || prop.girardManaged || prop.uploadedByGirard || !mismatch;
+  // Payment on a non-Girard property is allowed only once its payout account is
+  // actually verified — the automated name-check matched, or Girard approved it by
+  // hand. Every other state (not checked, unavailable, mismatch, rejected) is a HOLD,
+  // not a soft warning: since Paystack sunset match_bvn, unverified is now the norm,
+  // and the manual Payout review queue already collects these for a human to clear.
+  const acctVerified = !!(ob && ob.bvnVerified);
+  const bvnOk = !prop || prop.girardManaged || prop.uploadedByGirard || acctVerified;
   return <PmModal title="Pay rent" onClose={onClose}>
-    {!bvnOk && <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.3)", borderRadius: 9, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: "var(--ink)", lineHeight: 1.6, display: "flex", gap: 9, alignItems: "flex-start" }}>
+    {!bvnOk && mismatch && <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.3)", borderRadius: 9, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: "var(--ink)", lineHeight: 1.6, display: "flex", gap: 9, alignItems: "flex-start" }}>
       <Lock size={16} color="#D0453B" style={{ flexShrink: 0, marginTop: 2 }} />
       <div><b>Payment is blocked on this property.</b> The landlord's bank confirmed that their payout account is not linked to the identity they gave Girard. Until that is resolved, no rent can be paid here. <b>Do not pay this landlord by transfer or cash outside Girard</b>: this is exactly the situation where fraud happens. Contact Girard if you believe this is wrong.</div>
     </div>}
-    {bvnOk && unchecked && <div style={{ background: "var(--gold-soft)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "11px 13px", marginBottom: 12, fontSize: 12.5, color: "var(--ink)", lineHeight: 1.6, display: "flex", gap: 8, alignItems: "flex-start" }}>
-      <AlertTriangle size={15} color="var(--gold-2)" style={{ flexShrink: 0, marginTop: 2 }} />
-      <div>Girard has not yet been able to complete its bank check on this landlord. Please be especially careful: see the property, and satisfy yourself it exists and is available, before paying.</div>
+    {!bvnOk && !mismatch && <div style={{ background: "rgba(208,69,59,.06)", border: "1px solid rgba(208,69,59,.25)", borderRadius: 9, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: "var(--ink)", lineHeight: 1.6, display: "flex", gap: 9, alignItems: "flex-start" }}>
+      <Lock size={16} color="#D0453B" style={{ flexShrink: 0, marginTop: 2 }} />
+      <div><b>Payment is on hold for this property.</b> Girard has not yet verified that this landlord's payout account belongs to them, so rent cannot be paid here yet. Our team is completing that check. <b>Please do not pay this landlord by transfer or cash outside Girard.</b> Contact Girard if this persists.</div>
     </div>}
     <div style={{ background: "var(--ivory)", borderRadius: 10, padding: 16, marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", fontSize: 13 }}><span>Rent</span><span>{money(inv.amount)}</span></div>
