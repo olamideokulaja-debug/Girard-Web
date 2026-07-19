@@ -1,15 +1,16 @@
 {
-  "name": "REALMS Field",
-  "short_name": "RHSC Field",
-  "description": "RHSC field monitoring for HEFAMAA facility inspections.",
+  "name": "Girard Property",
+  "short_name": "Girard",
+  "description": "Digital property management and cross-border swaps on one governed platform.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#574277",
+  "background_color": "#0A1A38",
+  "theme_color": "#0A1A38",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
