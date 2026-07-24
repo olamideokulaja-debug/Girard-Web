@@ -33,17 +33,35 @@
 const FEE_PERCENT = 5;
 const DOJAH_BASE = process.env.DOJAH_BASE_URL || "https://api.dojah.io";
 
-// Nigerian account names arrive in either order (FIRST LAST or LAST FIRST) and often
-// carry a middle name. Return both orderings so a match on either counts - this is the
-// single biggest source of false mismatches, and we want to clear it automatically.
-function nameOrderings(fullName) {
-  const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
-  if (parts.length < 2) return [];
-  const first = parts[0], last = parts[parts.length - 1];
-  return [
-    { first_name: first, last_name: last },
-    { first_name: last, last_name: first }
-  ];
+// Split a bank-registered account name into usable name tokens.
+//
+// WHY THIS IS NOT "first word + last word":
+// Nigerian bank names commonly run SURNAME FIRSTNAME MIDDLENAME, e.g.
+// "OKULAJA OLAMIDE ADEKUNLE", where the BVN's registered FIRST name is the MIDDLE
+// token. Comparing only the outer two tokens never tests it, and an honest landlord
+// is hard-blocked as fraud. So we consider EVERY token, in every position.
+// Titles and joint-account conjunctions are stripped; anything non-alphabetic goes.
+const NAME_NOISE = ["MR", "MRS", "MS", "MISS", "DR", "PROF", "ENGR", "CHIEF", "ALHAJI", "ALHAJA", "PASTOR", "REV", "BARR", "AND"];
+function nameTokens(fullName) {
+  const seen = [];
+  String(fullName || "").toUpperCase().split(/[^A-Z]+/).forEach(function (t) {
+    if (t.length < 2) return;                       // drops initials and stray letters
+    if (NAME_NOISE.indexOf(t) !== -1) return;
+    if (seen.indexOf(t) === -1) seen.push(t);
+  });
+  return seen.slice(0, 4);                          // caps cost on very long names
+}
+
+// Pair the tokens in a ring: (t0,t1), (t1,t2), ... (tn,t0).
+// Dojah answers first_name and last_name INDEPENDENTLY in one response, so a ring of
+// n calls tests every token in BOTH positions - n calls instead of the n*(n-1) that
+// checking every combination separately would cost.
+function ringPairs(tokens) {
+  const out = [];
+  for (let i = 0; i < tokens.length; i++) {
+    out.push({ first_name: tokens[i], last_name: tokens[(i + 1) % tokens.length] });
+  }
+  return out;
 }
 
 // Ask Dojah whether the name registered on the bank account matches the BVN.
@@ -53,14 +71,16 @@ async function bvnNameMatch({ bvn, fullName }) {
   const secret = process.env.DOJAH_SECRET_KEY;
   if (!appId || !secret) return { result: "unavailable", note: "Identity check not configured" };
 
-  const orderings = nameOrderings(fullName);
-  if (!orderings.length) return { result: "unavailable", note: "Account name too short to match" };
+  const tokens = nameTokens(fullName);
+  if (tokens.length < 2) return { result: "unavailable", note: "Account name too short to match" };
 
   const hdr = { AppId: appId, Authorization: secret };  // Dojah: raw key, not Bearer
   let sawValidBvn = false;
   let lastNote = "";
+  const isFirst = {};   // token -> Dojah confirmed it as the BVN's first name
+  const isLast = {};    // token -> Dojah confirmed it as the BVN's last name
 
-  for (const o of orderings) {
+  for (const o of ringPairs(tokens)) {
     try {
       const url = DOJAH_BASE + "/api/v1/kyc/bvn?bvn=" + encodeURIComponent(bvn)
         + "&first_name=" + encodeURIComponent(o.first_name)
@@ -72,10 +92,24 @@ async function bvnNameMatch({ bvn, fullName }) {
       const bvnValid = !!(e.bvn && e.bvn.status);
       const firstOk = !!(e.first_name && e.first_name.status);
       const lastOk = !!(e.last_name && e.last_name.status);
-      if (bvnValid) sawValidBvn = true;
-      if (bvnValid && firstOk && lastOk) return { result: "matched", note: "" };
+      if (!bvnValid) continue;
+      sawValidBvn = true;
+      // Both halves confirmed in one answer: done, no further calls needed.
+      if (firstOk && lastOk) return { result: "matched", note: "" };
+      if (firstOk) isFirst[o.first_name] = true;
+      if (lastOk) isLast[o.last_name] = true;
     } catch (err) {
       lastNote = "Could not reach identity service";
+    }
+  }
+
+  // Confirmations can land in DIFFERENT calls: for "OKULAJA OLAMIDE ADEKUNLE" the BVN's
+  // first name (OLAMIDE) and last name (OKULAJA) are confirmed one call apart. Two
+  // different tokens holding the two positions is a match.
+  for (const a of tokens) {
+    if (!isFirst[a]) continue;
+    for (const b of tokens) {
+      if (a !== b && isLast[b]) return { result: "matched", note: "" };
     }
   }
 
