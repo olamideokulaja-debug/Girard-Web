@@ -2113,13 +2113,13 @@ function PmStat({ icon: Icon, label, value, sub, tone }) {
     </div></PmCard>;
 }
 function PmModal({ title, onClose, children, wide }) {
-  return <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,35,.55)", zIndex: 60, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", overflowY: "auto" }}>
-    <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 14, width: wide ? 720 : 500, maxWidth: "100%", marginBottom: 24 }}>
-      <div style={{ position: "sticky", top: 0, background: "var(--white)", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--cream-line)", borderTopLeftRadius: 14, borderTopRightRadius: 14, zIndex: 1 }}>
+  return <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,35,.55)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 14, width: wide ? 720 : 500, maxWidth: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flexShrink: 0, background: "var(--white)", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--cream-line)" }}>
         <div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{title}</div>
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><X size={20} /></button>
       </div>
-      <div style={{ padding: 20 }}>{children}</div>
+      <div style={{ padding: 20, overflowY: "auto", flex: 1, minHeight: 0 }}>{children}</div>
     </div></div>;
 }
 function AiPanel({ loading, offline, children }) {
