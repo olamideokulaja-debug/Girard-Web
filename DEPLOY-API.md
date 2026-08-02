@@ -1,15 +1,9 @@
-# Paystack payment endpoints for your WEBSITE
+# Paystack endpoints + auto-return (WEBSITE)
 
-Add these two files to your WEBSITE repo (the same one Vercel deploys), in the
-`api` folder (create it if it doesn't exist — it likely already holds
-paystack-subaccount.js etc.):
+Upload/replace these in your WEBSITE repo's `api` folder, then Commit (Vercel redeploys):
 
-  api/paystack-initialize.js   <- starts a rent payment (returns a checkout link)
-  api/paystack-verify.js       <- confirms a payment really succeeded
+  api/paystack-initialize.js  <- UPDATED: now tells Paystack to return to the app after payment
+  api/paystack-verify.js      <- (unchanged, include if not already there)
+  api/pay-return.js           <- NEW: the page that bounces the browser back into the app
 
-## Upload
-GitHub -> your WEBSITE repo -> Add file -> Upload files -> drag the `api` folder
-(or the two files into the existing api folder) -> Commit. Vercel redeploys.
-
-They use your existing PAYSTACK_SECRET_KEY env var (already set for your other
-Paystack functions). Nothing else to configure.
+Uses your existing PAYSTACK_SECRET_KEY. Keep it on your sk_test_ key while testing.

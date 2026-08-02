@@ -13,6 +13,7 @@ export default async function handler(req, res) {
       amount: Math.round(Number(amount)),          // kobo
       currency: "NGN",
       reference: reference || ("GIRARD-rent-" + Date.now()),
+      callback_url: "https://girardpropertylimited.com/api/pay-return",
       ...(split_code ? { split_code } : subaccount ? { subaccount, bearer: "subaccount" } : {}),
       metadata: metadata || {},
     };
