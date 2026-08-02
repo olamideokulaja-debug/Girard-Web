@@ -2395,6 +2395,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
   // Girard verifies a real person against a real property before it goes live.
   const [kyc, setKyc] = useState({ fullName: "", phone: "", altPhone: "", address: "", propAddress: "", nin: "", capacity: "Owner", titleType: "Certificate of Occupancy", titleRef: "" });
   const [photoTags, setPhotoTags] = useState([]);
+  const [docs, setDocs] = useState([]);
   const tagAt = (i) => photoTags[i] || PHOTO_CATS[i] || "Other";
   const uploadedByGirard = isApprovedAdmin(identity && identity.email);
   const myBank = bankFor(identity && identity.email);
