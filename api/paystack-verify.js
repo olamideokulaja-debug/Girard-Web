@@ -6,6 +6,17 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://qphpdczthyuzrfurimeh.supabase.co";
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+async function recordPayment(p) {
+  if (!SERVICE || !p.reference) return;
+  try {
+    await fetch(SUPABASE_URL + "/rest/v1/payments?on_conflict=reference", {
+      method: "POST",
+      headers: { apikey: SERVICE, Authorization: "Bearer " + SERVICE, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([p]),
+    });
+  } catch (e) {}
+}
+
 async function markLeasedIfLongLet(propId) {
   if (!SERVICE || !propId) return;          // no service key -> skip quietly
   try {
@@ -40,8 +51,17 @@ export default async function handler(req, res) {
     if (!data || !data.status) return res.status(400).json({ status: "failed", message: (data && data.message) || "verify failed" });
 
     if (data.data && data.data.status === "success") {
-      const propId = data.data.metadata && data.data.metadata.property;
-      await markLeasedIfLongLet(propId);      // take long-let off the market
+      const dd = data.data, meta = dd.metadata || {};
+      await recordPayment({
+        reference: dd.reference,
+        property_id: meta.property || null,
+        title: meta.title || null,
+        tenant_email: (dd.customer && dd.customer.email) || null,
+        amount: dd.amount || null,
+        status: "success",
+        paid_at: dd.paid_at || new Date().toISOString(),
+      });
+      await markLeasedIfLongLet(meta.property);   // take long-let off the market
     }
 
     return res.status(200).json({

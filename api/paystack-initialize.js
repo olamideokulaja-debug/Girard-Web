@@ -1,21 +1,56 @@
 // Vercel serverless function: start a Paystack transaction (rent payment).
-// Uses your SECRET key (server-side only). The app calls this to get a secure
-// checkout link. The landlord split rides along via subaccount / split_code.
+// SECURITY: the amount and the landlord split are looked up from the database
+// server-side by property id, so a tampered app cannot set the price or the payee.
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://qphpdczthyuzrfurimeh.supabase.co";
+const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+async function getProperty(propId) {
+  if (!SERVICE || !propId) return null;
+  try {
+    const r = await fetch(SUPABASE_URL + "/rest/v1/properties?id=eq." + encodeURIComponent(propId) + "&select=data,status,subaccount,split_code", {
+      headers: { apikey: SERVICE, Authorization: "Bearer " + SERVICE },
+    });
+    const rows = await r.json();
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  } catch (e) { return null; }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const SECRET = process.env.PAYSTACK_SECRET_KEY;
-  if (!SECRET) return res.status(500).json({ error: "Paystack not configured (PAYSTACK_SECRET_KEY missing)" });
+  if (!SECRET) return res.status(500).json({ error: "Paystack not configured" });
   try {
-    const { email, amount, subaccount, split_code, reference, metadata } = req.body || {};
-    if (!email || !amount) return res.status(400).json({ error: "email and amount (in kobo) are required" });
+    const b = req.body || {};
+    const email = b.email;
+    const propId = b.property || (b.metadata && b.metadata.property);
+    if (!email) return res.status(400).json({ error: "email is required" });
+
+    // Prefer server-side truth: look the property up and use ITS rent + split.
+    let amount = Math.round(Number(b.amount) || 0);   // client value is only a fallback
+    let subaccount = b.subaccount, split_code = b.split_code, title = (b.metadata && b.metadata.title) || "";
+    const prop = await getProperty(propId);
+    if (prop) {
+      if (prop.status !== "Available") return res.status(409).json({ error: "This property is no longer available." });
+      const d = prop.data || {};
+      const rent = Number(d.rent || 0);
+      if (rent > 0) amount = Math.round(rent * 100);   // authoritative amount (kobo)
+      subaccount = prop.subaccount || d.subaccount || subaccount;
+      split_code = prop.split_code || d.split_code || split_code;
+      title = d.title || title;
+    } else if (SERVICE && propId) {
+      // service key present but property not found -> refuse rather than trust the client
+      return res.status(404).json({ error: "Property not found." });
+    }
+    if (!amount || amount < 100) return res.status(400).json({ error: "Invalid amount." });
+
     const body = {
       email,
-      amount: Math.round(Number(amount)),          // kobo
+      amount,
       currency: "NGN",
-      reference: reference || ("GIRARD-rent-" + Date.now()),
+      reference: b.reference || ("GIRARD-rent-" + Date.now()),
       callback_url: "https://girardpropertylimited.com/api/pay-return",
       ...(split_code ? { split_code } : subaccount ? { subaccount, bearer: "subaccount" } : {}),
-      metadata: metadata || {},
+      metadata: { property: propId || "", title },
     };
     const r = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
