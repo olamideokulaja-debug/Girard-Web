@@ -2332,7 +2332,7 @@ function OwnerDash({ st, identity }) {
 }
 
 /* ---------- PROPERTIES ---------- */
-function PropertiesScreen({ st, setSt, identity }) {
+function PropertiesScreen({ st, setSt, identity, toast }) {
   const isAdmin = identity.role === "admin";
   const [area, setArea] = useState("All");
   const [sel, setSel] = useState(null);
