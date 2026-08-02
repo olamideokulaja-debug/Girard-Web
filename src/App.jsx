@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowUpRight, Building2, Repeat, LineChart, Sparkles, ShieldCheck,
   Globe2, MapPin, Menu, X, Home, KeyRound, Users, Briefcase, ArrowRight,
@@ -2113,7 +2114,7 @@ function PmStat({ icon: Icon, label, value, sub, tone }) {
     </div></PmCard>;
 }
 function PmModal({ title, onClose, children, wide }) {
-  return <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,35,.55)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+  const node = <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,35,.55)", zIndex: 4000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div onClick={e => e.stopPropagation()} style={{ background: "var(--white)", borderRadius: 14, width: wide ? 720 : 500, maxWidth: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ flexShrink: 0, background: "var(--white)", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--cream-line)" }}>
         <div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>{title}</div>
@@ -2121,6 +2122,7 @@ function PmModal({ title, onClose, children, wide }) {
       </div>
       <div style={{ padding: 20, overflowY: "auto", flex: 1, minHeight: 0 }}>{children}</div>
     </div></div>;
+  return (typeof document !== "undefined") ? createPortal(node, document.body) : node;
 }
 function AiPanel({ loading, offline, children }) {
   return <div style={{ background: "var(--gold-soft)", border: "1px solid var(--gold)", borderRadius: 10, padding: 14 }}>
