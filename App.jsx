@@ -2347,6 +2347,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
     try { auditLog("Listing approved", (pr ? pr.title + " \u00b7 " + (pr.kyc ? pr.kyc.fullName + " \u00b7 " + pr.kyc.propAddress : (pr.ownerEmail || "")) : id) + " \u00b7 approved by " + identity.email, identity.email); } catch (e) {}
     const next = { ...st, properties: st.properties.map(p => p.id === id ? { ...p, status: "Available", verified: true, verifiedBy: identity.email, verifiedAt: new Date().toISOString() } : p) };
     setSt(next); setSel(null);
+    if (pr && pr.ownerEmail) { try { fetch("/api/send-push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: pr.ownerEmail, title: "Listing verified", body: (pr.title || "Your listing") + " is now live on Girard." }) }); } catch (e) {} }
   };
   return <div>
     <H2 title="Properties" sub={list.length + " of " + st.properties.length + " shown"} right={<div style={{ width: 200 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div>} />
@@ -6003,8 +6004,12 @@ function rentSave(e, s) { try { localStorage.setItem(rentKey(e), JSON.stringify(
 function msgKey(e) { return "girard_msgs_" + (e || "guest"); }
 function msgLoadLocal(e) { try { const r = localStorage.getItem(msgKey(e)); if (r) return JSON.parse(r); } catch (x) {} return { items: [] }; }
 function msgSaveLocal(e, s) { try { localStorage.setItem(msgKey(e), JSON.stringify(s)); } catch (x) {} }
+async function pushTo(email, title, body) {
+  try { await fetch("/api/send-push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, title, body }) }); } catch (e) {}
+}
 async function msgSend(email, rec) {
   const row = { id: "MSG-" + Date.now(), tenant: email, sender: rec.sender, body: rec.body, created_at: new Date().toISOString() };
+  if (rec.sender !== "tenant") pushTo(email, "New message from Girard", rec.body);
   if (supabase) { try { await supabase.from("messages").insert([{ id: row.id, tenant: row.tenant, sender: row.sender, body: row.body }]); return row; } catch (x) {} }
   const st = msgLoadLocal(email); msgSaveLocal(email, { items: [...st.items, row] }); return row;
 }

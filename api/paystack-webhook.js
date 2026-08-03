@@ -33,6 +33,19 @@ async function recordPayment(p) {
   } catch (e) {}
 }
 
+async function createBooking(meta, d) {
+  if (!SERVICE || !meta.checkin || !meta.checkout) return;
+  try {
+    const nights = Math.max(1, Math.round((new Date(meta.checkout) - new Date(meta.checkin)) / 86400000));
+    const total = Number(d.amount || 0) / 100;
+    const nightly = nights ? Math.round(total / nights) : total;
+    await sb("bookings?on_conflict=id", {
+      method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ id: "BK-" + d.reference, property_id: meta.property || null, guest_email: (d.customer && d.customer.email) || null, checkin: meta.checkin, checkout: meta.checkout, nights, nightly, total, status: "Confirmed", reference: d.reference }]),
+    });
+  } catch (e) {}
+}
+
 async function markLeasedIfLongLet(propId) {
   if (!SERVICE || !propId) return;
   try {
@@ -46,6 +59,38 @@ async function markLeasedIfLongLet(propId) {
     await sb("properties?id=eq." + encodeURIComponent(propId), {
       method: "PATCH", headers: { Prefer: "return=minimal" },
       body: JSON.stringify({ status: "Leased", updated_at: new Date().toISOString() }),
+    });
+  } catch (e) {}
+}
+
+async function sendPush(email, title, body) {
+  if (!email) return;
+  try {
+    await fetch("https://girardpropertylimited.com/api/send-push", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, title, body }),
+    });
+  } catch (e) {}
+}
+
+async function sendReceipt(p) {
+  if (!p.tenant_email) return;
+  try {
+    await fetch("https://girardpropertylimited.com/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        channels: ["email"],
+        to: p.tenant_email,
+        subject: "Your Girard payment receipt",
+        message:
+          "Thank you for your payment through Girard.\n\n" +
+          "Property: " + (p.title || p.property_id || "-") + "\n" +
+          "Amount: NGN " + Number((p.amount || 0) / 100).toLocaleString() + "\n" +
+          "Reference: " + p.reference + "\n" +
+          "Date: " + (p.paid_at || "") + "\n\n" +
+          "Girard Property Estate Limited",
+      }),
     });
   } catch (e) {}
 }
@@ -65,7 +110,7 @@ export default async function handler(req, res) {
   if (event && event.event === "charge.success" && event.data) {
     const d = event.data;
     const meta = d.metadata || {};
-    await recordPayment({
+    const rec = {
       reference: d.reference,
       property_id: meta.property || null,
       title: meta.title || null,
@@ -73,8 +118,12 @@ export default async function handler(req, res) {
       amount: d.amount || null,
       status: "success",
       paid_at: d.paid_at || new Date().toISOString(),
-    });
-    await markLeasedIfLongLet(meta.property);
+    };
+    await recordPayment(rec);
+    if (meta.checkin) await createBooking(meta, d);
+    else await markLeasedIfLongLet(meta.property);
+    await sendReceipt(rec);
+    await sendPush(rec.tenant_email, "Payment received", "Your payment for " + (rec.title || "your property") + " was received.");
   }
   return res.status(200).json({ received: true });
 }

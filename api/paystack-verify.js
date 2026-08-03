@@ -17,6 +17,20 @@ async function recordPayment(p) {
   } catch (e) {}
 }
 
+async function createBooking(meta, d) {
+  if (!SERVICE || !meta.checkin || !meta.checkout) return;
+  try {
+    const nights = Math.max(1, Math.round((new Date(meta.checkout) - new Date(meta.checkin)) / 86400000));
+    const total = Number(d.amount || 0) / 100;
+    const nightly = nights ? Math.round(total / nights) : total;
+    await fetch(SUPABASE_URL + "/rest/v1/bookings?on_conflict=id", {
+      method: "POST",
+      headers: { apikey: SERVICE, Authorization: "Bearer " + SERVICE, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ id: "BK-" + d.reference, property_id: meta.property || null, guest_email: (d.customer && d.customer.email) || null, checkin: meta.checkin, checkout: meta.checkout, nights, nightly, total, status: "Confirmed", reference: d.reference }]),
+    });
+  } catch (e) {}
+}
+
 async function markLeasedIfLongLet(propId) {
   if (!SERVICE || !propId) return;          // no service key -> skip quietly
   try {
@@ -61,7 +75,8 @@ export default async function handler(req, res) {
         status: "success",
         paid_at: dd.paid_at || new Date().toISOString(),
       });
-      await markLeasedIfLongLet(meta.property);   // take long-let off the market
+      if (meta.checkin) await createBooking(meta, dd);
+      else await markLeasedIfLongLet(meta.property);   // take long-let off the market
     }
 
     return res.status(200).json({

@@ -28,15 +28,23 @@ export default async function handler(req, res) {
     // Prefer server-side truth: look the property up and use ITS rent + split.
     let amount = Math.round(Number(b.amount) || 0);   // client value is only a fallback
     let subaccount = b.subaccount, split_code = b.split_code, title = (b.metadata && b.metadata.title) || "";
+    const isBooking = !!(b.booking && b.checkin && b.checkout);
+    let bookingNights = 0;
     const prop = await getProperty(propId);
     if (prop) {
-      if (prop.status !== "Available") return res.status(409).json({ error: "This property is no longer available." });
       const d = prop.data || {};
-      const rent = Number(d.rent || 0);
-      if (rent > 0) amount = Math.round(rent * 100);   // authoritative amount (kobo)
       subaccount = prop.subaccount || d.subaccount || subaccount;
       split_code = prop.split_code || d.split_code || split_code;
       title = d.title || title;
+      if (isBooking) {
+        bookingNights = Math.max(1, Math.round((new Date(b.checkout) - new Date(b.checkin)) / 86400000));
+        const nightly = Number(d.nightly || d.rent || 0);
+        if (nightly > 0) amount = Math.round(bookingNights * nightly * 100);   // authoritative
+      } else {
+        if (prop.status !== "Available") return res.status(409).json({ error: "This property is no longer available." });
+        const rent = Number(d.rent || 0);
+        if (rent > 0) amount = Math.round(rent * 100);
+      }
     } else if (SERVICE && propId) {
       // service key present but property not found -> refuse rather than trust the client
       return res.status(404).json({ error: "Property not found." });
@@ -50,7 +58,7 @@ export default async function handler(req, res) {
       reference: b.reference || ("GIRARD-rent-" + Date.now()),
       callback_url: "https://girardpropertylimited.com/api/pay-return",
       ...(split_code ? { split_code } : subaccount ? { subaccount, bearer: "subaccount" } : {}),
-      metadata: { property: propId || "", title },
+      metadata: { property: propId || "", title, ...(b.booking && b.checkin && b.checkout ? { booking: true, checkin: b.checkin, checkout: b.checkout } : {}) },
     };
     const r = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
