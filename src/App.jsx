@@ -822,6 +822,12 @@ function Landing({ onStart, onSignIn }) {
             <div>
               <div className="serif" style={{ fontSize: 23, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Girard</div>
               <div style={{ fontSize: 13.5, lineHeight: 1.65, maxWidth: 260, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Girard Property Limited. Property managed with discipline, moved without borders.</div>
+              <div style={{ marginTop: 20 }}>
+                <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 11, letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>Get the app</div>
+                <a href="https://play.google.com/store/apps/details?id=com.girardpropertylimited.twa" target="_blank" rel="noopener noreferrer" aria-label="Get Girard on Google Play" style={{ display: "inline-block" }}>
+                  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" style={{ height: 58, width: "auto", display: "block", marginLeft: -9 }} />
+                </a>
+              </div>
             </div>
             {[["Services", ["Real Estate Development", "Property Management", "Buy-to-Let Solutions", "Investment & Partnerships", "Advisory & Transactions"]], ["Markets", ["Nigeria", "United Kingdom", "Middle East", "International"]], ["Company", ["About", "Why Girard", "Contact", "Sign in"]]].map(([h, items]) => (
               <div key={h}>
