@@ -2140,7 +2140,7 @@ function HouseArt({ hue = 200, status, h = 140, photo }) {
 
 /* ---------- mini charts (no dependencies) ---------- */
 function MiniArea({ data, w = 520, h = 180, color = "#B8934A", fill = "#C6A15B" }) {
-  const max = Math.max(...data.map(d => d.v)) * 1.15, min = 0;
+  const max = Math.max(1, ...data.map(d => d.v)) * 1.15, min = 0;
   const X = i => (i / (data.length - 1)) * (w - 20) + 10;
   const Y = v => h - 24 - ((v - min) / (max - min)) * (h - 40);
   const line = data.map((d, i) => (i ? "L" : "M") + X(i) + " " + Y(d.v)).join(" ");
@@ -2153,7 +2153,7 @@ function MiniArea({ data, w = 520, h = 180, color = "#B8934A", fill = "#C6A15B" 
   </svg>;
 }
 function MiniBars({ data, w = 520, h = 180, colors }) {
-  const max = Math.max(...data.map(d => d.v)) * 1.15, bw = (w - 20) / data.length;
+  const max = Math.max(1, ...data.map(d => d.v)) * 1.15, bw = (w - 20) / Math.max(1, data.length);
   return <svg viewBox={"0 0 " + w + " " + h} width="100%" height={h}>
     {data.map((d, i) => { const bh = (d.v / max) * (h - 40); return <g key={i}><title>{d.m + ": " + d.v}</title><rect className="chart-bar" style={{ animationDelay: (i * 0.05) + "s" }} x={10 + i * bw + bw * .2} y={h - 24 - bh} width={bw * .6} height={bh} rx="4" fill={colors ? colors[i % colors.length] : "var(--navy)"} /><text x={10 + i * bw + bw * .5} y={h - 28 - bh} fontSize="10" fill="var(--ink)" fontWeight="600" textAnchor="middle">{d.v}</text><text x={10 + i * bw + bw * .5} y={h - 7} fontSize="9" fill="var(--muted)" textAnchor="end" transform={"rotate(-30 " + (10 + i * bw + bw * .5) + " " + (h - 7) + ")"}>{d.m}</text></g>; })}
   </svg>;
@@ -2347,6 +2347,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
     try { auditLog("Listing approved", (pr ? pr.title + " \u00b7 " + (pr.kyc ? pr.kyc.fullName + " \u00b7 " + pr.kyc.propAddress : (pr.ownerEmail || "")) : id) + " \u00b7 approved by " + identity.email, identity.email); } catch (e) {}
     const next = { ...st, properties: st.properties.map(p => p.id === id ? { ...p, status: "Available", verified: true, verifiedBy: identity.email, verifiedAt: new Date().toISOString() } : p) };
     setSt(next); setSel(null);
+    if (pr && pr.ownerEmail) { try { fetch("/api/send-push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: pr.ownerEmail, title: "Listing verified", body: (pr.title || "Your listing") + " is now live on Girard." }) }); } catch (e) {} }
   };
   return <div>
     <H2 title="Properties" sub={list.length + " of " + st.properties.length + " shown"} right={<div style={{ width: 200 }}><PmSelect value={area} onChange={setArea} options={["All", ...PM_AREAS]} /></div>} />
@@ -6003,8 +6004,12 @@ function rentSave(e, s) { try { localStorage.setItem(rentKey(e), JSON.stringify(
 function msgKey(e) { return "girard_msgs_" + (e || "guest"); }
 function msgLoadLocal(e) { try { const r = localStorage.getItem(msgKey(e)); if (r) return JSON.parse(r); } catch (x) {} return { items: [] }; }
 function msgSaveLocal(e, s) { try { localStorage.setItem(msgKey(e), JSON.stringify(s)); } catch (x) {} }
+async function pushTo(email, title, body) {
+  try { await fetch("/api/send-push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, title, body }) }); } catch (e) {}
+}
 async function msgSend(email, rec) {
   const row = { id: "MSG-" + Date.now(), tenant: email, sender: rec.sender, body: rec.body, created_at: new Date().toISOString() };
+  if (rec.sender !== "tenant") pushTo(email, "New message from Girard", rec.body);
   if (supabase) { try { await supabase.from("messages").insert([{ id: row.id, tenant: row.tenant, sender: row.sender, body: row.body }]); return row; } catch (x) {} }
   const st = msgLoadLocal(email); msgSaveLocal(email, { items: [...st.items, row] }); return row;
 }
