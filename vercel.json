@@ -12,127 +12,62 @@
   "redirects": [
     {
       "source": "/about-us",
-      "destination": "/",
+      "destination": "/about",
       "permanent": true
     },
     {
       "source": "/about-us/",
-      "destination": "/",
+      "destination": "/about",
       "permanent": true
     },
     {
       "source": "/why-choose-us",
-      "destination": "/",
+      "destination": "/why-girard",
       "permanent": true
     },
     {
       "source": "/why-choose-us/",
-      "destination": "/",
+      "destination": "/why-girard",
       "permanent": true
     },
     {
       "source": "/our-services",
-      "destination": "/",
+      "destination": "/services",
       "permanent": true
     },
     {
       "source": "/our-services/",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/services",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/services/",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/service",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/service/",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/service/property-and-estate-management",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/service/property-and-estate-management/",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/service/real-estate-investment-partnerships",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/service/real-estate-investment-partnerships/",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/leadership",
-      "destination": "/#leadership",
-      "permanent": true
-    },
-    {
-      "source": "/leadership/",
-      "destination": "/#leadership",
+      "destination": "/services",
       "permanent": true
     },
     {
       "source": "/our-properties",
-      "destination": "/#listings",
+      "destination": "/listings",
       "permanent": true
     },
     {
       "source": "/our-properties/",
-      "destination": "/#listings",
+      "destination": "/listings",
       "permanent": true
     },
     {
       "source": "/properties",
-      "destination": "/#listings",
+      "destination": "/listings",
       "permanent": true
     },
     {
       "source": "/properties/",
-      "destination": "/#listings",
+      "destination": "/listings",
       "permanent": true
     },
     {
       "source": "/contact-us",
-      "destination": "/#contact",
+      "destination": "/contact",
       "permanent": true
     },
     {
       "source": "/contact-us/",
-      "destination": "/#contact",
-      "permanent": true
-    },
-    {
-      "source": "/contact",
-      "destination": "/#contact",
-      "permanent": true
-    },
-    {
-      "source": "/contact/",
-      "destination": "/#contact",
-      "permanent": true
-    },
-    {
-      "source": "/service/:x*",
-      "destination": "/",
+      "destination": "/contact",
       "permanent": true
     }
   ],
