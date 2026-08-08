@@ -21,11 +21,13 @@ export const SITE = {
 export const SERVICES = [
   {
     slug: "real-estate-development",
+    photo: "/img/bourdillon_tower.jpg",
     title: "Real Estate Development",
     body: "Premium residential, commercial and mixed-use properties engineered for durability, sustainability and elevated lifestyle experiences, guided by disciplined planning, architectural excellence and strict compliance with international standards."
   },
   {
     slug: "property-and-estate-management",
+    photo: "/img/bourdillon_lobby.jpg",
     title: "Property & Estate Management",
     body: "End-to-end management of residential and commercial assets, ensuring operational efficiency, tenant satisfaction and long-term asset preservation, with technology-enabled real-time monitoring and data-driven performance tracking.",
     list: {
@@ -35,16 +37,19 @@ export const SERVICES = [
   },
   {
     slug: "short-let-and-holiday-stays",
+    photo: "/img/bourdillon_bedroom.jpg",
     title: "Short Let & Holiday Stays",
     body: "Professional management of short-let and serviced residences, with positioning, guest operations and upkeep handled end-to-end so owners earn optimised returns from the hospitality market."
   },
   {
     slug: "buy-to-let-investment-solutions",
+    photo: "/img/bourdillon_living.jpg",
     title: "Buy-to-Let Investment Solutions",
     body: "A structured pathway for investors seeking stable rental income and long-term wealth creation through professionally selected residential assets, each evaluated with rigorous financial modelling and risk assessment."
   },
   {
     slug: "real-estate-investment-partnerships",
+    photo: "/img/bourdillon_entrance.jpg",
     title: "Real Estate Investment & Partnerships",
     body: "Secure investment models supported by disciplined due diligence, strong governance and transparent reporting, aligning investor objectives with sustainable asset performance and controlled risk exposure.",
     list: {
@@ -54,6 +59,7 @@ export const SERVICES = [
   },
   {
     slug: "real-estate-advisory-and-transaction-support",
+    photo: "/img/bourdillon_pool.jpg",
     title: "Real Estate Advisory & Transaction Support",
     body: "Holistic advisory across legal, financial, compliance, development strategy and transaction execution, enabling informed decisions across acquisitions, disposals, restructuring and project feasibility."
   }
@@ -92,11 +98,11 @@ export const AUDIENCES = [
 ];
 
 export const TEAM = [
-  { name: "Dr. Olamide Okulaja", role: "Executive Chairman", bio: "A respected healthcare executive and entrepreneur with over two decades across clinical practice, public health and healthcare management, and CEO of Genesys Health Information Systems. His expertise in systems reform, policy and strategic leadership guides Girard's mission of excellence and impact." },
-  { name: "Jennifer Kaja", role: "CEO / Managing Director", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
-  { name: "Pedro Cabulo", role: "Chief Strategy & Partnerships Officer", bio: "Leads corporate strategy and cultivates the partnerships that power Girard's growth and investment platforms." },
-  { name: "Olayinka O. Odunlami", role: "Finance, Operations & Management", bio: "Drives financial discipline, operational excellence and management systems across the Girard portfolio." },
-  { name: "Engr. Tomi Adebayo", role: "Projects Director", bio: "Oversees project delivery, engineering standards and construction quality across Girard developments." }
+  { name: "Dr. Olamide Okulaja", role: "Executive Chairman", photo: "/img/team-1.jpg", bio: "A respected healthcare executive and entrepreneur with over two decades across clinical practice, public health and healthcare management, and CEO of Genesys Health Information Systems. His expertise in systems reform, policy and strategic leadership guides Girard's mission of excellence and impact." },
+  { name: "Jennifer Kaja", role: "CEO / Managing Director", photo: "/img/team-2.jpg", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
+  { name: "Pedro Cabulo", role: "Chief Strategy & Partnerships Officer", photo: "/img/team-3.jpg", bio: "Leads corporate strategy and cultivates the partnerships that power Girard's growth and investment platforms." },
+  { name: "Olayinka O. Odunlami", role: "Finance, Operations & Management", photo: "/img/team-4.jpg", bio: "Drives financial discipline, operational excellence and management systems across the Girard portfolio." },
+  { name: "Engr. Tomi Adebayo", role: "Projects Director", photo: "/img/team-5.jpg", bio: "Oversees project delivery, engineering standards and construction quality across Girard developments." }
 ];
 
 export const AT_A_GLANCE = [
@@ -115,3 +121,31 @@ export const VALUES = [
   ["Quality & Compliance", "Premium standards aligned with international best practices."],
   ["Strategic Growth", "Long-term value creation for clients, partners and communities."]
 ];
+
+/* Images that already live in public/. Nothing new is uploaded. */
+export const IMAGES = {
+  emblem: "/img/girard-emblem.png",
+  home: "/img/bourdillon_tower.jpg",
+  about: "/img/bourdillon_lobby.jpg",
+  services: "/img/bourdillon_entrance.jpg",
+  platform: "/img/bourdillon_living.jpg",
+  howItWorks: "/walkthrough/1.jpg",
+  whoWeServe: "/img/bourdillon_bedroom.jpg",
+  whyGirard: "/img/bourdillon_lobby.jpg",
+  leadership: "/img/bourdillon_entrance.jpg",
+  developments: "/img/bourdillon_tower.jpg",
+  partners: "/img/bourdillon_pool.jpg",
+  contact: "/img/bourdillon_entrance.jpg",
+  listings: "/img/bourdillon_living.jpg"
+};
+
+export const DEVELOPMENT_GALLERY = [
+  ["/img/bourdillon_tower.jpg", "The tower"],
+  ["/img/bourdillon_entrance.jpg", "Entrance"],
+  ["/img/bourdillon_lobby.jpg", "Lobby"],
+  ["/img/bourdillon_living.jpg", "Living space"],
+  ["/img/bourdillon_bedroom.jpg", "Bedroom"],
+  ["/img/bourdillon_pool.jpg", "Rooftop infinity pool"]
+];
+
+export const WALKTHROUGH = ["/walkthrough/1.jpg", "/walkthrough/3.jpg", "/walkthrough/5.jpg", "/walkthrough/7.jpg"];

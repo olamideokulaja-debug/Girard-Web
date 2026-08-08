@@ -15,7 +15,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, SERVICES, MODULES, ADVANTAGES, AUDIENCES, TEAM, AT_A_GLANCE, VALUES } from "./seo-content.mjs";
+import { SITE, SERVICES, MODULES, ADVANTAGES, AUDIENCES, TEAM, AT_A_GLANCE, VALUES, IMAGES, DEVELOPMENT_GALLERY, WALKTHROUGH } from "./seo-content.mjs";
 
 const DIST = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 const urls = [];
@@ -47,7 +47,7 @@ const NAV = [
   ["/partners", "Partners"], ["/contact", "Contact"]
 ];
 
-function page({ path, title, description, h1, eyebrow, body, jsonld }) {
+function page({ path, title, description, h1, eyebrow, body, jsonld, image }) {
   const canonical = SITE.origin + path;
   const desc = plain(description).slice(0, 300);
   const doc = `<!doctype html>
@@ -64,6 +64,7 @@ function page({ path, title, description, h1, eyebrow, body, jsonld }) {
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(canonical)}">
 <meta name="twitter:card" content="summary_large_image">
+${image ? `<meta property="og:image" content="${esc(SITE.origin + image)}">` : ""}
 <meta name="theme-color" content="#0A1A38">
 <link rel="apple-touch-icon" href="/icons/apple-touch-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -77,7 +78,8 @@ body{margin:0;background:var(--ivory);color:var(--ink);font:400 16px/1.65 Inter,
 .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
 header{background:var(--navy);color:#fff;padding:18px 0}
 header .row{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
-.brand{font-family:Lora,Georgia,serif;font-size:22px;font-weight:600;letter-spacing:2px;color:#fff;text-decoration:none}
+.brand{display:inline-flex;align-items:center;gap:11px;font-family:Lora,Georgia,serif;font-size:22px;font-weight:600;letter-spacing:2px;color:#fff;text-decoration:none}
+.brand img{display:block;object-fit:contain}
 .brand small{display:block;font-family:Inter,sans-serif;font-size:9.5px;letter-spacing:3px;color:var(--gold);font-weight:600}
 nav a{color:rgba(255,255,255,.72);text-decoration:none;font-size:13.5px;margin-right:16px;line-height:2.2;white-space:nowrap}
 nav a:hover{color:var(--gold)}
@@ -85,6 +87,17 @@ nav a:hover{color:var(--gold)}
 .eyebrow{font-size:11.5px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
 h1{font-family:Lora,Georgia,serif;font-size:clamp(30px,5vw,50px);line-height:1.1;font-weight:600;letter-spacing:-.5px;margin:0 0 18px}
 .hero p{color:rgba(255,255,255,.82);font-size:17px;max-width:70ch;margin:0}
+.hero-grid{display:grid;grid-template-columns:1fr;gap:34px;align-items:center}
+.hero-img img{width:100%;height:auto;border-radius:10px;border:1px solid var(--navy-line);display:block}
+.team{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;margin:24px 0}
+.team figure{margin:0;background:var(--white);border:1px solid var(--cream-line);border-radius:10px;overflow:hidden}
+.team figure img{width:100%;height:300px;object-fit:cover;object-position:center top;display:block}
+.team figcaption{padding:18px 20px}
+.team h3{margin:0 0 4px}
+.team .role{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gold-2);font-weight:600;margin:0 0 10px}
+.team p{margin:0;font-size:14.5px;color:var(--muted)}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin:22px 0}
+.shots img{width:100%;height:auto;border-radius:10px;border:1px solid var(--cream-line);display:block}
 main{padding:52px 0 64px}
 h2{font-family:Lora,Georgia,serif;font-size:26px;font-weight:600;margin:40px 0 14px;letter-spacing:-.2px}
 h2:first-child{margin-top:0}
@@ -116,19 +129,23 @@ footer{background:var(--navy);color:rgba(255,255,255,.62);padding:40px 0;font-si
 footer a{color:rgba(255,255,255,.72);text-decoration:none;margin-right:16px}
 footer a:hover{color:var(--gold)}
 footer .fnav{margin-bottom:16px}
+@media(min-width:860px){.hero-grid{grid-template-columns:1.15fr .85fr}}
 @media(min-width:640px){dl{grid-template-columns:230px 1fr}dt{border-bottom:1px solid var(--cream-line);padding-bottom:14px}dd{padding-top:14px}}
 </style>
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>` : ""}
 </head>
 <body>
 <header><div class="wrap row">
-<a class="brand" href="/">GIRARD<small>PROPERTY LIMITED</small></a>
+<a class="brand" href="/"><img src="${IMAGES.emblem}" alt="" width="38" height="38"><span>GIRARD<small>PROPERTY LIMITED</small></span></a>
 <nav>${NAV.map(([h, l]) => `<a href="${h}">${esc(l)}</a>`).join("")}</nav>
 </div></header>
-<div class="hero"><div class="wrap">
+<div class="hero"><div class="wrap hero-grid">
+<div>
 ${eyebrow ? `<div class="eyebrow">${esc(eyebrow)}</div>` : ""}
 <h1>${esc(h1)}</h1>
 ${description ? `<p>${esc(plain(description))}</p>` : ""}
+</div>
+${image ? `<div class="hero-img"><img src="${esc(image)}" alt="${esc(h1)}" width="640" height="480"></div>` : ""}
 </div></div>
 <main><div class="wrap">
 ${body}
@@ -174,6 +191,7 @@ const ORG_JSONLD = {
 async function buildSections() {
   await emit(page({
     path: "/about",
+    image: IMAGES.about,
     title: "About Girard Property Limited | Lagos real estate development & asset management",
     eyebrow: "About Girard",
     h1: "Redefining excellence in real estate development.",
@@ -194,6 +212,7 @@ ${APP_CTA}`
 
   await emit(page({
     path: "/services",
+    image: IMAGES.services,
     title: "Our services | Girard Property Limited, Lagos",
     eyebrow: "Our services",
     h1: "A comprehensive suite of real estate solutions.",
@@ -205,6 +224,7 @@ ${APP_CTA}`
   for (const s of SERVICES) {
     await emit(page({
       path: "/service/" + s.slug,
+      image: s.photo,
       title: s.title + " | Girard Property Limited, Lagos",
       eyebrow: "Our services",
       h1: s.title,
@@ -220,6 +240,7 @@ ${APP_CTA}`
 
   await emit(page({
     path: "/platform",
+    image: IMAGES.platform,
     title: "The Girard platform | Digital property management & cross-border swaps",
     eyebrow: "The platform",
     h1: "Two flagship modules, one continuous journey.",
@@ -232,6 +253,7 @@ ${APP_CTA}`
 
   await emit(page({
     path: "/how-it-works",
+    image: IMAGES.howItWorks,
     title: "How it works | Girard Property Limited",
     eyebrow: "See how it works",
     h1: "A guided tour of the platform.",
@@ -243,6 +265,8 @@ ${APP_CTA}`
 <p>Browse verified listings, enquire or apply online, and pay rent through the platform. Leases are issued and signed electronically, and maintenance requests are logged and tracked from the same account.</p>
 <h2>For investors and developers</h2>
 <p>Review for-sale opportunities, model returns before committing, and use the swap marketplace to exchange property across Nigeria, the UK and beyond with independent valuations and escrow for any difference in value.</p>
+<h2>Inside the platform</h2>
+<div class="shots">${WALKTHROUGH.map((src, i) => `<img src="${esc(src)}" alt="Girard platform walkthrough, screen ${i + 1}" loading="lazy" width="1080" height="675">`).join("")}</div>
 <h2>Governance</h2>
 <p>Governance-led and compliance-first, with human oversight at every critical step.</p>
 ${APP_CTA}`
@@ -250,6 +274,7 @@ ${APP_CTA}`
 
   await emit(page({
     path: "/who-we-serve",
+    image: IMAGES.whoWeServe,
     title: "Who we serve | Girard Property Limited",
     eyebrow: "Who we serve",
     h1: "A role-aware platform, tuned to each user.",
@@ -259,6 +284,7 @@ ${APP_CTA}`
 
   await emit(page({
     path: "/why-girard",
+    image: IMAGES.whyGirard,
     title: "Why choose Girard | Strategic advantages",
     eyebrow: "Why choose Girard",
     h1: "Strategic advantages that set us apart.",
@@ -268,15 +294,17 @@ ${APP_CTA}`
 
   await emit(page({
     path: "/leadership",
+    image: IMAGES.leadership,
     title: "Leadership | Girard Property Limited",
     eyebrow: "Leadership",
     h1: "The team behind Girard.",
     description: "Seasoned professionals in real estate law, project development, finance, governance and estate management.",
-    body: `${TEAM.map(m => `<h2>${esc(m.name)}</h2><p><strong>${esc(m.role)}</strong></p><p>${esc(m.bio)}</p>`).join("")}${APP_CTA}`
+    body: `<div class="team">${TEAM.map(m => `<figure>${m.photo ? `<img src="${esc(m.photo)}" alt="${esc(m.name)}, ${esc(m.role)}, Girard Property Limited" loading="lazy" width="480" height="600">` : ""}<figcaption><h3>${esc(m.name)}</h3><p class="role">${esc(m.role)}</p><p>${esc(m.bio)}</p></figcaption></figure>`).join("")}</div>${APP_CTA}`
   }));
 
   await emit(page({
     path: "/developments",
+    image: IMAGES.developments,
     title: "Developments | Girard Property Limited, Ikoyi Lagos",
     eyebrow: "Featured development",
     h1: "Developments.",
@@ -289,11 +317,14 @@ ${APP_CTA}`
 <li>2,039 sq.m plot</li>
 <li>Ikoyi, Lagos</li>
 </ul>
+<h2>Gallery</h2>
+<div class="shots">${DEVELOPMENT_GALLERY.map(([src, alt]) => `<img src="${esc(src)}" alt="${esc(alt)}, Girard development, Ikoyi Lagos" loading="lazy" width="900" height="600">`).join("")}</div>
 <p><a class="cta" href="/contact">Enquire about our developments</a></p>`
   }));
 
   await emit(page({
     path: "/partners",
+    image: IMAGES.partners,
     title: "Partner with Girard | Vendor & support-service network",
     eyebrow: "Partner with Girard",
     h1: "Join our partner network.",
@@ -308,6 +339,7 @@ ${APP_CTA}`
 
   await emit(page({
     path: "/contact",
+    image: IMAGES.contact,
     title: "Contact Girard Property Limited | Lekki Phase 1, Lagos",
     eyebrow: "Get in touch",
     h1: "Contact us.",
@@ -409,6 +441,7 @@ ${p.amenities.length ? `<h2>Amenities</h2><ul>${p.amenities.map(a => `<li>${esc(
 
   await emit(page({
     path: "/listings",
+    image: IMAGES.listings,
     title: "Property listings in Lagos | To let and for sale | Girard",
     eyebrow: "Browse our listings",
     h1: "Available now.",
