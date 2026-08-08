@@ -3,6 +3,18 @@
     { "path": "/api/refresh-intel", "schedule": "0 6 * * *" },
     { "path": "/api/rent-reminders", "schedule": "0 7 * * *" }
   ],
+  "redirects": [
+    { "source": "/about-us/:x*", "destination": "/", "permanent": true },
+    { "source": "/why-choose-us/:x*", "destination": "/", "permanent": true },
+    { "source": "/our-services/:x*", "destination": "/", "permanent": true },
+    { "source": "/services/:x*", "destination": "/", "permanent": true },
+    { "source": "/service/:x*", "destination": "/", "permanent": true },
+    { "source": "/leadership/:x*", "destination": "/#leadership", "permanent": true },
+    { "source": "/our-properties/:x*", "destination": "/#listings", "permanent": true },
+    { "source": "/properties/:x*", "destination": "/#listings", "permanent": true },
+    { "source": "/contact-us/:x*", "destination": "/#contact", "permanent": true },
+    { "source": "/contact/:x*", "destination": "/#contact", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
