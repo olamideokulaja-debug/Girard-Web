@@ -1823,7 +1823,7 @@ function SaleCommissionCard({ prop, st, setSt, identity, toast, isAdmin }) {
       : <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>This is what Girard expects to invoice if the property sells at the asking price. Sale money does not pass through Girard: the buyer pays the seller directly, through both parties&apos; lawyers, and Girard invoices its {SALE_COMMISSION_PCT}% separately once the sale closes.</div>}
     {isAdmin && !sold && (open
       ? <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--cream-line)" }}>
-        <PmField label="Final sale price" value={price} onChange={v => setPrice(v.replace(/[^0-9]/g, ""))} placeholder="What it actually sold for" />
+        <PmField label="Final sale price" value={grp(price)} onChange={v => setPrice(ungrp(v))} placeholder="What it actually sold for" />
         <div style={{ marginTop: 8 }}><PmField label="Note (optional)" value={note} onChange={setNote} placeholder="e.g. Completed 14 Aug, invoice INV-221 raised" /></div>
         {price && <div style={{ fontSize: 12.5, color: "var(--gold-2)", fontWeight: 700, marginTop: 8 }}>Commission to invoice: {money(saleCommission(price))}</div>}
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}><PmBtn size="sm" kind="gold" icon={CheckCircle2} onClick={record}>Record the sale</PmBtn><PmBtn size="sm" kind="ghost" onClick={() => setOpen(false)}>Cancel</PmBtn></div>
@@ -2096,6 +2096,10 @@ const AI_NAME = "Ada";
 let CUR = "₦"; try { CUR = localStorage.getItem("girard_cur") || "₦"; } catch (e) {}
 const CUR_RATE = { "₦": 1, "$": 1 / 1650, "£": 1 / 2080, "€": 1 / 1780 };
 const moneyC = (ngn) => { const r = CUR_RATE[CUR] || 1; const v = Number(ngn || 0) * r; const a = Math.abs(v); if (a >= 1e9) return CUR + (v / 1e9).toFixed(1) + "B"; if (a >= 1e6) return CUR + (v / 1e6).toFixed(1) + "M"; if (a >= 1e3) return CUR + Math.round(v / 1e3) + "K"; return CUR + Math.round(v).toLocaleString(); };
+/* Live thousands separators for numeric INPUTS. money() already formats every
+   display; these are the raw type-in fields the review flagged as unreadable. */
+const grp = (v) => { const d = String(v == null ? "" : v).replace(/\D/g, ""); return d ? d.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""; };
+const ungrp = (v) => String(v == null ? "" : v).replace(/\D/g, "");
 const money = (a, c) => { const cur = c || CUR; const rate = c ? 1 : (CUR_RATE[CUR] || 1); const val = Math.round(Number(a || 0) * rate); return cur + val.toLocaleString(cur === "₦" ? "en-NG" : "en-US"); };
 const propOf = (st, id) => st.properties.find(p => p.id === id);
 
@@ -2501,12 +2505,12 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         {f.intent === "To let" && (f.letType === "Short let" || f.letType === "Holiday stay / serviced") && <>
           <div style={{ borderTop: "1px solid var(--cream-line)", paddingTop: 12, fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>Short-let pricing</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
-            <PmField label="Price per night (\u20a6)" value={f.nightly} onChange={v => setF({ ...f, nightly: v.replace(/[^0-9]/g, "") })} placeholder="e.g. 85000" />
+            <PmField label="Price per night (\u20a6)" value={grp(f.nightly)} onChange={v => setF({ ...f, nightly: ungrp(v) })} placeholder="e.g. 85000" />
             <PmField label="Minimum nights" value={f.minNights} onChange={v => setF({ ...f, minNights: v.replace(/[^0-9]/g, "") })} placeholder="1" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
-            <PmField label="Cleaning fee (\u20a6)" value={f.cleaning} onChange={v => setF({ ...f, cleaning: v.replace(/[^0-9]/g, "") })} placeholder="Charged once per stay" />
-            <PmField label="Caution deposit (\u20a6)" value={f.deposit} onChange={v => setF({ ...f, deposit: v.replace(/[^0-9]/g, "") })} placeholder="Refunded after checkout" />
+            <PmField label="Cleaning fee (\u20a6)" value={grp(f.cleaning)} onChange={v => setF({ ...f, cleaning: ungrp(v) })} placeholder="Charged once per stay" />
+            <PmField label="Caution deposit (\u20a6)" value={grp(f.deposit)} onChange={v => setF({ ...f, deposit: ungrp(v) })} placeholder="Refunded after checkout" />
           </div>
           <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}>The cleaning fee is charged once per stay and is not refundable. The caution deposit is held against damage and returned after checkout. Girard&apos;s 5% applies to the nightly total, not to the deposit.</div>
         </>}
@@ -2540,7 +2544,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pricing</div>
         {!ai ? <div style={{ color: "var(--muted)", fontSize: 14, padding: "20px 0", textAlign: "center" }}>Enter details, then request an AI recommendation.</div>
           : <><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended annual</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.annual)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Monthly</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthly)}</div></div></div><div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{ai.rationale}</div></AiPanel>
-            <div style={{ marginTop: 14 }}><PmField label="Your set rent (₦/yr)" value={price} onChange={setPrice} /></div>
+            <div style={{ marginTop: 14 }}><PmField label="Your set rent (₦/yr)" value={grp(price)} onChange={v => setPrice(ungrp(v))} /></div>
             {price && ai.annual && Math.abs(+price - ai.annual) / ai.annual > 0.15 && <div style={{ color: "#E0A106", fontSize: 12.5, marginTop: 6, display: "flex", gap: 6 }}><AlertTriangle size={14} /> Differs from the AI recommendation by more than 15%. This may affect time-to-let.</div>}
             <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>Submit listing</PmBtn></>}
       </PmCard>
@@ -2682,7 +2686,7 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
     {step === 0 && <div style={{ display: "grid", gap: 12 }}>
       <PmField label="Full name" value={f.name} onChange={v => setF({ ...f, name: v })} />
       <PmField label="Employer" value={f.employer} onChange={v => setF({ ...f, employer: v })} />
-      <PmField label="Annual income (₦)" value={f.income} onChange={v => setF({ ...f, income: v })} placeholder="e.g. 18,000,000" />
+      <PmField label="Annual income (₦)" value={grp(f.income)} onChange={v => setF({ ...f, income: ungrp(v) })} placeholder="e.g. 18,000,000" />
       <PmField label="Reference contact" value={f.ref} onChange={v => setF({ ...f, ref: v })} />
       <PmBtn onClick={() => setStep(1)} disabled={!f.name || !f.income}>Continue</PmBtn>
     </div>}
@@ -4953,7 +4957,7 @@ function AgentWallet({ toast, identity }) {
       </PmCard>
       <PmCard>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Withdraw funds</div>
-        <PmField label="Amount (₦)" value={amt} onChange={setAmt} placeholder={"Up to " + money(balance)} />
+        <PmField label="Amount (₦)" value={grp(amt)} onChange={v => setAmt(ungrp(v))} placeholder={"Up to " + money(balance)} />
         <div style={{ marginTop: 10 }}><PmField label="Account name" value={acctName} onChange={setAcctName} placeholder="Name on the account" /></div>
         <div style={{ marginTop: 10 }}><PmField label="Account number" value={acctNum} onChange={setAcctNum} placeholder="10-digit NUBAN" /></div>
         <div style={{ marginTop: 10 }}><PmSelect label="Bank" value={bankName} onChange={setBankName} options={NG_BANKS.map(x => x[0])} /></div>
@@ -5386,7 +5390,7 @@ function SwapJourney({ identity, toast, toAi }) {
     if (j.stage === 6) return <div style={{ display: "grid", gap: 16 }}>
       <PmCard>
         <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Balancing payment & escrow</div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}><div style={{ flex: 1, minWidth: 180 }}><PmField label="Balancing amount (if any)" value={j.balanceValue} onChange={v => setJ({ balanceValue: v })} placeholder="e.g. 20,000,000" /></div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}><div style={{ flex: 1, minWidth: 180 }}><PmField label="Balancing amount (if any)" value={grp(j.balanceValue)} onChange={v => setJ({ balanceValue: v })} placeholder="e.g. 20,000,000" /></div>
           {!j.escrowFunded ? <PmBtn kind="gold" icon={Banknote} onClick={() => { setJ({ escrowFunded: true }); toast("Funds placed in escrow. Counterparty notified.", "success"); }}>Send balance to escrow</PmBtn> : <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#1F9D57", fontWeight: 700, fontSize: 13.5 }}><CheckCircle2 size={18} /> In escrow · released on final sign-off</div>}</div>
         <div style={{ marginTop: 16, borderTop: "1px solid var(--cream-line)", paddingTop: 14 }}>
           <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Receiving party bank details</div>
@@ -5528,7 +5532,7 @@ function JobCompletionModal({ job, onClose, onDone }) {
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}><div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)" }}>Job completion</div><button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><X size={19} /></button></div>
       <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>{job.vendorName} · {job.category} · {job.propTitle}</div>
       <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "var(--muted)", marginBottom: 12 }}>AI estimate was {money(job.estimate)}. Adjust to the actual final cost below.</div>
-      <PmField label="Final cost (₦)" value={cost} onChange={setCost} />
+      <PmField label="Final cost (₦)" value={grp(cost)} onChange={v => setCost(ungrp(v))} />
       <div style={{ marginTop: 10 }}><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Completion notes</label><textarea value={note} onChange={e => setNote(e.target.value)} rows={3} placeholder="Work done, parts replaced, etc." style={{ width: "100%", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", resize: "vertical" }} /></div>
       <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 14 }} onClick={() => { const c = Math.round(+String(cost).replace(/,/g, "")); if (!(c > 0)) return; onDone({ status: "Completed", finalCost: c, note }); onClose(); }}>Submit completion</PmBtn>
     </div>
@@ -5708,7 +5712,7 @@ function InvestorOverview({ identity, go }) {
     </PmCard>
     <PmCard style={{ marginTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}><div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Sell an asset</div><div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3 }}>List a property for sale. Girard markets it and brings you offers.</div></div>{!sellOpen && <PmBtn kind="gold" icon={Tag} onClick={() => setSellOpen(true)}>List for sale</PmBtn>}</div>
-      {sellOpen && <div style={{ display: "grid", gap: 10, marginTop: 14 }}><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2"><PmField label="Asset" value={sellName} onChange={setSellName} placeholder="e.g. 4-bed detached, Lekki" /><PmField label="Guide price" value={sellPrice} onChange={setSellPrice} placeholder="e.g. ₦450,000,000" /></div><div style={{ display: "flex", gap: 8 }}><PmBtn kind="gold" onClick={() => { if (!sellName) { toast("Add the asset", "danger"); return; } setSellOpen(false); setSellName(""); setSellPrice(""); toast("Listed for sale. Girard will market it and revert with offers.", "success"); }}>Submit for sale</PmBtn><PmBtn kind="ghost" onClick={() => setSellOpen(false)}>Cancel</PmBtn></div></div>}
+      {sellOpen && <div style={{ display: "grid", gap: 10, marginTop: 14 }}><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2"><PmField label="Asset" value={grp(sellName)} onChange={v => setSellName(ungrp(v))} placeholder="e.g. 4-bed detached, Lekki" /><PmField label="Guide price" value={sellPrice} onChange={setSellPrice} placeholder="e.g. ₦450,000,000" /></div><div style={{ display: "flex", gap: 8 }}><PmBtn kind="gold" onClick={() => { if (!sellName) { toast("Add the asset", "danger"); return; } setSellOpen(false); setSellName(""); setSellPrice(""); toast("Listed for sale. Girard will market it and revert with offers.", "success"); }}>Submit for sale</PmBtn><PmBtn kind="ghost" onClick={() => setSellOpen(false)}>Cancel</PmBtn></div></div>}
     </PmCard>
     <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>{[["Swap marketplace", "swap"], ["Market intelligence", "intel"], ["Support services", "support"], ["Plans & pricing", "plans"]].map(([l, v]) => <PmBtn key={v} kind="ghost" onClick={() => go(v)}>{l}</PmBtn>)}</div>
     {deal && <DealModal deal={deal} onClose={() => setDeal(null)} go={go} />}
