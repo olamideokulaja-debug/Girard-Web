@@ -1872,7 +1872,7 @@ function SavedProperties({ st, identity, go }) {
           <div style={{ padding: 14 }}>
             <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{p.area}{p.beds ? " \u00b7 " + p.beds + " bed" : ""}</div>
-            <div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)", marginTop: 8 }}>{money(p.rent)}<span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 400 }}>/yr</span></div>
+            <div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)", marginTop: 8 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 400 }}>/yr</span>}</div>
           </div>
         </PmCard>)}
       </div>}
@@ -2404,7 +2404,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}<span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span></div><PmBtn size="sm" onClick={() => setSel(p)}>View</PmBtn></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span>}</div><PmBtn size="sm" onClick={() => setSel(p)}>View</PmBtn></div>
         </div></PmCard>)}
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
@@ -2487,7 +2487,6 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         {f.intent === "For sale" && <div style={{ background: "rgba(208,69,59,.06)", border: "1px solid rgba(208,69,59,.28)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.6 }}><b>Girard does not handle sale money.</b> We introduce buyers and verify what we can. The purchase price is paid through the parties&rsquo; own solicitors, never through this platform. Girard charges its fee separately and takes no part in the transfer of title.</div>}
         {f.intent === "To let" && <PmSelect label="Letting type" value={f.letType} onChange={v => setF({ ...f, letType: v, term: TERM_OPTS[v][0] })} options={["Long let", "Short let", "Holiday stay / serviced"]} />}
         {f.intent === "To let" && <PmSelect label={f.letType === "Long let" ? "Acceptable length of stay" : "Lease period"} value={f.term} onChange={v => setF({ ...f, term: v })} options={TERM_OPTS[f.letType]} />}
-        <PmSelect label="Are you letting or selling?" value={f.intent} onChange={v => setF({ ...f, intent: v })} options={["To let", "For sale"]} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
           <PmSelect label="Country" value={f.country} onChange={v => setF({ ...f, country: v, state: (regionsFor(v) || [""])[0] })} options={COUNTRIES} />
           {regionsFor(f.country)
@@ -2642,7 +2641,7 @@ function TenantFind({ st, setSt, identity, toast }) {
         <div style={{ padding: 14, cursor: "pointer" }} onClick={() => setSel(p)}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{[p.state, (p.country && p.country !== "Nigeria" ? p.country : null), (p.intent || "To let")].filter(Boolean).join(" \u00b7 ")}{p.postedAt ? " \u00b7 " + postedAgo(p.postedAt) : ""}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}<span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span></div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span>}</div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
@@ -4858,7 +4857,7 @@ function PartnersSection() {
           <h2 className="serif sec-h">Join our partner network.</h2>
           <p style={{ color: "rgba(255,255,255,.75)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 520, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>We work with maintenance vendors and support-service providers across legal, insurance, valuation, logistics and more, who receive job referrals across the Girard portfolio.</p>
           <div style={{ display: "flex", gap: 22, marginTop: 24, flexWrap: "wrap" }}>
-            {[[Wrench, "Maintenance vendors"], [ConciergeBell, "Support services"], [BadgeCheck, "Vetted & verified"]].map(([Ic, t]) => <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,.85)", fontSize: 13.5 }}><Ic size={17} color="var(--gold)" />{t}</div>)}
+            {[[Wrench, "Maintenance vendors"], [ConciergeBell, "Support services"]].map(([Ic, t]) => <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,.85)", fontSize: 13.5 }}><Ic size={17} color="var(--gold)" />{t}</div>)}
           </div>
         </div>
         <div style={{ background: "var(--navy-3)", borderRadius: 16, padding: 30, textAlign: "center" }}>
@@ -5676,7 +5675,6 @@ function InvestorOverview({ identity, go }) {
       <CStat icon={Banknote} label="Total invested" value={inv.count ? moneyC(inv.invested) : "\u2014"} sub={inv.count ? "Across " + inv.count + " " + (inv.count === 1 ? "asset" : "assets") : "No investments recorded"} c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={TrendingUp} label="Portfolio value" value={inv.count ? moneyC(inv.value) : "\u2014"} sub={inv.count ? "Current valuation" : "Nothing to value yet"} c="#10B981" bg="#E7F7F0" />
       <CStat icon={Wallet} label="Net income (YTD)" value={inv.count ? moneyC(inv.income) : "\u2014"} sub={inv.count ? "Rent & distributions" : "No income recorded"} c="#8B5CF6" bg="#F1ECFE" />
-      <CStat icon={LineChart} label="Avg. yield" value={inv.count && inv.invested ? ((inv.income / inv.invested) * 100).toFixed(1) + "%" : "\u2014"} sub={inv.count ? "Income over cost" : "Awaiting first investment"} c="#F59E0B" bg="#FEF3E2" />
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }} className="pm-grid2">
       <PmCard>
