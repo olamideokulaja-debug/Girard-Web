@@ -2789,14 +2789,26 @@ function DocViewer({ app, p, check, onClose }) {
 function ApplicationsScreen({ st, setSt, toast, toAi, identity }) {
   const [lease, setLease] = useState(null);
   const [review, setReview] = useState(null);
-  const act = (id, status) => { setSt({ ...st, applications: st.applications.map(a => a.id === id ? { ...a, status } : a) }); const ap = st.applications.find(a => a.id === id); auditLog("Application " + status, ap ? ap.tenant : id, identity && identity.email); if (status === "Approved" && ap) { const pr = propOf(st, ap.property); docSave({ id: "DOC-" + Date.now(), doc_type: "Tenancy Agreement", party_b: ap.tenant, party_b_email: ap.email || null, subject: pr ? pr.title : ap.property, body: tenancyDoc(ap, pr), created_by: identity && identity.email, deal_key: "app:" + ap.id, deal_label: "Application · " + ap.tenant }); notify({ title: "Tenancy agreement ready", body: ap.tenant + " · available in the tenant portal", audience: "tenant" }); notify({ title: "Application approved", body: ap.tenant, audience: "admin" }); } toast("Application " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
+  /* Applications live in the database now. They used to be read from
+     localStorage only, so a landlord signing in on a different device from the
+     applicant saw nothing and could never approve. Merge the two, preferring
+     the stored copy, and keep any local-only rows so nothing disappears. */
+  const [remote, setRemote] = useState(null);
+  useEffect(() => { appsFetch().then(setRemote); }, []);
+  const apps = (() => {
+    const local = st.applications || [];
+    if (!remote || !remote.length) return local;
+    const seen = new Set(remote.map(a => a.id));
+    return remote.concat(local.filter(a => !seen.has(a.id)));
+  })();
+  const act = (id, status) => { appUpdate(id, { status }); setRemote(r => (r || []).map(a => a.id === id ? { ...a, status } : a)); setSt({ ...st, applications: (st.applications || []).map(a => a.id === id ? { ...a, status } : a) }); const ap = apps.find(a => a.id === id); auditLog("Application " + status, ap ? ap.tenant : id, identity && identity.email); if (status === "Approved" && ap) { const pr = propOf(st, ap.property); docSave({ id: "DOC-" + Date.now(), doc_type: "Tenancy Agreement", party_b: ap.tenant, party_b_email: ap.email || null, subject: pr ? pr.title : ap.property, body: tenancyDoc(ap, pr), created_by: identity && identity.email, deal_key: "app:" + ap.id, deal_label: "Application · " + ap.tenant }); notify({ title: "Tenancy agreement ready", body: ap.tenant + " · available in the tenant portal", audience: "tenant" }); notify({ title: "Application approved", body: ap.tenant, audience: "admin" }); } toast("Application " + status.toLowerCase(), status === "Rejected" ? "danger" : "success"); };
   const onAct = (id, s) => { act(id, s); setReview(null); };
   return <div>
     <H2 title="Applications" sub="Review tenant documents and approve" />
     <PmCard pad={0} style={{ overflow: "hidden" }}>
       <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
         <thead><tr style={{ background: "var(--ivory)" }}>{["Applicant", "Property", "Income", "Documents", "Risk", "Status", "Actions"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: .4 }}>{h}</th>)}</tr></thead>
-        <tbody>{st.applications.map(a => { const p = propOf(st, a.property); const chk = appChecks(a, p ? p.rent : 0); const got = chk.filter(c => c.ok).length; return <tr key={a.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
+        <tbody>{apps.map(a => { const p = propOf(st, a.property); const chk = appChecks(a, p ? p.rent : 0); const got = chk.filter(c => c.ok).length; return <tr key={a.id} style={{ borderTop: "1px solid var(--cream-line)" }}>
           <td style={{ padding: "13px 16px" }}><div style={{ fontWeight: 700, color: "var(--ink)" }}>{a.tenant}{got === chk.length && <span style={{ marginLeft: 6, display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "#1F9D57", verticalAlign: "middle" }}><BadgeCheck size={12} /> Verified by Girard</span>}</div><div style={{ fontSize: 11.5, color: "var(--muted)" }}>{a.note}</div></td>
           <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{p ? p.title : a.property}<div style={{ fontSize: 11.5, color: "var(--muted)" }}>{p ? p.area : ""}</div></td>
           <td style={{ padding: "13px 16px", fontSize: 13.5, color: "var(--ink)" }}>{money(a.income)}</td>
@@ -2807,7 +2819,7 @@ function ApplicationsScreen({ st, setSt, toast, toAi, identity }) {
         </tr>; })}</tbody>
       </table></div>
     </PmCard>
-    {lease && <LeaseModal st={st} setSt={setSt} app={lease} onClose={() => setLease(null)} toast={toast} />}
+    {lease && <LeaseModal st={st} setSt={setSt} app={lease} onClose={() => setLease(null)} toast={toast} identity={identity} />}
     {review && <ReviewModal st={st} app={review} onClose={() => setReview(null)} onAct={onAct} />}
   </div>;
 }
@@ -2849,7 +2861,7 @@ function ReviewModal({ st, app, onClose, onAct }) {
     </div>}
   </PmModal>;
 }
-function LeaseModal({ st, setSt, app, onClose, toast }) {
+function LeaseModal({ st, setSt, app, onClose, toast, identity }) {
   const prop = propOf(st, app.property);
   const [ai, setAi] = useState({ loading: true });
   useEffect(() => { aiLease({ tenant: app.tenant, prop }).then(r => setAi({ loading: false, ...r })); }, []);
@@ -2860,7 +2872,11 @@ function LeaseModal({ st, setSt, app, onClose, toast }) {
     leaseInsert({
       id: leaseId, applicationId: app.id, property: prop.id,
       tenantName: app.tenant, tenantEmail: app.email || "",
-      landlordEmail: prop.girardManaged ? "" : (prop.ownerEmail || ""),
+      // Must never be blank. The signature policy matches the signer against
+      // this address and deliberately has no staff bypass, so an empty value
+      // would make the lease impossible to countersign. Girard-managed
+      // properties fall back to whoever issues the lease.
+      landlordEmail: (prop.ownerEmail || (identity && identity.email) || "").toLowerCase(),
       rent: prop.rent, adminFee: fee, startDate: "2026-08-01", term: prop.term || null,
       status: "Awaiting signatures", data: { body: ai.text || "" }
     });
