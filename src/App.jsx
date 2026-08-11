@@ -2671,7 +2671,8 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
     setTimeout(() => {
       const r = ratio < 0.33 ? "Approved" : ratio < 0.45 ? "More Info Required" : "Rejected";
       const score = Math.max(560, Math.min(820, Math.round(820 - ratio * 500)));
-      const app = { id: "AP-" + (100 + st.applications.length), tenant: f.name, email: identity.email, property: prop.id, income: inc, score, status: r, note: f.employer || "Applicant" };
+      const app = { id: "AP-" + Date.now(), tenant: f.name, email: identity.email, property: prop.id, income: inc, score, status: r, note: f.employer || "Applicant" };
+      appInsert(app);
       setSt({ ...st, applications: [app, ...st.applications] });
       setResult(r); toast("Application " + r.toLowerCase(), r === "Rejected" ? "danger" : "success");
     }, 1300);
@@ -2841,12 +2842,19 @@ function ReviewModal({ st, app, onClose, onAct }) {
 function LeaseModal({ st, setSt, app, onClose, toast }) {
   const prop = propOf(st, app.property);
   const [ai, setAi] = useState({ loading: true });
-  const [signed, setSigned] = useState({ tenant: false, owner: false });
   useEffect(() => { aiLease({ tenant: app.tenant, prop }).then(r => setAi({ loading: false, ...r })); }, []);
-  const both = signed.tenant && signed.owner;
   const finalize = () => {
     try { auditLog("Lease finalised", prop.title + " \u00b7 tenant " + app.tenant + " \u00b7 rent " + prop.rent + " \u00b7 fee " + adminFeeOf(prop), app.email || "system"); } catch (e) {}
     const fee = adminFeeOf(prop); const inv = { id: "INV-" + (9100 + st.invoices.length), property: prop.id, tenant: app.tenant, tenantEmail: app.email || "", amount: prop.rent + fee, adminFee: fee, due: "2026-08-01", status: "Pending" };
+    const leaseId = "LSE-" + Date.now();
+    leaseInsert({
+      id: leaseId, applicationId: app.id, property: prop.id,
+      tenantName: app.tenant, tenantEmail: app.email || "",
+      landlordEmail: prop.girardManaged ? "" : (prop.ownerEmail || ""),
+      rent: prop.rent, adminFee: fee, startDate: "2026-08-01", term: prop.term || null,
+      status: "Awaiting signatures", data: { body: ai.text || "" }
+    });
+    notify({ title: "Tenancy agreement ready to sign", body: (prop.title || prop.id) + " \u00b7 sign it in Lease & documents", audience: app.email || "tenant" });
     setSt({
       ...st,
       properties: st.properties.map(p => p.id === prop.id ? { ...p, status: "Leased" } : p),
@@ -2858,15 +2866,12 @@ function LeaseModal({ st, setSt, app, onClose, toast }) {
   };
   return <PmModal title="Lease agreement" onClose={onClose} wide>
     <AiPanel loading={ai.loading} offline={ai.offline}><div style={{ maxHeight: 240, overflow: "auto", background: "var(--ivory)", borderRadius: 9, padding: 14, color: "var(--ink)", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{ai.text}</div></AiPanel>
-    <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
-      {[["Tenant", app.tenant, "tenant"], ["Landlord", "Girard Property Ltd", "owner"]].map(([role, who, key]) => <div key={key} style={{ flex: 1, minWidth: 200, border: "1px solid " + (signed[key] ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}>
-        <div style={{ fontSize: 12, color: "var(--muted)" }}>{role}</div><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>{who}</div>
-        {signed[key] ? <span style={{ color: "#1F9D57", fontWeight: 700, fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}><CheckCircle2 size={16} /> Signed</span> : <PmBtn size="sm" icon={PenLine} onClick={() => setSigned(s => ({ ...s, [key]: true }))}>{key === "owner" ? "Countersign" : "e-Sign"}</PmBtn>}
-      </div>)}
+    <div style={{ marginTop: 16, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "12px 14px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>
+      <b>Signing happens separately.</b> Issuing this lease creates it for both parties. The tenant then signs from their own account under Lease &amp; documents, and you countersign from yours. Neither party can sign on the other&rsquo;s behalf, and each signature records who signed, when, and from what device.
     </div>
     {(() => { const fee = adminFeeOf(prop); const ob = prop.ownerEmail ? bankFor(prop.ownerEmail) : null; const rentTo = prop.girardManaged ? "Girard managed account" : (ob && ob.bankAcctNo ? (ob.bankName || "landlord account") + " ••••" + String(ob.bankAcctNo).slice(-4) : "the landlord’s registered account"); return <div style={{ marginTop: 16, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Settlement before closing</div><div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "4px 0" }}><span style={{ color: "var(--muted)" }}>Advance rent (annual) → {rentTo}</span><b style={{ color: "var(--ink)" }}>{money(prop.rent)}</b></div>{fee > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "4px 0" }}><span style={{ color: "var(--muted)" }}>Girard administrative fee (5%) → Girard account</span><b style={{ color: "var(--ink)" }}>{money(fee)}</b></div>}<div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", borderTop: "1px solid var(--cream-line)", marginTop: 6 }}><span style={{ fontWeight: 700, color: "var(--ink)" }}>Total before closing</span><b className="serif" style={{ fontSize: 17, color: "var(--ink)" }}>{money(prop.rent + fee)}</b></div><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.5 }}>{fee > 0 ? ("The 5% administrative fee is settled to Girard. Rent settles to " + rentTo + ".") : "Girard-uploaded property: no administrative fee applies."}</div></div>; })()}
     {!prop.girardManaged && <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55, marginTop: 12 }}>By finalising, you confirm this property exists, is available, and that you have the right to let it. Girard facilitates this letting and does not guarantee it. Knowingly letting a property that is unavailable is fraud.</div>}
-    <PmBtn kind="gold" icon={CheckCircle2} disabled={!both} style={{ marginTop: 16 }} onClick={finalize}>Finalise and store lease</PmBtn>
+    <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={finalize}>Issue lease for signing</PmBtn>
   </PmModal>;
 }
 
@@ -5946,6 +5951,7 @@ function DocumentsScreen({ identity, toast }) {
   const filtered = docs.filter(d => !ql || (d.doc_type || "").toLowerCase().includes(ql) || (d.subject || "").toLowerCase().includes(ql) || (d.party_b || "").toLowerCase().includes(ql) || (d.deal_label || "").toLowerCase().includes(ql));
   return <div>
     <H2 title="Documents" sub="Every agreement, MOU and letter saved from the AI studio" />
+    <LeasesPanel identity={identity} toast={toast} />
     <div style={{ marginBottom: 16, maxWidth: 400 }}><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search type, subject, party or deal…" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit" }} /></div>
     {loading ? <PmCard><div style={{ color: "var(--muted)" }}>Loading…</div></PmCard>
       : filtered.length === 0 ? <PmCard><div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{docs.length === 0 ? "No saved documents yet. Generate an agreement or MOU in AI documents and tap Save, and it will appear here." : "No documents match your search."}</div></PmCard>
@@ -6145,6 +6151,7 @@ function TenantPortal({ identity, toast, section, go }) {
 
   if (section === "tdocs") return <div>
     <H2 title="Lease & documents" sub="Your tenancy agreement and shared documents" />
+    <LeasesPanel identity={identity} toast={toast} />
     <PmCard style={{ marginBottom: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Tenancy summary</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12 }}>{[["Property", tenancy.property], ["Location", tenancy.area], ["Annual rent", money(tenancy.rent)], ["Start", tenancy.start], ["End", tenancy.end], ["Managed by", "Girard Property Limited"]].map(([k, v]) => <div key={k} style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase" }}>{k}</div><div style={{ fontSize: 13.5, color: "var(--ink)", marginTop: 3 }}>{v}</div></div>)}</div>
@@ -6303,6 +6310,294 @@ function SavedSearches({ st, identity, toast }) {
         {m.length > 0 && <div style={{ marginTop: 10, display: "grid", gap: 6 }}>{m.slice(0, 5).map(p => <div key={p.id} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 10px", background: "var(--ivory-2)", borderRadius: 7 }}>{p.title} · {p.area} · {money(p.rent)}/yr</div>)}</div>}
       </PmCard>; })}</div>}
   </div>;
+}
+
+/* Leases visible to you. RLS decides that: tenant, landlord, or staff. */
+function LeasesPanel({ identity, toast }) {
+  const [rows, setRows] = useState(null);
+  const [open, setOpen] = useState(null);
+  const load = () => leasesFetch().then(setRows);
+  useEffect(() => { load(); }, []);
+  if (rows === null) return null;
+  if (!rows.length) return null;
+  const me = ((identity && identity.email) || "").toLowerCase();
+  return <div style={{ marginBottom: 18 }}>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Tenancy agreements</div>
+    <div style={{ display: "grid", gap: 10 }}>
+      {rows.map(l => {
+        const isParty = me === (l.tenant_email || "").toLowerCase() || me === (l.landlord_email || "").toLowerCase();
+        return <PmCard key={l.id} style={{ marginBottom: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontWeight: 700, color: "var(--ink)" }}>{l.tenant_name || l.tenant_email || "Tenancy"}</div>
+              <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{l.property_id} · {l.status}{l.rent ? " · " + money(l.rent) : ""}</div>
+            </div>
+            <PmBtn size="sm" kind={l.status === "Executed" ? "ghost" : "gold"} icon={PenLine} onClick={() => setOpen(l)}>
+              {l.status === "Executed" ? "View" : isParty ? "Review & sign" : "View"}
+            </PmBtn>
+          </div>
+        </PmCard>;
+      })}
+    </div>
+    {open && <LeaseSignModal lease={open} identity={identity} toast={toast} onClose={() => { setOpen(null); load(); }} onSigned={load} />}
+  </div>;
+}
+
+/* ---------- TENANCY CHAIN: applications, leases, signatures ----------
+   These replace the old localStorage-only st.applications / st.leases.
+   A lease used to live in one browser and vanish with the site data.       */
+
+async function appInsert(rec) {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from("applications").insert([{
+      id: rec.id, property_id: rec.property, tenant_name: rec.tenant, tenant_email: rec.email,
+      income: rec.income || 0, score: rec.score || null, status: rec.status, note: rec.note || null,
+      data: rec.data || {}
+    }]);
+    return !error;
+  } catch (e) { return false; }
+}
+async function appsFetch() {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase.from("applications").select("*").order("created_at", { ascending: false });
+    if (error || !data) return [];
+    return data.map(r => ({ id: r.id, property: r.property_id, tenant: r.tenant_name, email: r.tenant_email, income: r.income, score: r.score, status: r.status, note: r.note, createdAt: r.created_at }));
+  } catch (e) { return []; }
+}
+async function appUpdate(id, patch) {
+  if (!supabase) return;
+  try { await supabase.from("applications").update(patch).eq("id", id); } catch (e) {}
+}
+
+async function leaseInsert(rec) {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from("leases").insert([{
+      id: rec.id, application_id: rec.applicationId || null, property_id: rec.property,
+      tenant_name: rec.tenantName || null, tenant_email: (rec.tenantEmail || "").toLowerCase() || null,
+      landlord_email: (rec.landlordEmail || "").toLowerCase() || null,
+      rent: rec.rent || 0, admin_fee: rec.adminFee || 0,
+      start_date: rec.startDate || null, end_date: rec.endDate || null, term: rec.term || null,
+      status: rec.status || "Awaiting signatures", document_id: rec.documentId || null, data: rec.data || {}
+    }]);
+    return !error;
+  } catch (e) { return false; }
+}
+async function leasesFetch() {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase.from("leases").select("*").order("created_at", { ascending: false });
+    if (error || !data) return [];
+    return data;
+  } catch (e) { return []; }
+}
+async function leaseUpdate(id, patch) {
+  if (!supabase) return;
+  try { await supabase.from("leases").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id); } catch (e) {}
+}
+
+/* Signatures are append-only. RLS enforces that you may only insert a signature
+   as yourself, and only for the party you actually are on that lease. There is
+   no staff bypass, so an admin cannot sign for a tenant.                     */
+async function sigsFetch(leaseId) {
+  if (!supabase || !leaseId) return [];
+  try {
+    const { data, error } = await supabase.from("lease_signatures").select("*").eq("lease_id", leaseId);
+    if (error || !data) return [];
+    return data;
+  } catch (e) { return []; }
+}
+async function sigInsert(rec) {
+  if (!supabase) return { ok: false, message: "Not connected" };
+  try {
+    const { error } = await supabase.from("lease_signatures").insert([{
+      lease_id: rec.leaseId, party: rec.party, signer_email: (rec.signerEmail || "").toLowerCase(),
+      signer_name: rec.signerName || null, method: rec.method,
+      typed_name: rec.method === "typed" ? (rec.typedName || null) : null,
+      signature_image: rec.method === "drawn" ? (rec.image || null) : null,
+      user_agent: (typeof navigator !== "undefined" && navigator.userAgent) ? navigator.userAgent.slice(0, 400) : null
+    }]);
+    if (error) return { ok: false, message: error.message || "Could not record the signature" };
+    return { ok: true };
+  } catch (e) { return { ok: false, message: "Could not record the signature" }; }
+}
+
+/* ---------- Signature capture: typed OR drawn ---------- */
+function SignaturePad({ value, onChange }) {
+  const [mode, setMode] = useState("typed");
+  const canvasRef = useRef(null);
+  const drawing = useRef(false);
+
+  const pos = (e) => {
+    const c = canvasRef.current, r = c.getBoundingClientRect();
+    const t = e.touches && e.touches[0];
+    return { x: ((t ? t.clientX : e.clientX) - r.left) * (c.width / r.width), y: ((t ? t.clientY : e.clientY) - r.top) * (c.height / r.height) };
+  };
+  const start = (e) => { e.preventDefault(); drawing.current = true; const c = canvasRef.current, ctx = c.getContext("2d"); const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  const move = (e) => {
+    if (!drawing.current) return; e.preventDefault();
+    const ctx = canvasRef.current.getContext("2d"); const p = pos(e);
+    ctx.lineWidth = 2.4; ctx.lineCap = "round"; ctx.strokeStyle = "#16324F";
+    ctx.lineTo(p.x, p.y); ctx.stroke();
+  };
+  const end = () => {
+    if (!drawing.current) return; drawing.current = false;
+    try { onChange({ method: "drawn", image: canvasRef.current.toDataURL("image/png"), typedName: "" }); } catch (e) {}
+  };
+  const clear = () => {
+    const c = canvasRef.current; if (!c) return;
+    c.getContext("2d").clearRect(0, 0, c.width, c.height);
+    onChange({ method: "drawn", image: "", typedName: "" });
+  };
+
+  return <div>
+    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+      {[["typed", "Type it"], ["drawn", "Draw it"]].map(([k, label]) =>
+        <button key={k} onClick={() => { setMode(k); onChange({ method: k, image: "", typedName: "" }); }}
+          style={{ padding: "7px 14px", borderRadius: 999, cursor: "pointer", fontSize: 12.5, fontWeight: 700,
+            border: "1px solid " + (mode === k ? "var(--gold)" : "var(--cream-line)"),
+            background: mode === k ? "var(--gold-soft)" : "var(--white)", color: "var(--ink)" }}>{label}</button>)}
+    </div>
+    {mode === "typed" ? <div>
+      <input value={(value && value.typedName) || ""} onChange={e => onChange({ method: "typed", typedName: e.target.value, image: "" })}
+        placeholder="Your full legal name"
+        style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 12px", fontSize: 14, color: "var(--ink)" }} />
+      {value && value.typedName ? <div className="serif" style={{ fontSize: 26, fontStyle: "italic", color: "var(--ink)", padding: "10px 2px 0" }}>{value.typedName}</div> : null}
+    </div> : <div>
+      <canvas ref={canvasRef} width={640} height={200}
+        onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
+        onTouchStart={start} onTouchMove={move} onTouchEnd={end}
+        style={{ width: "100%", height: 160, touchAction: "none", cursor: "crosshair", background: "var(--ivory-2)", border: "1px dashed var(--cream-line)", borderRadius: 8, display: "block" }} />
+      <button onClick={clear} style={{ marginTop: 8, background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, cursor: "pointer", textDecoration: "underline" }}>Clear</button>
+    </div>}
+  </div>;
+}
+
+/* ---------- Shared signing modal, used by BOTH parties ----------
+   Which party you are is derived from the lease and your signed-in email, not
+   from which portal you happen to be in. You cannot sign as anyone else.     */
+function LeaseSignModal({ lease, identity, onClose, toast, onSigned }) {
+  const [sigs, setSigs] = useState(null);
+  const [draft, setDraft] = useState({ method: "typed", typedName: "", image: "" });
+  const [busy, setBusy] = useState(false);
+  const me = (identity && identity.email || "").toLowerCase();
+  const myParty = me && lease
+    ? (me === (lease.tenant_email || "").toLowerCase() ? "tenant"
+      : me === (lease.landlord_email || "").toLowerCase() ? "landlord" : null)
+    : null;
+
+  const load = () => sigsFetch(lease.id).then(setSigs);
+  useEffect(() => { load(); }, [lease && lease.id]);
+
+  const signed = (p) => (sigs || []).find(s => s.party === p);
+  const mine = myParty ? signed(myParty) : null;
+  const both = !!signed("tenant") && !!signed("landlord");
+
+  const sign = async () => {
+    if (!myParty) { toast("You are not a party to this lease", "danger"); return; }
+    if (draft.method === "typed" && !String(draft.typedName || "").trim()) { toast("Type your full name to sign", "danger"); return; }
+    if (draft.method === "drawn" && !draft.image) { toast("Draw your signature to sign", "danger"); return; }
+    setBusy(true);
+    const r = await sigInsert({
+      leaseId: lease.id, party: myParty, signerEmail: me,
+      signerName: (identity && identity.name) || draft.typedName || null,
+      method: draft.method, typedName: draft.typedName, image: draft.image
+    });
+    setBusy(false);
+    if (!r.ok) { toast(r.message || "Could not record the signature", "danger"); return; }
+    auditLog("Lease signed", lease.id + " \u00b7 as " + myParty, me);
+    notify({ title: "Lease signed", body: (lease.tenant_name || "Tenant") + " \u00b7 " + myParty, audience: "admin" });
+    toast("Signature recorded", "success");
+    const fresh = await sigsFetch(lease.id); setSigs(fresh);
+    if (fresh.find(s => s.party === "tenant") && fresh.find(s => s.party === "landlord")) {
+      await leaseUpdate(lease.id, { status: "Executed" });
+      if (onSigned) onSigned();
+    }
+  };
+
+  const downloadPdf = async () => {
+    const ok = await loadJsPDF();
+    if (!ok || !window.jspdf) { toast("Could not load the PDF tool", "danger"); return; }
+    const { jsPDF } = window.jspdf; const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 48, width = pdf.internal.pageSize.getWidth() - margin * 2, bottom = pdf.internal.pageSize.getHeight() - 90;
+    let y = margin;
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(14); pdf.text("Tenancy Agreement", margin, y); y += 20;
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(10);
+    pdf.text("Lease " + lease.id + " \u00b7 " + (lease.property_id || ""), margin, y); y += 22;
+    pdf.setFontSize(10.5);
+    pdf.splitTextToSize(((lease.data && lease.data.body) || "Tenancy agreement."), width).forEach(line => {
+      if (y > bottom) { pdf.addPage(); y = margin; } pdf.text(line, margin, y); y += 14;
+    });
+    y += 20;
+    for (const p of ["tenant", "landlord"]) {
+      const s = signed(p); if (!s) continue;
+      if (y > bottom - 90) { pdf.addPage(); y = margin; }
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(10.5);
+      pdf.text((p === "tenant" ? "Tenant" : "Landlord") + ": " + (s.signer_name || s.signer_email), margin, y); y += 6;
+      if (s.method === "drawn" && s.signature_image) {
+        try { pdf.addImage(s.signature_image, "PNG", margin, y, 170, 54); } catch (e) {}
+        y += 60;
+      } else {
+        pdf.setFont("times", "italic"); pdf.setFontSize(19); pdf.text(s.typed_name || "", margin, y + 24); y += 34;
+      }
+      pdf.setDrawColor(150); pdf.line(margin, y, margin + 230, y);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(8.5);
+      pdf.text("Signed electronically by " + s.signer_email + " on " + new Date(s.signed_at).toUTCString(), margin, y + 13);
+      pdf.text("Signature id " + s.id, margin, y + 24);
+      y += 46;
+    }
+    const blob = pdf.output("blob");
+    try {
+      if (supabase) await supabase.storage.from("lease-documents").upload(lease.id + ".pdf", blob, { contentType: "application/pdf", upsert: true });
+      await leaseUpdate(lease.id, { pdf_path: lease.id + ".pdf" });
+    } catch (e) {}
+    pdf.save("tenancy-agreement-" + lease.id + ".pdf");
+    toast("Signed agreement generated", "success");
+  };
+
+  const Party = ({ p, label, who }) => {
+    const s = signed(p);
+    return <div style={{ flex: 1, minWidth: 210, border: "1px solid " + (s ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}>
+      <div style={{ fontSize: 12, color: "var(--muted)" }}>{label}</div>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>{who || "\u2014"}</div>
+      {s ? <div>
+        <span style={{ color: "#1F9D57", fontWeight: 700, fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}><CheckCircle2 size={16} /> Signed</span>
+        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{s.signer_email}</div>
+        <div style={{ fontSize: 11, color: "var(--muted)" }}>{new Date(s.signed_at).toLocaleString()}</div>
+      </div> : <span style={{ color: "var(--muted)", fontSize: 13 }}>Awaiting signature</span>}
+    </div>;
+  };
+
+  return <PmModal title="Tenancy agreement" onClose={onClose} wide>
+    <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>Lease {lease.id} · {lease.property_id}</div>
+    {(lease.data && lease.data.body) ? <div style={{ whiteSpace: "pre-wrap", fontSize: 12.5, lineHeight: 1.55, color: "var(--ink)", maxHeight: 220, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: 14, marginBottom: 16 }}>{lease.data.body}</div> : null}
+
+    <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+      <Party p="tenant" label="Tenant" who={lease.tenant_name || lease.tenant_email} />
+      <Party p="landlord" label="Landlord" who={lease.landlord_email} />
+    </div>
+
+    {sigs === null ? <div style={{ color: "var(--muted)", fontSize: 13 }}>Loading signatures…</div>
+      : !myParty ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}>
+          You are viewing this agreement but are not a party to it, so you cannot sign it. Only the named tenant and landlord can, each from their own account.
+        </div>
+      : mine ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>
+          You signed this as the {myParty} on {new Date(mine.signed_at).toLocaleString()}. A signature cannot be changed once recorded.
+        </div>
+      : <div>
+          <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>Sign as the {myParty}</div>
+          <SignaturePad value={draft} onChange={setDraft} />
+          <PmBtn kind="gold" icon={PenLine} disabled={busy} style={{ marginTop: 14 }} onClick={sign}>{busy ? "Recording…" : "Sign agreement"}</PmBtn>
+        </div>}
+
+    {both && <PmBtn icon={FileText} style={{ marginTop: 14 }} onClick={downloadPdf}>Generate signed PDF</PmBtn>}
+
+    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 12, lineHeight: 1.5 }}>
+      Each signature records the signer's account, the time, and the device it was made from. Signatures are stored permanently and cannot be edited or removed.
+    </div>
+  </PmModal>;
 }
 
 /* ---------- E-signature -> signed PDF ---------- */
