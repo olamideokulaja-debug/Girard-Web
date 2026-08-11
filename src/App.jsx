@@ -536,28 +536,41 @@ function Landing({ onStart, onSignIn }) {
             </div>
           </div>
           <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", whiteSpace: "nowrap", flex: 1, justifyContent: "space-evenly", padding: "0 22px" }}>
-            <button className="nav-link" onClick={() => go("home")} style={tab === "home" ? { color: "var(--gold)" } : undefined}>Home</button>
+            {/* Top navigation regrouped per the platform review: 10 top-level
+                items reduced to 5. Platform, Partners and Developments sit under
+                Home; Who we serve under About; How it works under Services. */}
             <div className="navdrop">
-              <button className="nav-link" onClick={() => go("leadership")} style={["leadership", "excellence", "advantages"].includes(tab) ? { color: "var(--gold)" } : undefined}>About ▾</button>
+              <button className="nav-link" onClick={() => go("home")} style={["home", "platform", "partners", "bourdillon"].includes(tab) ? { color: "var(--gold)" } : undefined}>Home &#9662;</button>
+              <div className="navdrop-menu">
+                <button className={"navdrop-item" + (tab === "home" ? " active" : "")} onClick={() => go("home")}>Overview</button>
+                <button className={"navdrop-item" + (tab === "platform" ? " active" : "")} onClick={() => go("platform")}>Platform</button>
+                <button className={"navdrop-item" + (tab === "partners" ? " active" : "")} onClick={() => go("partners")}>Partners</button>
+                <button className={"navdrop-item" + (tab === "bourdillon" ? " active" : "")} onClick={() => go("bourdillon")}>Developments</button>
+              </div>
+            </div>
+            <div className="navdrop">
+              <button className="nav-link" onClick={() => go("leadership")} style={["leadership", "excellence", "advantages", "who"].includes(tab) ? { color: "var(--gold)" } : undefined}>About &#9662;</button>
               <div className="navdrop-menu">
                 <button className={"navdrop-item" + (tab === "leadership" ? " active" : "")} onClick={() => go("leadership")}>Leadership</button>
+                <button className={"navdrop-item" + (tab === "who" ? " active" : "")} onClick={() => go("who")}>Who we serve</button>
                 <button className={"navdrop-item" + (tab === "excellence" ? " active" : "")} onClick={() => go("excellence")}>Redefining excellence in real estate development</button>
                 <button className={"navdrop-item" + (tab === "advantages" ? " active" : "")} onClick={() => go("advantages")}>Strategic advantages that set us apart</button>
               </div>
             </div>
-            <button className="nav-link" onClick={() => go("services")} style={tab === "services" ? { color: "var(--gold)" } : undefined}>Services</button>
-            <button className="nav-link" onClick={() => go("platform")} style={tab === "platform" ? { color: "var(--gold)" } : undefined}>Platform</button>
-            <button className="nav-link" onClick={() => go("tour")} style={tab === "tour" ? { color: "var(--gold)" } : undefined}>How it works</button>
-            <button className="nav-link" onClick={() => go("who")} style={tab === "who" ? { color: "var(--gold)" } : undefined}>Who we serve</button>
             <div className="navdrop">
-              <button className="nav-link" onClick={() => go("listings")} style={["listings", "returns"].includes(tab) ? { color: "var(--gold)" } : undefined}>Listings ▾</button>
+              <button className="nav-link" onClick={() => go("services")} style={["services", "tour"].includes(tab) ? { color: "var(--gold)" } : undefined}>Services &#9662;</button>
+              <div className="navdrop-menu">
+                <button className={"navdrop-item" + (tab === "services" ? " active" : "")} onClick={() => go("services")}>What we do</button>
+                <button className={"navdrop-item" + (tab === "tour" ? " active" : "")} onClick={() => go("tour")}>How it works</button>
+              </div>
+            </div>
+            <div className="navdrop">
+              <button className="nav-link" onClick={() => go("listings")} style={["listings", "returns"].includes(tab) ? { color: "var(--gold)" } : undefined}>Listings &#9662;</button>
               <div className="navdrop-menu">
                 <button className={"navdrop-item" + (tab === "listings" ? " active" : "")} onClick={() => go("listings")}>Browse our listings</button>
                 <button className={"navdrop-item" + (tab === "returns" ? " active" : "")} onClick={() => go("returns")}>Estimate your returns</button>
               </div>
             </div>
-            <button className="nav-link" onClick={() => go("bourdillon")} style={tab === "bourdillon" ? { color: "var(--gold)" } : undefined}>Developments</button>
-            <button className="nav-link" onClick={() => go("partners")} style={tab === "partners" ? { color: "var(--gold)" } : undefined}>Partners</button>
             <button className="nav-link" onClick={() => go("contact")} style={tab === "contact" ? { color: "var(--gold)" } : undefined}>Contact</button>
           </nav>
           <div className="nav-cta" style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
@@ -3030,11 +3043,11 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  investor: [["work", "Dashboard", LayoutDashboard], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
+  admin: [["dash", "Dashboard", LayoutDashboard], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  investor: [["work", "Dashboard", LayoutDashboard], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
 };
 function AdaAssistant({ st, identity }) {
   const [open, setOpen] = useState(false);
@@ -5887,7 +5900,7 @@ function PaymentsScreen({ toast }) {
   }));
   const hasFees = monthData.some(d => d.agent + d.swap + d.job > 0);
   return <div>
-    <H2 title="Payments" sub="Every fee taken through Girard. Live once Paystack is connected." right={<div style={{ display: "flex", gap: 8 }}><PmBtn size="sm" kind="ghost" icon={FileText} onClick={exportCsv}>CSV</PmBtn><PmBtn size="sm" kind="navy" icon={Download} onClick={exportPdf}>PDF</PmBtn></div>} />
+    <H2 title="Payments" sub="Every fee taken through Girard." right={<div style={{ display: "flex", gap: 8 }}><PmBtn size="sm" kind="ghost" icon={FileText} onClick={exportCsv}>CSV</PmBtn><PmBtn size="sm" kind="navy" icon={Download} onClick={exportPdf}>PDF</PmBtn></div>} />
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
       <PmStat icon={Banknote} label="Total recorded" value={money(total)} tone="#1F9D57" />
       <PmStat icon={Users} label="Agent fees" value={String(byP("agent"))} tone="#3B82F6" />
@@ -6156,7 +6169,7 @@ function TenantPortal({ identity, toast, section, go }) {
       </div>
     </PmCard>)}</div>
     <PmCard style={{ marginTop: 14 }}><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 6 }}>Bank transfer details</div><div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.7 }}>Account name: <b style={{ color: "var(--ink)" }}>Girard Property Estate Limited</b><br />Bank: <b style={{ color: "var(--ink)" }}>GTBank</b><br />Naira account: <b style={{ color: "var(--ink)" }}>0748459989</b><br />Dollar account: <b style={{ color: "var(--ink)" }}>0757446194</b><br /><span style={{ fontSize: 12.5 }}>Use your name as the reference, then tap &quot;I paid by transfer&quot; above. Girard confirms within 24 hours.</span></div></PmCard>
-    <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Online payments are recorded now and go live once Paystack is connected.</div>
+    <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 12 }}>Card and bank payments are processed securely by Paystack. Your receipt is emailed as soon as payment clears.</div>
   </div>;
 
   if (section === "trepairs") return <div>
