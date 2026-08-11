@@ -586,15 +586,17 @@ function Landing({ onStart, onSignIn }) {
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("leadership"); setMenu(false); }}>Leadership</button>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("excellence"); setMenu(false); }}>Redefining excellence</button>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("advantages"); setMenu(false); }}>Strategic advantages</button>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("services"); setMenu(false); }}>Services</button>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("platform"); setMenu(false); }}>Platform</button>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("tour"); setMenu(false); }}>How it works</button>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("who"); setMenu(false); }}>Who we serve</button>
+            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("who"); setMenu(false); }}>Who we serve</button>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Services</div>
+            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("services"); setMenu(false); }}>What we do</button>
+            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("tour"); setMenu(false); }}>How it works</button>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Listings</div>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("listings"); setMenu(false); }}>Browse our listings</button>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("returns"); setMenu(false); }}>Estimate your returns</button>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("bourdillon"); setMenu(false); }}>Developments</button>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("partners"); setMenu(false); }}>Partners</button>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Home</div>
+            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("platform"); setMenu(false); }}>Platform</button>
+            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("partners"); setMenu(false); }}>Partners</button>
+            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("bourdillon"); setMenu(false); }}>Developments</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("contact"); setMenu(false); }}>Contact</button>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
           </div>
@@ -2694,7 +2696,7 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
     setTimeout(() => {
       const r = ratio < 0.33 ? "Approved" : ratio < 0.45 ? "More Info Required" : "Rejected";
       const score = Math.max(560, Math.min(820, Math.round(820 - ratio * 500)));
-      const app = { id: "AP-" + Date.now(), tenant: f.name, email: identity.email, property: prop.id, income: inc, score, status: r, note: f.employer || "Applicant" };
+      const app = { id: "AP-" + Date.now(), tenant: f.name, email: identity.email, property: prop.id, income: inc, score, status: r, note: (f.employment || "Employed") + (f.employer ? " \u00b7 " + f.employer : ""), data: { employment: f.employment || "Employed", employer: f.employer || "" } };
       appInsert(app);
       setSt({ ...st, applications: [app, ...st.applications] });
       setResult(r); toast("Application " + r.toLowerCase(), r === "Rejected" ? "danger" : "success");
@@ -2704,7 +2706,8 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
     <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>{["Details", "Documents", "Screening"].map((s, i) => <div key={s} style={{ flex: 1, textAlign: "center", fontSize: 11.5, fontWeight: 700, color: i <= step ? "var(--gold-2)" : "var(--muted)", borderBottom: "3px solid " + (i <= step ? "var(--gold)" : "var(--cream-line)"), paddingBottom: 8 }}>{s}</div>)}</div>
     {step === 0 && <div style={{ display: "grid", gap: 12 }}>
       <PmField label="Full name" value={f.name} onChange={v => setF({ ...f, name: v })} />
-      <PmField label="Employer" value={f.employer} onChange={v => setF({ ...f, employer: v })} />
+      <PmSelect label="Employment status" value={f.employment || "Employed"} onChange={v => setF({ ...f, employment: v })} options={["Employed", "Self-employed", "Unemployed", "Retired", "Student"]} />
+      {(f.employment || "Employed") !== "Unemployed" && <PmField label="Employer" value={f.employer} onChange={v => setF({ ...f, employer: v })} />}
       <PmField label="Annual income (₦)" value={grp(f.income)} onChange={v => setF({ ...f, income: ungrp(v) })} placeholder="e.g. 18,000,000" />
       <PmField label="Reference contact" value={f.ref} onChange={v => setF({ ...f, ref: v })} />
       <PmBtn onClick={() => setStep(1)} disabled={!f.name || !f.income}>Continue</PmBtn>
@@ -3916,7 +3919,7 @@ function SupportServices({ identity, toast }) {
   };
   const advance = (id) => setStore({ ...store, requests: store.requests.map(r => r.id === id ? { ...r, status: SUP_STATUS_NEXT[r.status] || r.status } : r) });
   return <div>
-    <H2 title="Support services" sub="A managed concierge on a partner network" />
+    <H2 title="Support services" sub="Vetted trades and household services, booked through Girard and billed to your account" />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16, marginBottom: 26 }}>
       {SUPPORT.map(s => <PmCard key={s.key}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
