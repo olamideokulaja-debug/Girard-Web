@@ -829,10 +829,35 @@ function Landing({ onStart, onSignIn }) {
                 </a>
               </div>
             </div>
-            {[["Services", ["Real Estate Development", "Property Management", "Buy-to-Let Solutions", "Investment & Partnerships", "Advisory & Transactions"]], ["Markets", ["Nigeria", "United Kingdom", "Middle East", "International"]], ["Company", ["About", "Why Girard", "Contact", "Sign in"]]].map(([h, items]) => (
+            {/* Services and Company are real links to the static pages generated at build time.
+                Markets stays plain text: there are no market pages, and a link to nowhere is
+                worse than no link. */}
+            {[
+              ["Services", [
+                ["Real Estate Development", "/service/real-estate-development"],
+                ["Property & Estate Management", "/service/property-and-estate-management"],
+                ["Short-let & Holiday Stays", "/service/short-let-and-holiday-stays"],
+                ["Buy-to-Let Solutions", "/service/buy-to-let-investment-solutions"],
+                ["Investment & Partnerships", "/service/real-estate-investment-partnerships"],
+                ["Advisory & Transactions", "/service/real-estate-advisory-and-transaction-support"]
+              ]],
+              ["Markets", [["Nigeria", null], ["United Kingdom", null], ["Middle East", null], ["International", null]]],
+              ["Company", [
+                ["About", "/about"],
+                ["Why Girard", "/why-girard"],
+                ["Leadership", "/leadership"],
+                ["Contact", "/contact"],
+                ["Sign in", "signin"]
+              ]]
+            ].map(([h, items]) => (
               <div key={h}>
                 <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 12, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>{h}</div>
-                {items.map(x => <div key={x} style={{ fontSize: 13.5, marginBottom: 9 }}>{x}</div>)}
+                {items.map(([label, href]) => {
+                  const base = { fontSize: 13.5, marginBottom: 9, display: "block" };
+                  if (!href) return <div key={label} style={base}>{label}</div>;
+                  if (href === "signin") return <a key={label} href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ ...base, color: "rgba(255,255,255,.7)", textDecoration: "none" }}>{label}</a>;
+                  return <a key={label} href={href} style={{ ...base, color: "rgba(255,255,255,.7)", textDecoration: "none" }}>{label}</a>;
+                })}
               </div>
             ))}
           </div>
@@ -944,9 +969,24 @@ async function notify(rec) {
 }
 async function notifsFetch(role, email) {
   let items = [];
-  if (supabase) { try { const { data, error } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(60); if (!error && data) items = data; } catch (e) {} }
-  if (!items.length) items = notifLoadLocal().items;
-  return items.filter(n => n.audience === "all" || n.audience === role || n.audience === email);
+  // Filter in the QUERY, not after it. Previously this took the newest 60
+  // notifications platform-wide and filtered afterwards, so once 60 newer ones
+  // existed (10 of the 12 notify() call sites write audience "admin") a user's
+  // own notifications silently disappeared from their bell.
+  const audiences = ["all", role, email].filter(Boolean);
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .in("audience", audiences)
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (!error && data) return data;
+    } catch (e) {}
+  }
+  items = notifLoadLocal().items;
+  return items.filter(n => audiences.includes(n.audience));
 }
 async function auditLog(action, detail, actor) {
   const row = { id: "AU-" + Date.now() + "-" + Math.floor(Math.random() * 1000), action, detail: detail || null, actor: actor || null, created_at: new Date().toISOString() };
