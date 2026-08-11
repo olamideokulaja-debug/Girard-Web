@@ -2100,6 +2100,12 @@ const moneyC = (ngn) => { const r = CUR_RATE[CUR] || 1; const v = Number(ngn || 
    display; these are the raw type-in fields the review flagged as unreadable. */
 const grp = (v) => { const d = String(v == null ? "" : v).replace(/\D/g, ""); return d ? d.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""; };
 const ungrp = (v) => String(v == null ? "" : v).replace(/\D/g, "");
+/* A property with a lease issued but not yet signed is NOT available to let and
+   is NOT let either. It sits in its own state so it leaves the public feed
+   without claiming income that has not happened. Keep this in step with the
+   native app (ListingsScreen, MyListingsScreen, DashboardScreen). */
+const PM_STATUS_AWAITING = "Awaiting signatures";
+const isSpokenFor = (p) => p && (p.status === "Leased" || p.status === PM_STATUS_AWAITING);
 const money = (a, c) => { const cur = c || CUR; const rate = c ? 1 : (CUR_RATE[CUR] || 1); const val = Math.round(Number(a || 0) * rate); return cur + val.toLocaleString(cur === "₦" ? "en-NG" : "en-US"); };
 const propOf = (st, id) => st.properties.find(p => p.id === id);
 
@@ -2861,7 +2867,7 @@ function LeaseModal({ st, setSt, app, onClose, toast }) {
     notify({ title: "Tenancy agreement ready to sign", body: (prop.title || prop.id) + " \u00b7 sign it in Lease & documents", audience: app.email || "tenant" });
     setSt({
       ...st,
-      properties: st.properties.map(p => p.id === prop.id ? { ...p, status: "Leased" } : p),
+      properties: st.properties.map(p => p.id === prop.id ? { ...p, status: PM_STATUS_AWAITING } : p),
       leases: [{ id: "LSE-" + (2200 + st.leases.length), property: prop.id, tenant: app.tenant, date: "2026-08-01" }, ...st.leases],
       applications: st.applications.map(a => a.id === app.id ? { ...a, status: "Approved" } : a),
       invoices: [inv, ...st.invoices]
@@ -3672,7 +3678,7 @@ function AgentAnalytics({ identity, go }) {
   const thisMonth = deals.filter(d => String(d.date || "").slice(0, 7) === new Date().toISOString().slice(0, 7)).reduce((t, d) => t + (d.value || 0), 0);
   // Pipeline: anything not yet completed is still live money.
   const live = (crm.cards || []).filter(c => c.stage < 4);
-  const pipelineValue = mine.filter(p => p.status !== "Leased").reduce((t, p) => t + (p.rent || 0), 0);
+  const pipelineValue = mine.filter(p => !isSpokenFor(p)).reduce((t, p) => t + (p.rent || 0), 0);
   const byStage = CRM_COLS.map((c, i) => ({ m: c, v: (crm.cards || []).filter(x => x.stage === i).length }));
   const enqByType = ["Viewing", "Enquiry", "Offer"].map(t => ({ name: t, v: items.filter(e => e.type === t).length })).filter(x => x.v > 0);
   return <div>
@@ -6238,7 +6244,7 @@ function MessagesInbox({ identity, toast }) {
 /* ---------- Ask AI (portfolio assistant) ---------- */
 function AskAI({ st, identity, toast }) {
   const [q, setQ] = useState(""); const [msgs, setMsgs] = useState([]); const [loading, setLoading] = useState(false);
-  const summary = () => { const props = st.properties || []; const leased = props.filter(p => p.status === "Leased").length; const vacant = props.length - leased; const rentTotal = props.reduce((s, p) => s + (p.rent || 0), 0); const apps = (st.applications || []); const byArea = {}; props.forEach(p => { byArea[p.area] = (byArea[p.area] || 0) + 1; }); return "Portfolio data (all money in Naira):\n- Properties: " + props.length + " (" + leased + " leased, " + vacant + " available)\n- Annual rent roll: " + rentTotal + "\n- Applications: " + apps.length + "\n- By area: " + Object.entries(byArea).map(([a, n]) => a + ": " + n).join(", ") + "\n- List: " + props.slice(0, 40).map(p => p.title + " (" + p.area + ", " + p.status + ", rent " + p.rent + ")").join("; "); };
+  const summary = () => { const props = st.properties || []; const leased = props.filter(p => p.status === "Leased").length; const vacant = props.filter(p => !isSpokenFor(p)).length; const rentTotal = props.reduce((s, p) => s + (p.rent || 0), 0); const apps = (st.applications || []); const byArea = {}; props.forEach(p => { byArea[p.area] = (byArea[p.area] || 0) + 1; }); return "Portfolio data (all money in Naira):\n- Properties: " + props.length + " (" + leased + " leased, " + vacant + " available)\n- Annual rent roll: " + rentTotal + "\n- Applications: " + apps.length + "\n- By area: " + Object.entries(byArea).map(([a, n]) => a + ": " + n).join(", ") + "\n- List: " + props.slice(0, 40).map(p => p.title + " (" + p.area + ", " + p.status + ", rent " + p.rent + ")").join("; "); };
   const ask = async () => { if (!q.trim()) return; const question = q; setMsgs(m => [...m, { me: true, text: question }]); setQ(""); setLoading(true); const r = await aiProxy("Answer using ONLY this data. Be concise, use numbers. If not answerable from the data, say so.\n\n" + summary() + "\n\nQuestion: " + question, "You are Girard's precise real estate portfolio analyst. Short, direct answers.", 800); setLoading(false); setMsgs(m => [...m, { me: false, text: (r && r.ok && r.text) ? r.text : ("AI is not connected yet (add ANTHROPIC_API_KEY in Vercel). Quick facts: " + (st.properties || []).length + " properties, " + (st.properties || []).filter(p => p.status === "Leased").length + " leased.") }]); };
   const sugg = ["Which properties are vacant?", "What is my total rent roll?", "Which area has the most properties?", "How many applications do I have?"];
   return <div>
@@ -6295,7 +6301,7 @@ function SavedSearches({ st, identity, toast }) {
   const [area, setArea] = useState("Any"); const [beds, setBeds] = useState("Any"); const [maxRent, setMaxRent] = useState("");
   const [store, setStoreRaw] = useState(ssLoad); const setStore = n => { setStoreRaw(n); ssSave(n); };
   const areas = ["Any", ...Array.from(new Set(props.map(p => p.area)))];
-  const matches = (s) => props.filter(p => p.status !== "Leased" && (s.area === "Any" || p.area === s.area) && (s.beds === "Any" || String(p.beds) === String(s.beds)) && (!s.maxRent || p.rent <= s.maxRent));
+  const matches = (s) => props.filter(p => !isSpokenFor(p) && (s.area === "Any" || p.area === s.area) && (s.beds === "Any" || String(p.beds) === String(s.beds)) && (!s.maxRent || p.rent <= s.maxRent));
   const save = () => { const srch = { id: "SS-" + Date.now(), area, beds, maxRent: Number(String(maxRent).replace(/,/g, "")) || 0 }; const m = matches(srch).length; setStore({ items: [srch, ...store.items] }); notify({ title: "New saved search", body: (area === "Any" ? "Any area" : area) + " · " + m + " current matches", audience: identity.email }); toast("Search saved. We'll alert you to matches.", "success"); };
   return <div>
     <H2 title="Saved searches & alerts" sub="Save what you want and get alerted when it appears" />
