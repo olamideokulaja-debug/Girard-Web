@@ -8,8 +8,8 @@ export const SITE = {
   name: "Girard Property Limited",
   tagline: "Property managed with discipline, moved without borders.",
   address: "21 Fatai Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos",
-  phone: "+234 805 873 3019",
-  phoneHref: "tel:+2348058733019",
+  phone: "+234 704 817 3866",
+  phoneHref: "tel:+2347048173866",
   email: "info@girardpropertylimited.com",
   hours: "Monday to Saturday, 8am to 5pm. Sunday closed.",
   play: "https://play.google.com/store/apps/details?id=com.girardpropertylimited.twa"
