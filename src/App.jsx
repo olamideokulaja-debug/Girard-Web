@@ -1887,7 +1887,7 @@ function SavedProperties({ st, identity, go }) {
           <div style={{ padding: 14 }}>
             <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{p.area}{p.beds ? " \u00b7 " + p.beds + " bed" : ""}</div>
-            <div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)", marginTop: 8 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 400 }}>/yr</span>}</div>
+            <div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)", marginTop: 8 }}>{money(priceOf(p))}{pricePeriod(p) && <span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 400 }}>{pricePeriod(p)}</span>}</div>
           </div>
         </PmCard>)}
       </div>}
@@ -2119,6 +2119,12 @@ const ungrp = (v) => String(v == null ? "" : v).replace(/\D/g, "");
    is NOT let either. It sits in its own state so it leaves the public feed
    without claiming income that has not happened. Keep this in step with the
    native app (ListingsScreen, MyListingsScreen, DashboardScreen). */
+/* Price period. Short lets are nightly, long lets annual, sales neither.
+   Checking intent alone was not enough: a short let's intent is "To let". */
+const isShortLet = (p) => !!p && (p.letType === "Short let" || p.letType === "Short-let");
+const isForSale = (p) => !!p && (p.intent || "To let") === "For sale";
+const priceOf = (p) => (isShortLet(p) ? (p.nightly || p.rent) : p.rent);
+const pricePeriod = (p) => (isForSale(p) ? "" : isShortLet(p) ? "/night" : "/yr");
 const PM_STATUS_AWAITING = "Awaiting signatures";
 const isSpokenFor = (p) => p && (p.status === "Leased" || p.status === PM_STATUS_AWAITING);
 const money = (a, c) => { const cur = c || CUR; const rate = c ? 1 : (CUR_RATE[CUR] || 1); const val = Math.round(Number(a || 0) * rate); return cur + val.toLocaleString(cur === "₦" ? "en-NG" : "en-US"); };
@@ -2429,7 +2435,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span>}</div><PmBtn size="sm" onClick={() => setSel(p)}>View</PmBtn></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(priceOf(p))}{pricePeriod(p) && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>{pricePeriod(p)}</span>}</div><PmBtn size="sm" onClick={() => setSel(p)}>View</PmBtn></div>
         </div></PmCard>)}
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
@@ -2666,7 +2672,7 @@ function TenantFind({ st, setSt, identity, toast }) {
         <div style={{ padding: 14, cursor: "pointer" }} onClick={() => setSel(p)}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{[p.state, (p.country && p.country !== "Nigeria" ? p.country : null), (p.intent || "To let")].filter(Boolean).join(" \u00b7 ")}{p.postedAt ? " \u00b7 " + postedAgo(p.postedAt) : ""}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span>}</div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(priceOf(p))}{pricePeriod(p) && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>{pricePeriod(p)}</span>}</div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
@@ -3589,7 +3595,7 @@ function seedFeed() {
   if (isPurged()) return [];
   const pm = pmLoad(); const sw = swLoad();
   const ev = [];
-  pm.properties.slice(0, 6).forEach((p, i) => ev.push({ kind: "instruction", market: "Nigeria", text: p.title + " listed in " + p.area, price: money(p.rent) + "/yr", mins: 3 + i * 7 }));
+  pm.properties.slice(0, 6).forEach((p, i) => ev.push({ kind: "instruction", market: "Nigeria", text: p.title + " listed in " + p.area, price: money(priceOf(p)) + pricePeriod(p), mins: 3 + i * 7 }));
   sw.listings.slice(0, 6).forEach((l, i) => ev.push({ kind: "swap", market: l.country, text: l.type + " in " + l.city + " seeking " + l.seeking, price: usd(toUSD(l.value, l.currency)), mins: 5 + i * 9 }));
   ev.push({ kind: "application", market: "Nigeria", text: "New application for a 3-Bed in Ikoyi", price: "", mins: 11 });
   ev.push({ kind: "let", market: "Nigeria", text: "Let agreed on a 4-Bed in Lekki", price: "", mins: 18 });
@@ -6349,7 +6355,7 @@ function SavedSearches({ st, identity, toast }) {
           <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>{srch.area === "Any" ? "Any area" : srch.area}{srch.beds !== "Any" ? " · " + srch.beds + " bed" : ""}{srch.maxRent ? " · up to " + money(srch.maxRent) : ""}</div><div style={{ fontSize: 12.5, color: m.length ? "#1F9D57" : "var(--muted)", fontWeight: 600, marginTop: 2 }}>{m.length} current match{m.length === 1 ? "" : "es"}</div></div>
           <PmBtn size="sm" kind="ghost" onClick={() => setStore({ items: store.items.filter(x => x.id !== srch.id) })}>Remove</PmBtn>
         </div>
-        {m.length > 0 && <div style={{ marginTop: 10, display: "grid", gap: 6 }}>{m.slice(0, 5).map(p => <div key={p.id} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 10px", background: "var(--ivory-2)", borderRadius: 7 }}>{p.title} · {p.area} · {money(p.rent)}/yr</div>)}</div>}
+        {m.length > 0 && <div style={{ marginTop: 10, display: "grid", gap: 6 }}>{m.slice(0, 5).map(p => <div key={p.id} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 10px", background: "var(--ivory-2)", borderRadius: 7 }}>{p.title} · {p.area} · {money(priceOf(p))}{pricePeriod(p)}</div>)}</div>}
       </PmCard>; })}</div>}
   </div>;
 }
