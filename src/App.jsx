@@ -2695,6 +2695,44 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
   const [step, setStep] = useState(0);
   const [f, setF] = useState({ name: identity.name, employer: "", income: "", ref: "" });
   const [result, setResult] = useState(null);
+  /* The three Upload buttons had no onClick at all — nothing was ever wired to
+     them, which is why clicking did nothing. Documents now go to the private
+     application-documents bucket, keyed by the applicant's email, never into a
+     jsonb column as base64. */
+  const [docs, setDocs] = useState({});
+  const [busyDoc, setBusyDoc] = useState("");
+  const fileRefs = useRef({});
+  const DOC_TYPES = ["Government ID", "Proof of income", "Employment letter"];
+
+  const pickDoc = (label) => { const el = fileRefs.current[label]; if (el) el.click(); };
+
+  const uploadDoc = async (label, file) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { toast("That file is over 10MB. Please upload a smaller copy.", "danger"); return; }
+    const okType = file.type.startsWith("image/") || file.type === "application/pdf";
+    if (!okType) { toast("Upload a PDF or a photo of the document", "danger"); return; }
+    const email = (identity && identity.email || "").toLowerCase();
+    if (!email || !supabase) { toast("Sign in again to upload documents", "danger"); return; }
+    setBusyDoc(label);
+    try {
+      const ext = (file.name.split(".").pop() || "dat").toLowerCase().slice(0, 8);
+      const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const path = email + "/" + slug + "-" + Date.now() + "." + ext;
+      const { error } = await supabase.storage.from("application-documents").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) { toast(error.message || "Upload failed. Please try again.", "danger"); setBusyDoc(""); return; }
+      setDocs(prev => ({ ...prev, [label]: { path, name: file.name, size: file.size } }));
+      toast(label + " uploaded", "success");
+    } catch (e) {
+      toast("Upload failed. Please try again.", "danger");
+    }
+    setBusyDoc("");
+  };
+
+  const removeDoc = async (label) => {
+    const d = docs[label]; if (!d) return;
+    try { if (supabase) await supabase.storage.from("application-documents").remove([d.path]); } catch (e) {}
+    setDocs(prev => { const c = { ...prev }; delete c[label]; return c; });
+  };
   const submit = () => {
     setStep(2);
     const inc = +String(f.income).replace(/\D/g, "") || 0;
@@ -2702,7 +2740,7 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
     setTimeout(() => {
       const r = ratio < 0.33 ? "Approved" : ratio < 0.45 ? "More Info Required" : "Rejected";
       const score = Math.max(560, Math.min(820, Math.round(820 - ratio * 500)));
-      const app = { id: "AP-" + Date.now(), tenant: f.name, email: identity.email, property: prop.id, income: inc, score, status: r, note: (f.employment || "Employed") + (f.employer ? " \u00b7 " + f.employer : ""), data: { employment: f.employment || "Employed", employer: f.employer || "" } };
+      const app = { id: "AP-" + Date.now(), tenant: f.name, email: identity.email, property: prop.id, income: inc, score, status: r, note: (f.employment || "Employed") + (f.employer ? " \u00b7 " + f.employer : ""), data: { employment: f.employment || "Employed", employer: f.employer || "", reference: f.ref || "", documents: docs } };
       appInsert(app);
       setSt({ ...st, applications: [app, ...st.applications] });
       setResult(r); toast("Application " + r.toLowerCase(), r === "Rejected" ? "danger" : "success");
@@ -2719,7 +2757,29 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
       <PmBtn onClick={() => setStep(1)} disabled={!f.name || !f.income}>Continue</PmBtn>
     </div>}
     {step === 1 && <div style={{ display: "grid", gap: 12 }}>
-      {["Government ID", "Proof of income", "Employment letter"].map(d => <div key={d} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px dashed var(--cream-line)", borderRadius: 9, padding: 13 }}><span style={{ color: "var(--ink)", fontSize: 13.5, fontWeight: 600 }}>{d}</span><PmBtn kind="soft" size="sm" icon={Upload}>Upload</PmBtn></div>)}
+      {DOC_TYPES.map(d => {
+        const up = docs[d];
+        return <div key={d} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, border: "1px dashed " + (up ? "#1F9D57" : "var(--cream-line)"), borderRadius: 9, padding: 13 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: "var(--ink)", fontSize: 13.5, fontWeight: 600 }}>{d}</div>
+            {up && <div style={{ color: "var(--muted)", fontSize: 11.5, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{up.name}</div>}
+          </div>
+          <input
+            ref={el => { fileRefs.current[d] = el; }}
+            type="file"
+            accept="image/*,application/pdf"
+            style={{ display: "none" }}
+            onChange={e => { const file = e.target.files && e.target.files[0]; e.target.value = ""; uploadDoc(d, file); }}
+          />
+          {up
+            ? <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: "#1F9D57", fontWeight: 700, fontSize: 12.5, display: "flex", gap: 4, alignItems: "center" }}><CheckCircle2 size={15} /> Uploaded</span>
+                <button onClick={() => removeDoc(d)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Remove</button>
+              </div>
+            : <PmBtn kind="soft" size="sm" icon={Upload} disabled={busyDoc === d} onClick={() => pickDoc(d)}>{busyDoc === d ? "Uploading\u2026" : "Upload"}</PmBtn>}
+        </div>;
+      })}
+      <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.5 }}>PDF or a clear photo, up to 10MB each. Your documents are stored privately and are visible only to you and the Girard team.</div>
       <PmBtn onClick={submit}>Submit application</PmBtn>
     </div>}
     {step === 2 && <div style={{ textAlign: "center", padding: "10px 0" }}>{!result ? <div style={{ color: "var(--muted)" }}><Loader2 size={30} className="spin" style={{ color: "var(--gold-2)" }} /><div style={{ marginTop: 12, fontWeight: 600 }}>Running automated screening…</div><div style={{ fontSize: 12.5 }}>Credit, rent-to-income and reference checks</div></div>
