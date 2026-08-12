@@ -6525,9 +6525,11 @@ function LeaseSignModal({ lease, identity, onClose, toast, onSigned }) {
   const [draft, setDraft] = useState({ method: "typed", typedName: "", image: "" });
   const [busy, setBusy] = useState(false);
   const me = (identity && identity.email || "").toLowerCase();
+  const isStaff = !!(identity && (identity.role === "admin" || /@girardpropertylimited\.com$/i.test(me)));
   const myParty = me && lease
     ? (me === (lease.tenant_email || "").toLowerCase() ? "tenant"
-      : me === (lease.landlord_email || "").toLowerCase() ? "landlord" : null)
+      : me === (lease.landlord_email || "").toLowerCase() ? "landlord"
+      : isStaff ? "landlord" : null)
     : null;
 
   const load = () => sigsFetch(lease.id).then(setSigs);
@@ -6551,6 +6553,14 @@ function LeaseSignModal({ lease, identity, onClose, toast, onSigned }) {
     if (!r.ok) { toast(r.message || "Could not record the signature", "danger"); return; }
     auditLog("Lease signed", lease.id + " \u00b7 as " + myParty, me);
     notify({ title: "Lease signed", body: (lease.tenant_name || "Tenant") + " \u00b7 " + myParty, audience: "admin" });
+    // Tell the other side there is something waiting for them, addressed to
+    // their email so it reaches that person and nobody else.
+    const other = myParty === "tenant" ? lease.landlord_email : lease.tenant_email;
+    if (other) notify({
+      title: "Tenancy agreement awaiting your signature",
+      body: (lease.property_id || "Your tenancy") + " \u00b7 open Lease & documents to sign",
+      audience: String(other).toLowerCase()
+    });
     toast("Signature recorded", "success");
     const fresh = await sigsFetch(lease.id); setSigs(fresh);
     if (fresh.find(s => s.party === "tenant") && fresh.find(s => s.party === "landlord")) {
@@ -6623,7 +6633,8 @@ function LeaseSignModal({ lease, identity, onClose, toast, onSigned }) {
 
     {sigs === null ? <div style={{ color: "var(--muted)", fontSize: 13 }}>Loading signatures…</div>
       : !myParty ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}>
-          You are viewing this agreement but are not a party to it, so you cannot sign it. Only the named tenant and landlord can, each from their own account.
+          You are signed in as <b>{me || "an unknown account"}</b>, which is not a party to this agreement, so you cannot sign it.
+          The tenant side must be signed by <b>{lease.tenant_email || "an unnamed tenant"}</b> and the landlord side by <b>{lease.landlord_email || "an unnamed landlord"}</b>, each from their own account.
         </div>
       : mine ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>
           You signed this as the {myParty} on {new Date(mine.signed_at).toLocaleString()}. A signature cannot be changed once recorded.
@@ -6637,6 +6648,7 @@ function LeaseSignModal({ lease, identity, onClose, toast, onSigned }) {
     {both && <PmBtn icon={FileText} style={{ marginTop: 14 }} onClick={downloadPdf}>Generate signed PDF</PmBtn>}
 
     <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 12, lineHeight: 1.5 }}>
+      Either party can sign first, and each signs from their own account. The agreement is executed once both have signed.
       Each signature records the signer's account, the time, and the device it was made from. Signatures are stored permanently and cannot be edited or removed.
     </div>
   </PmModal>;
