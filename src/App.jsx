@@ -160,7 +160,7 @@ function ListingCard({ l }) {
       <div style={{ padding: 14 }}>
         <div className="serif" style={{ fontSize: 16.5, fontWeight: 600, color: "var(--ink)" }}>{l.title}</div>
         <div style={{ fontSize: 12.5, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4, margin: "5px 0 9px" }}><MapPin size={12} />{l.place}</div>
-        <div style={{ fontWeight: 700, color: "var(--navy)", letterSpacing: .2, fontSize: 13 }}>Price on enquiry</div>
+        <div style={{ fontWeight: 700, color: "var(--ink)", letterSpacing: .2, fontSize: 13 }}>Price on enquiry</div>
       </div>
     </div>
   );
@@ -211,7 +211,7 @@ function ContactSection() {
   const inp = { width: "100%", background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 8, padding: "12px 14px", color: "#fff", fontSize: 14, marginBottom: 12, fontFamily: "inherit" };
   const items = [
     { icon: MapPin, label: "Visit us", value: "21 Fatai Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos" },
-    { icon: Phone, label: "Call us", value: "+234 805 873 3019", href: "tel:+2348058733019" },
+    { icon: Phone, label: "Call us", value: "+234 704 817 3866", href: "tel:+2347048173866" },
     { icon: Mail, label: "Email us", value: "info@girardpropertylimited.com", href: "mailto:info@girardpropertylimited.com" },
     { icon: Clock, label: "Open hours", value: "Mon – Sat: 8am – 5pm · Sunday closed" }
   ];
@@ -364,7 +364,7 @@ function RoiCalculator() {
       <div className="roi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
         <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: 26 }}>
           {rows.map(r => <div key={r.label} style={{ marginBottom: 18 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink)" }}>{r.label}</span><span className="serif" style={{ fontSize: 16, fontWeight: 600, color: "var(--navy)" }}>{r.val}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink)" }}>{r.label}</span><span className="serif" style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{r.val}</span></div>
             <input type="range" min={r.min} max={r.max} step={r.step} value={r.v} onChange={e => r.set(Number(e.target.value))} style={slider} />
           </div>)}
         </div>
@@ -428,7 +428,7 @@ function WalkthroughVideo() {
         <p style={{ color: "rgba(255,255,255,.75)", fontSize: 15.5, lineHeight: 1.65, margin: "10px 0 0", maxWidth: 560 }}>{s.d}</p>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button onClick={() => setPlaying(x => !x)} aria-label={playing ? "Pause" : "Play"} style={{ width: 46, height: 46, borderRadius: 999, border: "none", background: "var(--gold)", color: "var(--navy)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>{playing ? <Pause size={18} fill="var(--navy)" /> : <Play size={18} fill="var(--navy)" />}</button>
+        <button onClick={() => setPlaying(x => !x)} aria-label={playing ? "Pause" : "Play"} style={{ width: 46, height: 46, borderRadius: 999, border: "none", background: "var(--gold)", color: "var(--ink)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>{playing ? <Pause size={18} fill="var(--navy)" /> : <Play size={18} fill="var(--navy)" />}</button>
         <button onClick={() => jump(i - 1)} aria-label="Previous" style={{ width: 42, height: 42, borderRadius: 999, border: "1px solid var(--navy-line)", background: "transparent", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}><ArrowLeft size={17} /></button>
         <button onClick={() => jump(i + 1)} aria-label="Next" style={{ width: 42, height: 42, borderRadius: 999, border: "1px solid var(--navy-line)", background: "transparent", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}><ArrowRight size={17} /></button>
         <span style={{ fontSize: 13, color: "rgba(255,255,255,.5)", minWidth: 44, textAlign: "right" }}>{i + 1} / {steps.length}</span>
@@ -632,7 +632,7 @@ function Landing({ onStart, onSignIn }) {
                 <Photo src={IMG.hero} hue={210} alt="Modern residential towers" style={{ height: 440 }} overlay="linear-gradient(180deg, rgba(10,31,60,.18), rgba(10,31,60,.55))" />
               </div>
               <div style={{ position: "absolute", bottom: -22, left: -22, background: "var(--white)", color: "var(--ink)", borderRadius: 8, padding: "16px 20px", boxShadow: "0 20px 50px rgba(0,0,0,.35)" }}>
-                <PropertyCounter style={{ fontSize: 30, fontWeight: 600, color: "var(--navy)", display: "block" }} />
+                <PropertyCounter style={{ fontSize: 30, fontWeight: 600, color: "var(--ink)", display: "block" }} />
                 <div style={{ fontSize: 12, color: "var(--muted)", maxWidth: 140 }}>Properties under management</div>
               </div>
             </div>
@@ -747,7 +747,7 @@ function Landing({ onStart, onSignIn }) {
             {MODULES.map(m => (
               <div key={m.n} style={{ border: "1px solid var(--navy-line)", borderRadius: 8, padding: 34, background: "var(--navy)", position: "relative", overflow: "hidden" }}>
                 <div className="serif" style={{ position: "absolute", top: 18, right: 26, fontSize: 60, color: "rgba(198,161,91,.16)", fontWeight: 600 }}>{m.n}</div>
-                <div style={{ width: 52, height: 52, borderRadius: 8, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center", marginBottom: 22 }}><m.icon size={24} /></div>
+                <div style={{ width: 52, height: 52, borderRadius: 8, background: "var(--gold)", color: "var(--ink)", display: "grid", placeItems: "center", marginBottom: 22 }}><m.icon size={24} /></div>
                 <h3 className="serif" style={{ fontSize: 27, fontWeight: 600, marginBottom: 12 }}>{m.name}</h3>
                 <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15, lineHeight: 1.68, marginBottom: 22, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{m.copy}</p>
                 <div style={{ borderTop: "1px solid var(--navy-line)", paddingTop: 18, display: "flex", flexDirection: "column", gap: 11 }}>
@@ -1337,7 +1337,7 @@ function RolePage({ onPick, onSignIn, onBack }) {
     <div style={{ minHeight: "100vh", background: "var(--navy)", color: "#fff", display: "flex", flexDirection: "column" }}>
       <div className="wrap" style={{ paddingTop: 26, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20 }}>
         <button onClick={onBack} className="btn-line on-navy" style={{ padding: "8px 14px" }}><ArrowLeft size={15} /> Back</button>
-        <div style={{ marginRight: "auto", marginLeft: 20 }}><BrandMark /></div>
+        <div role="button" tabIndex={0} title="Go to homepage" onClick={() => go("home")} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") go("home"); }} style={{ marginRight: "auto", marginLeft: 20, cursor: "pointer" }}><BrandMark /></div>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,.7)" }}>Have an account? <a href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ color: "var(--gold)", fontWeight: 600 }}>Sign in</a></div>
       </div>
       <div className="wrap" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingTop: 40, paddingBottom: 60, maxWidth: 1000 }}>
@@ -1348,7 +1348,7 @@ function RolePage({ onPick, onSignIn, onBack }) {
           {ROLES.map(r => (
             <button key={r.key} className="role-card rise" onClick={() => onPick(r.key)}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center" }}><r.icon size={22} /></div>
+                <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--gold)", color: "var(--ink)", display: "grid", placeItems: "center" }}><r.icon size={22} /></div>
                 <ChevronRight size={18} color="var(--gold)" />
               </div>
               <div className="serif" style={{ fontSize: 20, fontWeight: 600, marginBottom: 6 }}>{r.name}</div>
@@ -1357,7 +1357,7 @@ function RolePage({ onPick, onSignIn, onBack }) {
           ))}
           <button className="role-card rise" onClick={() => setPartner(true)}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center" }}><Handshake size={22} /></div>
+              <div style={{ width: 46, height: 46, borderRadius: 10, background: "var(--gold)", color: "var(--ink)", display: "grid", placeItems: "center" }}><Handshake size={22} /></div>
               <ChevronRight size={18} color="var(--gold)" />
             </div>
             <div className="serif" style={{ fontSize: 20, fontWeight: 600, marginBottom: 6 }}>Vendor / Partner</div>
@@ -1544,7 +1544,7 @@ function HomeShell({ identity, onSignOut, onSwitchRole }) {
           <BrandMark />
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div className="serif" style={{ width: 36, height: 36, borderRadius: 999, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>{identity.initials}</div>
+              <div className="serif" style={{ width: 36, height: 36, borderRadius: 999, background: "var(--gold)", color: "var(--ink)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>{identity.initials}</div>
               <div style={{ lineHeight: 1.2 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 600 }}>{identity.name}</div>
                 <div style={{ fontSize: 11, color: "var(--gold)" }}>{identity.title}</div>
@@ -2429,7 +2429,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span>}</div><PmBtn size="sm" onClick={() => setSel(p)}>View</PmBtn></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span>}</div><PmBtn size="sm" onClick={() => setSel(p)}>View</PmBtn></div>
         </div></PmCard>)}
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
@@ -2452,7 +2452,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
       </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}>
-        <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--navy)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div>
+        <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--ink)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Type</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.type}</div></div>
       </div>
@@ -2666,7 +2666,7 @@ function TenantFind({ st, setSt, identity, toast }) {
         <div style={{ padding: 14, cursor: "pointer" }} onClick={() => setSel(p)}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{[p.state, (p.country && p.country !== "Nigeria" ? p.country : null), (p.intent || "To let")].filter(Boolean).join(" \u00b7 ")}{p.postedAt ? " \u00b7 " + postedAgo(p.postedAt) : ""}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span>}</div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(p.rent)}{(p.intent || "To let") !== "For sale" && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>/yr</span>}</div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
@@ -2678,7 +2678,7 @@ function TenantFind({ st, setSt, identity, toast }) {
         <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{sel.blurb}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
       </div>}
-      <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--navy)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
+      <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--ink)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{(sel.amenities || []).map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
       <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn>
     </PmModal>}
@@ -3076,7 +3076,7 @@ function AdaAssistant({ st, identity }) {
     </button>
     {open && <div style={{ position: "fixed", right: 20, bottom: 84, zIndex: 85, width: 370, maxWidth: "calc(100vw - 40px)", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, boxShadow: "0 26px 64px rgba(10,31,60,.3)", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "min(540px, calc(100vh - 130px))" }}>
       <div style={{ background: "var(--navy)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 999, background: "var(--gold)", color: "var(--navy)", display: "grid", placeItems: "center", flexShrink: 0 }}><Sparkles size={16} /></div>
+        <div style={{ width: 32, height: 32, borderRadius: 999, background: "var(--gold)", color: "var(--ink)", display: "grid", placeItems: "center", flexShrink: 0 }}><Sparkles size={16} /></div>
         <div style={{ minWidth: 0 }}><div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{AI_NAME}</div><div style={{ color: "rgba(255,255,255,.6)", fontSize: 11.5 }}>Your Girard assistant</div></div>
       </div>
       <div ref={boxRef} style={{ padding: 14, overflowY: "auto", flex: 1, background: "var(--ivory)", minHeight: 150 }}>
@@ -3090,7 +3090,7 @@ function AdaAssistant({ st, identity }) {
         <AiNote style={{ marginBottom: 9 }} />
         <div style={{ display: "flex", gap: 8 }}>
           <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && ask()} placeholder={"Ask " + AI_NAME + "\u2026"} style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 9, padding: "9px 12px", fontSize: 13.5, fontFamily: "inherit", color: "var(--ink)" }} />
-          <button onClick={ask} disabled={loading} aria-label="Send" style={{ width: 40, borderRadius: 9, border: "none", background: "var(--gold)", color: "var(--navy)", cursor: "pointer", display: "grid", placeItems: "center", opacity: loading ? .6 : 1 }}><Send size={16} /></button>
+          <button onClick={ask} disabled={loading} aria-label="Send" style={{ width: 40, borderRadius: 9, border: "none", background: "var(--gold)", color: "var(--ink)", cursor: "pointer", display: "grid", placeItems: "center", opacity: loading ? .6 : 1 }}><Send size={16} /></button>
         </div>
       </div>
     </div>}
@@ -3189,7 +3189,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
     `}</style>
     <aside className={"pm-side" + (nav2Open ? " open" : "")}>
-      <div style={{ padding: "4px 8px 18px" }}><BrandMark /></div>
+      <div role="button" tabIndex={0} title="Go to dashboard" onClick={() => { setView(nav[0][0]); setNav2Open(false); }} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { setView(nav[0][0]); setNav2Open(false); } }} style={{ padding: "4px 8px 18px", cursor: "pointer" }}><BrandMark /></div>
       <nav style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
         {nav.map(([k, label, Icon]) => <button key={k} className={"pm-nav" + (view === k ? " on" : "")} onClick={() => { setView(k); setNav2Open(false); }}><Icon size={17} />{label}</button>)}
       </nav>
@@ -3354,7 +3354,7 @@ function SwapBrowse({ sw, setSw, toast }) {
         <div style={{ padding: 14 }}>
           <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{l.type}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{l.city}, {l.country}</div>
-          <div style={{ color: "var(--navy)", fontWeight: 700 }}>{money(l.value, l.currency)}</div>
+          <div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(l.value, l.currency)}</div>
           <div style={{ color: "var(--muted)", fontSize: 12 }}>≈ {usd(toUSD(l.value, l.currency))}</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 8, fontSize: 10.5, fontWeight: 800, letterSpacing: .4, textTransform: "uppercase", padding: "3px 8px", borderRadius: 999, background: (l.swapType || "Permanent") === "Temporary" ? "rgba(198,161,91,.14)" : "var(--gold-soft)", color: "var(--gold-2)" }}>{(l.swapType || "Permanent") === "Temporary" ? <><CalendarDays size={11} /> Temporary</> : <><Repeat size={11} /> Permanent</>}</div>
           <div style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0", display: "flex", gap: 5, alignItems: "center" }}><ArrowRightLeft size={13} color="var(--gold-2)" /> Seeking: {l.seeking}</div>
@@ -3629,7 +3629,7 @@ function LiveFeed({ identity }) {
       {list.map((e, i) => { const K = FEED_KINDS[e.kind]; return <div key={e._id || i} onClick={() => setSel(e)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderBottom: i < list.length - 1 ? "1px solid var(--cream-line)" : "none", background: e.mins === 0 ? "var(--gold-soft)" : "transparent", transition: "background .5s", cursor: "pointer" }}>
         <div style={{ width: 38, height: 38, borderRadius: 9, background: K.c + "1f", color: K.c, display: "grid", placeItems: "center", flexShrink: 0 }}><K.icon size={18} /></div>
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{e.text}</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}><PmPill label={K.label} /> <span style={{ marginLeft: 6 }}>{e.market} · {ago(e.mins)}</span></div></div>
-        {e.price && <div style={{ fontWeight: 700, color: "var(--navy)", fontSize: 13.5, whiteSpace: "nowrap" }}>{e.price}</div>}
+        {e.price && <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13.5, whiteSpace: "nowrap" }}>{e.price}</div>}
         <a href={waLink(OFFICE_WA, "Hello Girard Communications, I would like to act on this marketplace item: " + e.text + (e.price ? " (" + e.price + ")" : "") + ".")} target="_blank" rel="noreferrer" onClick={ev => ev.stopPropagation()} className="btn-line on-ivory" style={{ flexShrink: 0, fontSize: 12, padding: "6px 11px", whiteSpace: "nowrap", gap: 5 }}><MessageSquare size={13} /> Contact Girard</a>
         <ChevronRight size={16} color="var(--muted)" style={{ flexShrink: 0 }} />
       </div>; })}
@@ -5379,7 +5379,7 @@ function SwapJourney({ identity, toast, toAi }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{SWAP_LOCATIONS.map(t => <button key={t} onClick={() => toggleTarget(t)} style={{ border: "1px solid " + (j.targets.includes(t) ? "var(--gold)" : "var(--cream-line)"), background: j.targets.includes(t) ? "var(--gold-soft)" : "transparent", color: j.targets.includes(t) ? "var(--gold-2)" : "var(--muted)", borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{t}</button>)}</div>
       </PmCard>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
-        {matches.map(m => <PmCard key={m.id} className="lift"><div style={{ fontWeight: 700, color: "var(--ink)" }}>{m.title}</div><div style={{ fontSize: 12.5, color: "var(--muted)", margin: "3px 0" }}>{m.place}</div><div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--navy)", marginBottom: 12 }}>{m.value}</div><PmBtn size="sm" kind="gold" icon={ArrowRightLeft} onClick={() => { setJ({ match: m, stage: 4, chat: [{ me: false, text: "Hello, I saw your property is a potential match. Happy to discuss a swap." }] }); toast("Match requested. Counterparty notified.", "success"); }}>Request swap</PmBtn></PmCard>)}
+        {matches.map(m => <PmCard key={m.id} className="lift"><div style={{ fontWeight: 700, color: "var(--ink)" }}>{m.title}</div><div style={{ fontSize: 12.5, color: "var(--muted)", margin: "3px 0" }}>{m.place}</div><div className="serif" style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)", marginBottom: 12 }}>{m.value}</div><PmBtn size="sm" kind="gold" icon={ArrowRightLeft} onClick={() => { setJ({ match: m, stage: 4, chat: [{ me: false, text: "Hello, I saw your property is a potential match. Happy to discuss a swap." }] }); toast("Match requested. Counterparty notified.", "success"); }}>Request swap</PmBtn></PmCard>)}
         {matches.length === 0 && <div style={{ color: "var(--muted)" }}>No {isTemp ? "temporary" : "permanent"} swaps in the selected locations yet.</div>}
       </div>
     </div>; }
