@@ -948,7 +948,7 @@ function payLoadLocal() { try { const r = localStorage.getItem(PAYMENTS_KEY); if
 function paySaveLocal(s) { try { localStorage.setItem(PAYMENTS_KEY, JSON.stringify(s)); } catch (e) {} }
 async function payRecord(rec) {
   const row = { reference: rec.reference, purpose: rec.purpose || "payment", target: rec.target || null, amount: Math.round(rec.amount || 0), status: rec.status || "recorded", paid_at: new Date().toISOString() };
-  if (supabase) { try { await supabase.from("payments").upsert([row]); return; } catch (e) {} }
+  if (supabase) { const r = await safeWrite("payment record", () => supabase.from("payments").upsert([row])); if (r.ok) return; }
   const st = payLoadLocal(); if (!st.items.find(x => x.reference === row.reference)) paySaveLocal({ items: [row, ...st.items] });
 }
 async function paymentsFetch() {
@@ -960,7 +960,7 @@ function docsLoadLocal() { try { const r = localStorage.getItem(DOCS_KEY); if (r
 function docsSaveLocal(s) { try { localStorage.setItem(DOCS_KEY, JSON.stringify(s)); } catch (e) {} }
 async function docSave(rec) {
   const row = { id: rec.id, doc_type: rec.doc_type, party_b: rec.party_b || null, party_b_email: rec.party_b_email || null, subject: rec.subject || null, body: rec.body, created_by: rec.created_by || null, deal_key: rec.deal_key || null, deal_label: rec.deal_label || null };
-  if (supabase) { try { await supabase.from("documents").insert([row]); return; } catch (e) {} }
+  if (supabase) { const r = await safeWrite("document", () => supabase.from("documents").insert([row])); if (r.ok) return; }
   const st = docsLoadLocal(); docsSaveLocal({ items: [{ ...row, created_at: new Date().toISOString() }, ...st.items] });
 }
 async function docDelete(id) {
@@ -1997,8 +1997,36 @@ function invToRow(i) {
 function rowToInv(r) {
   return { ...(r.data || {}), id: r.id, property: r.property_id, tenant: r.tenant, tenantEmail: r.tenant_email || "", amount: Number(r.amount || 0), adminFee: Number(r.admin_fee || 0), status: r.status };
 }
-async function propUpsert(p) { if (!supabase) return; try { await supabase.from("properties").upsert([propToRow(p)], { onConflict: "id" }); } catch (e) {} }
-async function invUpsert(i) { if (!supabase) return; try { await supabase.from("invoices").upsert([invToRow(i)], { onConflict: "id" }); } catch (e) {} }
+/* Writes must not fail silently. The Supabase client returns { error } instead
+   of throwing, so a bare try/catch discards genuine failures — a permission
+   refusal, a constraint breach, a dropped connection — while the optimistic UI
+   reports success. These helpers surface the failure and hand it back to the
+   caller so a toast can tell the truth. */
+let writeFailureHandler = null;
+function onWriteFailure(fn) { writeFailureHandler = fn; }
+function reportWriteFailure(what, message) {
+  const msg = message || "Could not save. Please try again.";
+  try { console.error("[girard] write failed:", what, msg); } catch (e) {}
+  try { if (writeFailureHandler) writeFailureHandler(what, msg); } catch (e) {}
+  return { ok: false, message: msg };
+}
+async function safeWrite(what, run) {
+  if (!supabase) return { ok: true, offline: true };
+  try {
+    const res = await run();
+    if (res && res.error) return reportWriteFailure(what, res.error.message);
+    return { ok: true };
+  } catch (e) {
+    return reportWriteFailure(what, (e && e.message) || null);
+  }
+}
+
+async function propUpsert(p) {
+  return safeWrite("property", () => supabase.from("properties").upsert([propToRow(p)], { onConflict: "id" }));
+}
+async function invUpsert(i) {
+  return safeWrite("invoice", () => supabase.from("invoices").upsert([invToRow(i)], { onConflict: "id" }));
+}
 // Returns null when Supabase is not configured or has nothing yet, so the app
 // quietly falls back to its local copy instead of showing an empty workspace.
 // Push anything that changed to the database, so other devices see it.
@@ -3196,6 +3224,9 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     return () => { dead = true; };
   }, [identity && identity.email]);
   const toast = (msg, tone) => { const id = Math.random(); setToasts(x => [...x, { id, msg, tone }]); setTimeout(() => setToasts(x => x.filter(t => t.id !== id)), 3000); };
+  /* Route write failures to the same toast the user already sees, so a refused
+     or failed save can never masquerade as success. */
+  useEffect(() => { onWriteFailure((what, message) => toast("Could not save the " + what + ". " + message, "danger")); }, []);
   const screen = () => {
     const P = { st, setSt, identity, toast, toAi: (data) => { setAiSeed(data); setView("ai"); } };
     if (view === "dash") return <><OwnerDash st={st} identity={identity} />{isSuperAdmin(identity.email) && <><TestTenancyCard st={st} setSt={setSt} identity={identity} toast={toast} /><DemoDataCard st={st} setSt={setSt} toast={toast} /></>}</>;
