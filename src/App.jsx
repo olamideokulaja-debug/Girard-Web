@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { ClipboardList, createPortal } from "react-dom";
 import {
   ArrowUpRight, Building2, Repeat, LineChart, Sparkles, ShieldCheck,
   Globe2, MapPin, Menu, X, Home, KeyRound, Users, Briefcase, ArrowRight,
@@ -1036,9 +1036,10 @@ const ROLES = [
   { key: "tenant", name: "Tenant", icon: KeyRound, blurb: "Find a home, apply, pay rent and request repairs." },
   { key: "agent", name: "Agent", icon: Users, blurb: "Run instructions, applications and offers in one pipeline." },
   { key: "investor", name: "Investor", icon: Briefcase, blurb: "Deal flow, market intelligence and cross-border swaps." },
+  { key: "manager", name: "Property Manager", icon: ClipboardList, blurb: "Run properties day to day: jobs, tenants, applications and upkeep." },
   { key: "admin", name: "Platform Admin", icon: ShieldCheck, blurb: "Oversee listings, users, verification and the swap pipeline." }
 ];
-const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate Agent", investor: "Investor & Developer", admin: "Platform Administration" };
+const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate Agent", investor: "Investor & Developer", manager: "Property Management", admin: "Platform Administration" };
 
 /* Per-account identity, resolved by sign-in email.
    Edit this map with your real team so each person is greeted by name and title. */
@@ -3133,6 +3134,7 @@ const NAV = {
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   admin: [["dash", "Dashboard", LayoutDashboard], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  manager: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["maint", "Jobs & repairs", Wrench], ["inbox", "Tenant messages", MessageSquare], ["docs", "Leases & documents", FileText], ["moderation", "Flagged reports", AlertTriangle], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["askai", "Ask " + AI_NAME, Sparkles], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   investor: [["work", "Dashboard", LayoutDashboard], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
 };
 function AdaAssistant({ st, identity }) {
@@ -3227,6 +3229,12 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "rent") return <RentScreen {...P} />;
     if (view === "maint") return <JobsScreen identity={identity} toast={toast} properties={st.properties} />;
     if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" toAi={P.toAi} />;
+    /* A property manager is Girard staff but operational only. Leaving these
+       screens out of the nav is not a control on its own, since the view can be
+       reached by other means, so the restriction is enforced here too. */
+    if (activeRole === "manager" && ["financials", "payouts", "payments", "vetting", "reminders", "sales", "plans", "reports", "users", "adminreq", "signups"].includes(view)) {
+      return <div><H2 title="Not available" sub="Property management" /><PmCard><div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><Lock size={18} color="var(--muted)" style={{ marginTop: 2, flexShrink: 0 }} /><div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>Financial and account administration sits outside property management. Speak to a platform administrator if you need something from this area.</div></div></PmCard></div>;
+    }
     if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" toAi={P.toAi} />;
     if (view === "intel") return <IntelScreen />;
     if (view === "support") return <SupportServices identity={identity} toast={toast} />;
