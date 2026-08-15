@@ -536,18 +536,11 @@ function Landing({ onStart, onSignIn }) {
             </div>
           </div>
           <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", whiteSpace: "nowrap", flex: 1, justifyContent: "space-evenly", padding: "0 22px" }}>
-            {/* Top navigation regrouped per the platform review: 10 top-level
-                items reduced to 5. Platform, Partners and Developments sit under
-                Home; Who we serve under About; How it works under Services. */}
-            <div className="navdrop">
-              <button className="nav-link" onClick={() => go("home")} style={["home", "platform", "partners", "bourdillon"].includes(tab) ? { color: "var(--gold)" } : undefined}>Home &#9662;</button>
-              <div className="navdrop-menu">
-                <button className={"navdrop-item" + (tab === "home" ? " active" : "")} onClick={() => go("home")}>Overview</button>
-                <button className={"navdrop-item" + (tab === "platform" ? " active" : "")} onClick={() => go("platform")}>Platform</button>
-                <button className={"navdrop-item" + (tab === "partners" ? " active" : "")} onClick={() => go("partners")}>Partners</button>
-                <button className={"navdrop-item" + (tab === "bourdillon" ? " active" : "")} onClick={() => go("bourdillon")}>Developments</button>
-              </div>
-            </div>
+            {/* Home is now a single page: the review asked for Platform,
+                Partners and Developments to live ON the homepage rather than
+                behind a dropdown, so Home is a plain link and those sections
+                are reached by scrolling or by the in-page links. */}
+            <button className="nav-link" onClick={() => go("home")} style={tab === "home" ? { color: "var(--gold)" } : undefined}>Home</button>
             <div className="navdrop">
               <button className="nav-link" onClick={() => go("leadership")} style={["leadership", "excellence", "advantages", "who"].includes(tab) ? { color: "var(--gold)" } : undefined}>About &#9662;</button>
               <div className="navdrop-menu">
@@ -593,10 +586,6 @@ function Landing({ onStart, onSignIn }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Listings</div>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("listings"); setMenu(false); }}>Browse our listings</button>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("returns"); setMenu(false); }}>Estimate your returns</button>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Home</div>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("platform"); setMenu(false); }}>Platform</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("partners"); setMenu(false); }}>Partners</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("bourdillon"); setMenu(false); }}>Developments</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("contact"); setMenu(false); }}>Contact</button>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
           </div>
@@ -718,7 +707,7 @@ function Landing({ onStart, onSignIn }) {
       </section>)}
 
       {/* FEATURED DEVELOPMENT */}
-      {tab === "bourdillon" && (<section style={{ background: "var(--navy)", color: "#fff", padding: "20px 0 4px" }}>
+      {(tab === "bourdillon" || tab === "home") && (<section id="developments" style={{ background: "var(--navy)", color: "#fff", padding: "20px 0 4px" }}>
         <div className="feat-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
           <BourdillonGallery />
           <div style={{ padding: "72px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -736,7 +725,7 @@ function Landing({ onStart, onSignIn }) {
       </section>)}
 
       {/* FLAGSHIP PLATFORM MODULES */}
-      {tab === "platform" && (<section id="platform" style={{ background: "var(--navy-2)", color: "#fff", padding: "92px 0" }}>
+      {(tab === "platform" || tab === "home") && (<section id="platform" style={{ background: "var(--navy-2)", color: "#fff", padding: "92px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 640, marginBottom: 48 }}>
             <Rule />
@@ -804,7 +793,7 @@ function Landing({ onStart, onSignIn }) {
       {/* LEADERSHIP */}
       {tab === "leadership" && <LeadershipSection />}
 
-      {tab === "partners" && <PartnersSection />}
+      {(tab === "partners" || tab === "home") && <PartnersSection />}
 
       {tab === "contact" && <ContactSection />}
 
@@ -2273,7 +2262,7 @@ function Legend({ items }) { return <div style={{ display: "flex", flexDirection
 /* Colourful palette + calm colour stat card for the dashboards */
 const CHART_COLORS = ["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#14B8A6", "#F43F5E", "#6366F1"];
 function CStat({ icon: Icon, label, value, sub, c = "#3B82F6", bg = "#EAF2FE" }) {
-  return <div className="lift card-soft" style={{ background: bg, borderRadius: 14, padding: 18, border: "1px solid " + c + "26" }}>
+  return <div className="lift card-soft" style={{ background: "linear-gradient(0deg, " + c + "14, " + c + "14), var(--white)", borderRadius: 14, padding: 18, border: "1px solid " + c + "33" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
       <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>{label}</span>
       <span style={{ width: 34, height: 34, borderRadius: 9, background: c, color: "#fff", display: "grid", placeItems: "center", flexShrink: 0 }}><Icon size={17} /></span>
@@ -2560,12 +2549,12 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         {f.intent === "To let" && (f.letType === "Short let" || f.letType === "Holiday stay / serviced") && <>
           <div style={{ borderTop: "1px solid var(--cream-line)", paddingTop: 12, fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>Short-let pricing</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
-            <PmField label="Price per night (\u20a6)" value={grp(f.nightly)} onChange={v => setF({ ...f, nightly: ungrp(v) })} placeholder="e.g. 85000" />
+            <PmField label={"Price per night (\u20a6)"} value={grp(f.nightly)} onChange={v => setF({ ...f, nightly: ungrp(v) })} placeholder="e.g. 85000" />
             <PmField label="Minimum nights" value={f.minNights} onChange={v => setF({ ...f, minNights: v.replace(/[^0-9]/g, "") })} placeholder="1" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
-            <PmField label="Cleaning fee (\u20a6)" value={grp(f.cleaning)} onChange={v => setF({ ...f, cleaning: ungrp(v) })} placeholder="Charged once per stay" />
-            <PmField label="Caution deposit (\u20a6)" value={grp(f.deposit)} onChange={v => setF({ ...f, deposit: ungrp(v) })} placeholder="Refunded after checkout" />
+            <PmField label={"Cleaning fee (\u20a6)"} value={grp(f.cleaning)} onChange={v => setF({ ...f, cleaning: ungrp(v) })} placeholder="Charged once per stay" />
+            <PmField label={"Caution deposit (\u20a6)"} value={grp(f.deposit)} onChange={v => setF({ ...f, deposit: ungrp(v) })} placeholder="Refunded after checkout" />
           </div>
           <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}>The cleaning fee is charged once per stay and is not refundable. The caution deposit is held against damage and returned after checkout. Girard&apos;s 5% applies to the nightly total, not to the deposit.</div>
         </>}
@@ -2678,11 +2667,11 @@ function TenantFind({ st, setSt, identity, toast }) {
     && (beds === "Any" || p.type === "Land" || (beds === "3+" ? p.beds >= 3 : p.beds === +beds))
     && (!q.trim() || ((p.title || "") + " " + (p.area || "") + " " + (p.address || "") + " " + (p.type || "") + " " + (p.ref || "") + " " + (p.state || "")).toLowerCase().includes(q.trim().toLowerCase()))).sort((a, b) => feat(b) - feat(a));
   return <div>
-    <H2 title="Find a property" sub={list.length + " available"} />
+    <H2 title="Find a home" sub={list.length + " available"} />
     <PmCard style={{ marginBottom: 16 }}>
       <div style={{ position: "relative", marginBottom: 10 }}>
         <Search size={15} color="var(--muted)" style={{ position: "absolute", left: 11, top: 11 }} />
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by area, address or description\u2026" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px 9px 34px", fontSize: 13.5, fontFamily: "inherit", color: "var(--ink)" }} />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder={"Search by area, address or description\u2026"} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px 9px 34px", fontSize: 13.5, fontFamily: "inherit", color: "var(--ink)" }} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
         <PmSelect label="Rent or buy" value={intent} onChange={setIntent} options={["All", "To let", "For sale"]} />
@@ -2694,7 +2683,7 @@ function TenantFind({ st, setSt, identity, toast }) {
       </div>
     </PmCard>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
-      {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden" }}>
+      {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", position: "relative" }}>
         <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
         <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" photo={p.img || poolPhoto(p.id)} /></div>
         <div style={{ padding: 14, cursor: "pointer" }} onClick={() => setSel(p)}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
@@ -3236,7 +3225,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "apps") return <ApplicationsScreen {...P} />;
     if (view === "find") return <TenantFind {...P} />;
     if (view === "rent") return <RentScreen {...P} />;
-    if (view === "maint") return <JobsScreen identity={identity} toast={toast} />;
+    if (view === "maint") return <JobsScreen identity={identity} toast={toast} properties={st.properties} />;
     if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" toAi={P.toAi} />;
     if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" toAi={P.toAi} />;
     if (view === "intel") return <IntelScreen />;
@@ -3813,8 +3802,6 @@ function AgentAnalytics({ identity, go }) {
   return <div>
     <H2 title="Analytics" sub="Your listings, enquiries and earnings" />
     <div className="grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16, marginBottom: 16 }}>
-      <CStat icon={Building2} label="My listings" value={String(listed)} sub={let_ + " let"} c="#3B82F6" bg="#EAF2FE" />
-      <CStat icon={Mail} label="Enquiries" value={String(enquiries)} sub={openEnq + " awaiting reply"} c="#8B5CF6" bg="#F1ECFE" />
       <CStat icon={CalendarDays} label="Viewings" value={String(viewings)} sub="Booked through Girard" c="#F59E0B" bg="#FEF3E2" />
       <CStat icon={TrendingUp} label="Conversion" value={conv + "%"} sub="Enquiry to let" c="#10B981" bg="#E7F7F0" />
     </div>
@@ -4506,7 +4493,7 @@ function RentRemindersScreen({ toast }) {
 /* ===================================================================
    Public listings, enquiries, viewings and WhatsApp notifications
    =================================================================== */
-const OFFICE_WA = "2348058733019";
+const OFFICE_WA = "2347048173866";
 function waLink(phone, text) { const n = String(phone || OFFICE_WA).replace(/[^0-9]/g, ""); return "https://wa.me/" + n + (text ? "?text=" + encodeURIComponent(text) : ""); }
 async function sendWhatsApp(to, message) {
   try { const r = await fetch("/api/whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to, message }) }); const d = await r.json(); return !!(d && d.sent); } catch (e) { return false; }
@@ -4797,7 +4784,7 @@ function unitSeed() {
       const price = (180 + floor * 6 + u * 4) * 1000000;
       const id = "U" + floor + String.fromCharCode(65 + u);
       const r = hashStr(id) % 10;
-      const status = r < 2 ? "Sold" : r < 4 ? "Reserved" : "Available";
+      const status = r < 2 ? "Sold" : "Available";
       units.push({ id, floor, unit: String.fromCharCode(65 + u), beds, label, size, price, status, buyer: "", phone: "" });
     }
   }
@@ -4827,18 +4814,16 @@ function SalesBoard({ toast }) {
   useEffect(() => { let on = true; unitsFetch().then(x => { if (on) setUnits(x); }); return () => { on = false; }; }, []);
   const save = (u) => { setUnits(us => us.map(x => x.id === u.id ? u : x)); unitUpsertRemote(u); setSel(null); toast("Unit " + u.id.slice(1) + " · " + u.status.toLowerCase(), "success"); };
   const sold = units.filter(u => u.status === "Sold");
-  const reserved = units.filter(u => u.status === "Reserved");
   const avail = units.filter(u => u.status === "Available");
   const committedValue = sold.reduce((s, u) => s + u.price, 0) + reserved.reduce((s, u) => s + u.price, 0);
   const shown = units.filter(u => filter === "All" || u.status === filter);
   const kpis = [
     { icon: CheckCircle2, label: "Sold", value: String(sold.length), c: "#D0453B", bg: "#FDECEA" },
-    { icon: Clock, label: "Reserved", value: String(reserved.length), c: "#F59E0B", bg: "#FEF4E3" },
     { icon: Home, label: "Available", value: String(avail.length), c: "#10B981", bg: "#E7F7F0" },
     { icon: TrendingUp, label: "Committed value", value: moneyShort(committedValue), c: "#3B82F6", bg: "#EAF2FE" }
   ];
   return <div>
-    <H2 title="Developments · Sales board" sub="Unit-by-unit availability for the 40 residences" right={<div style={{ width: 160 }}><PmSelect value={filter} onChange={setFilter} options={["All", "Available", "Reserved", "Sold"]} /></div>} />
+    <H2 title="Developments · Sales board" sub="Unit-by-unit availability for the 40 residences" right={<div style={{ width: 160 }}><PmSelect value={filter} onChange={setFilter} options={["All", "Available", "Sold"]} /></div>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }} className="dash-kpi">
       {kpis.map(k => <CStat key={k.label} icon={k.icon} label={k.label} value={k.value} c={k.c} bg={k.bg} />)}
     </div>
@@ -4860,7 +4845,7 @@ function UnitModal({ unit, onClose, onSave }) {
   const [u, setU] = useState(unit);
   return <PmModal title={"Unit " + unit.id.slice(1) + " · Floor " + unit.floor} onClose={onClose}>
     <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>{[["Type", unit.label], ["Size", unit.size + " sqm"], ["Price", moneyShort(unit.price)]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 100, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 16 }}>{v}</div></div>)}</div>
-    <div style={{ marginBottom: 12 }}><PmSelect label="Status" value={u.status} onChange={v => setU({ ...u, status: v })} options={["Available", "Reserved", "Sold"]} /></div>
+    <div style={{ marginBottom: 12 }}><PmSelect label="Status" value={u.status} onChange={v => setU({ ...u, status: v })} options={["Available", "Sold"]} /></div>
     {u.status !== "Available" && <div><PmField label="Buyer name" value={u.buyer} onChange={v => setU({ ...u, buyer: v })} placeholder="Full name" /><PmField label="Buyer phone" value={u.phone} onChange={v => setU({ ...u, phone: v })} placeholder="+234..." /></div>}
     <PmBtn kind="gold" onClick={() => onSave(u)} style={{ marginTop: 6 }}>Save unit</PmBtn>
   </PmModal>;
@@ -5716,7 +5701,7 @@ function JobCard({ j, isAdmin, onComplete, onRate }) {
   </PmCard>;
 }
 
-function JobsScreen({ identity, toast }) {
+function JobsScreen({ identity, toast, properties }) {
   const isAdmin = identity.role === "admin";
   const [jobs, setJobs] = useState([]);
   useEffect(() => { let on = true; jobsFetch().then(x => { if (on) setJobs(x); }); return () => { on = false; }; }, []);
@@ -5729,7 +5714,7 @@ function JobsScreen({ identity, toast }) {
   const [desc, setDesc] = useState("");
   const [vendors, setVendors] = useState(null);
   const [picked, setPicked] = useState(null);
-  const [paidBy, setPaidBy] = useState("Client");
+  const [paidBy, setPaidBy] = useState("Landlord");
   const propObj = JOB_PROPS.find(x => x.id === prop);
   const est = JOB_EST[cat] || 50000;
   const sel = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", color: "var(--ink)", fontSize: 14, fontFamily: "inherit" };
@@ -5738,6 +5723,14 @@ function JobsScreen({ identity, toast }) {
     if (!desc.trim()) { toast("Describe the issue", "danger"); return; }
     const j = { id: "JB-" + Date.now(), propTitle: propObj.title, ownerEmail: (identity && identity.email) || null, girardOwned: propObj.girardOwned, category: cat, desc, vendorName: picked ? picked.business : null, status: picked ? "Assigned" : "No vendor", estimate: est, finalCost: null, paidBy: propObj.girardOwned ? paidBy : "Client", rating: 0, ratedOk: null, review: "", createdAt: new Date().toISOString().slice(0, 10) };
     jobInsert(j); setJobs(js => [j, ...js]);
+    const ownerOf = (properties || []).find(pr => pr.title === propObj.title);
+    const ownerAddr = ownerOf && ownerOf.ownerEmail ? String(ownerOf.ownerEmail).toLowerCase() : null;
+    if (ownerAddr) notify({
+      title: picked ? "Vendor assigned to your property" : "Your property needs a vendor",
+      body: propObj.title + " \u00b7 " + cat + (picked ? " \u00b7 " + picked.business : " \u00b7 sourcing a vendor") + " \u00b7 paid by " + paidBy,
+      audience: ownerAddr
+    });
+    notify({ title: picked ? "Vendor assigned" : "Job needs a vendor", body: propObj.title + " \u00b7 " + cat, audience: "admin" });
     toast(picked ? "Job requested and assigned to " + picked.business : "Job logged. Girard will source a vendor.", picked ? "success" : "danger");
     setDesc(""); setVendors(null); setPicked(null); setTab(isAdmin ? "all" : "mine");
   };
@@ -5772,8 +5765,8 @@ function JobsScreen({ identity, toast }) {
         </div>
         <div style={{ marginTop: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Who pays for this service?</div>
-          {propObj.girardOwned ? <div style={{ display: "flex", gap: 8 }}>{[["Client", "Paid by client"], ["Girard", "Covered by Girard"]].map(([v, l]) => <button key={v} onClick={() => setPaidBy(v)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1px solid " + (paidBy === v ? "var(--gold)" : "var(--cream-line)"), background: paidBy === v ? "var(--gold-soft)" : "transparent", color: paidBy === v ? "var(--gold-2)" : "var(--muted)", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>{l}</button>)}</div>
-            : <div style={{ fontSize: 12.5, color: "var(--muted)", background: "var(--ivory)", borderRadius: 8, padding: "9px 12px" }}>This is an external property, so the service is always paid for by the client.</div>}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{[["Landlord", "Landlord / owner"], ["Tenant", "Tenant"], ["Girard", "Covered by Girard"]].map(([v, l]) => <button key={v} onClick={() => setPaidBy(v)} style={{ flex: 1, minWidth: 120, padding: "9px", borderRadius: 8, border: "1px solid " + (paidBy === v ? "var(--gold)" : "var(--cream-line)"), background: paidBy === v ? "var(--gold-soft)" : "var(--white)", color: "var(--ink)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>{l}</button>)}</div>
+          {!propObj.girardOwned && paidBy === "Girard" && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>This is an external property. Confirm with the owner before Girard absorbs the cost.</div>}
         </div>
         <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>{picked ? "Request job" : "Log job (no vendor yet)"}</PmBtn>
       </PmCard>
@@ -6107,8 +6100,12 @@ function DocumentsScreen({ identity, toast }) {
     {view && <PmModal title={view.doc_type} onClose={() => setView(null)} wide>
       <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 10 }}>{view.subject || ""}{view.deal_label ? " · " + view.deal_label : ""}</div>
       <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.6, color: "var(--ink)", maxHeight: 460, overflow: "auto", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 16, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{view.body}</div>
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}><PmBtn kind="gold" onClick={() => { setSign(view); setView(null); }}>Sign</PmBtn><PmBtn kind="ghost" icon={FileText} onClick={() => download(view)}>Download</PmBtn></div>
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>{String(view.doc_type || "").toLowerCase().includes("tenancy") ? null : <PmBtn kind="gold" onClick={() => { setSign(view); setView(null); }}>Sign</PmBtn>}<PmBtn kind="ghost" icon={FileText} onClick={() => download(view)}>Download</PmBtn></div>
     </PmModal>}
+    {view && String(view.doc_type || "").toLowerCase().includes("tenancy") &&
+      <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 10, lineHeight: 1.55 }}>
+        Tenancy agreements are signed under Tenancy agreements above, where the tenant and the landlord each sign from their own account and every signature is recorded with the signer, the time and the device.
+      </div>}
     {sign && <EsignModal doc={sign} onClose={() => setSign(null)} toast={toast} />}
   </div>;
 }
@@ -6163,7 +6160,7 @@ function AuditScreen() {
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ flex: 1, minWidth: 220, position: "relative" }}>
           <Search size={15} color="var(--muted)" style={{ position: "absolute", left: 11, top: 11 }} />
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by person, action, property, reference\u2026" style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px 9px 34px", fontSize: 13.5, fontFamily: "inherit", color: "var(--ink)" }} />
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder={"Search by person, action, property, reference\u2026"} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px 9px 34px", fontSize: 13.5, fontFamily: "inherit", color: "var(--ink)" }} />
         </div>
         <div style={{ width: 190 }}><PmSelect value={kind} onChange={setKind} options={kinds} /></div>
       </div>
@@ -6252,7 +6249,10 @@ function TenantPortal({ identity, toast, section, go }) {
     <PmCard style={{ marginBottom: 16 }}>
       <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Ending your tenancy</div>
       <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10, lineHeight: 1.5 }}>Give notice to end your tenancy. Girard will confirm the notice period and next steps.</div>
-      {!showTerm ? <PmBtn kind="ghost" icon={LogOut} onClick={() => setShowTerm(true)}>Request termination</PmBtn> : <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><input value={termDate} onChange={e => setTermDate(e.target.value)} placeholder="Preferred move-out date" style={{ padding: "9px 12px", borderRadius: 8, border: "1px solid var(--cream-line)", fontSize: 14, width: 220, fontFamily: "inherit" }} /><PmBtn kind="gold" onClick={() => { if (!termDate) { toast("Add a move-out date", "danger"); return; } setShowTerm(false); setTermDate(""); toast("Termination request sent to Girard. We will confirm the notice period.", "success"); }}>Submit request</PmBtn><PmBtn kind="ghost" onClick={() => setShowTerm(false)}>Cancel</PmBtn></div>}
+      {!showTerm ? <PmBtn kind="ghost" icon={LogOut} onClick={() => setShowTerm(true)}>Request termination</PmBtn> : <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><div>
+        <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", marginBottom: 4 }}>Preferred move-out date</label>
+        <input type="date" value={termDate} min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)} onChange={e => setTermDate(e.target.value)} style={{ padding: "9px 12px", borderRadius: 8, border: "1px solid var(--cream-line)", fontSize: 14, width: 220, fontFamily: "inherit", background: "var(--white)", color: "var(--ink)" }} />
+      </div><PmBtn kind="gold" onClick={() => { if (!termDate) { toast("Add a move-out date", "danger"); return; } setShowTerm(false); setTermDate(""); toast("Termination request sent to Girard. We will confirm the notice period.", "success"); }}>Submit request</PmBtn><PmBtn kind="ghost" onClick={() => setShowTerm(false)}>Cancel</PmBtn></div>}
     </PmCard>
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{[["Pay rent", "trent"], ["Report a repair", "trepairs"], ["Lease & documents", "tdocs"], ["Message Girard", "tmsg"]].map(([l, v]) => <PmBtn key={v} kind={v === "trent" ? "gold" : "ghost"} onClick={() => go(v)}>{l}</PmBtn>)}</div>
   </div>;
