@@ -828,9 +828,14 @@ function Landing({ onStart, onSignIn }) {
               <div style={{ fontSize: 13.5, lineHeight: 1.65, maxWidth: 260, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Girard Property Limited. Property managed with discipline, moved without borders.</div>
               <div style={{ marginTop: 20 }}>
                 <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 11, letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>Get the app</div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 <a href="https://play.google.com/store/apps/details?id=com.girardpropertylimited.twa" target="_blank" rel="noopener noreferrer" aria-label="Get Girard on Google Play" style={{ display: "inline-block" }}>
-                  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" style={{ height: 58, width: "auto", display: "block", marginLeft: -9 }} />
-                </a>
+                    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" style={{ height: 58, width: "auto", display: "block", marginLeft: -9 }} />
+                  </a>
+                  <a href="https://apps.apple.com/app/id6795445952" target="_blank" rel="noopener noreferrer" aria-label="Download Girard on the App Store" style={{ display: "inline-block" }}>
+                    <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" style={{ height: 40, width: "auto", display: "block" }} />
+                  </a>
+                </div>
               </div>
             </div>
             {/* Services and Company are real links to the static pages generated at build time.
