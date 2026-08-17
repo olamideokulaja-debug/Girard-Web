@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ClipboardList, createPortal } from "react-dom";
+import { createPortal } from "react-dom";
 import {
-  ArrowUpRight, Building2, Repeat, LineChart, Sparkles, ShieldCheck,
+  ArrowUpRight, Building2, Repeat, LineChart, Sparkles, ShieldCheck, ClipboardList,
   Globe2, MapPin, Menu, X, Home, KeyRound, Users, Briefcase, ArrowRight,
   LogOut, Mail, Lock, ArrowLeft, ChevronRight, Wallet, Wrench, FileText,
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
@@ -1035,11 +1035,11 @@ const ROLES = [
   { key: "owner", name: "Owner / Landlord", icon: Home, blurb: "List and manage rentals, collect rent and track income." },
   { key: "tenant", name: "Tenant", icon: KeyRound, blurb: "Find a home, apply, pay rent and request repairs." },
   { key: "agent", name: "Agent", icon: Users, blurb: "Run instructions, applications and offers in one pipeline." },
-  { key: "investor", name: "Investor", icon: Briefcase, blurb: "Deal flow, market intelligence and cross-border swaps." },
+  { key: "investor", name: "Subscriber", icon: Briefcase, blurb: "Track what you have committed to, with progress reports and updates." },
   { key: "manager", name: "Property Manager", icon: ClipboardList, blurb: "Run properties day to day: jobs, tenants, applications and upkeep." },
   { key: "admin", name: "Platform Admin", icon: ShieldCheck, blurb: "Oversee listings, users, verification and the swap pipeline." }
 ];
-const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate Agent", investor: "Investor & Developer", manager: "Property Management", admin: "Platform Administration" };
+const ROLE_TITLE = { owner: "Owner & Landlord", tenant: "Tenant", agent: "Estate Agent", investor: "Subscriber", manager: "Property Management", admin: "Platform Administration" };
 
 /* Per-account identity, resolved by sign-in email.
    Edit this map with your real team so each person is greeted by name and title. */
@@ -3132,10 +3132,10 @@ function WorkspaceSoon({ identity }) {
 const NAV = {
   owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  manager: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["maint", "Jobs & repairs", Wrench], ["inbox", "Tenant messages", MessageSquare], ["docs", "Leases & documents", FileText], ["moderation", "Flagged reports", AlertTriangle], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["askai", "Ask " + AI_NAME, Sparkles], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  investor: [["work", "Dashboard", LayoutDashboard], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
+  manager: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["props", "Properties", Building2], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["maint", "Jobs & repairs", Wrench], ["inbox", "Tenant messages", MessageSquare], ["docs", "Leases & documents", FileText], ["moderation", "Flagged reports", AlertTriangle], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["askai", "Ask " + AI_NAME, Sparkles], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  investor: [["work", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
 };
 function AdaAssistant({ st, identity }) {
   const [open, setOpen] = useState(false);
@@ -3236,6 +3236,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
       return <div><H2 title="Not available" sub="Property management" /><PmCard><div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><Lock size={18} color="var(--muted)" style={{ marginTop: 2, flexShrink: 0 }} /><div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>Financial and account administration sits outside property management. Speak to a platform administrator if you need something from this area.</div></div></PmCard></div>;
     }
     if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" toAi={P.toAi} />;
+    if (view === "progress") return <ProgressReportsScreen identity={identity} toast={toast} />;
     if (view === "intel") return <IntelScreen />;
     if (view === "support") return <SupportServices identity={identity} toast={toast} />;
     if (view === "plans") return <PricingScreen identity={identity} toast={toast} />;
@@ -3934,6 +3935,119 @@ const INTEL = {
   }
 };
 
+/* ---------- Progress reports ----------
+   Development updates for subscribers: where a project has got to, what has
+   happened since, and photographs. Staff publish; subscribers read only what
+   has been published. Nothing financial appears here. */
+async function devUpdatesFetch() {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase.from("development_updates").select("*").order("update_date", { ascending: false });
+    if (error || !data) return [];
+    return data;
+  } catch (e) { return []; }
+}
+
+function ProgressReportsScreen({ identity, toast }) {
+  const [rows, setRows] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ project: "", title: "", body: "", stage: "", percent: "", update_date: new Date().toISOString().slice(0, 10) });
+  const [busy, setBusy] = useState(false);
+  const isStaff = !!(identity && (identity.role === "admin" || identity.role === "manager" || /@girardpropertylimited\.com$/i.test(String(identity.email || "").toLowerCase())));
+  const canPublish = !!(identity && (identity.role === "admin" || /@girardpropertylimited\.com$/i.test(String(identity.email || "").toLowerCase())));
+
+  const load = () => devUpdatesFetch().then(setRows);
+  useEffect(() => { load(); }, []);
+
+  const save = async (publish) => {
+    if (!f.project.trim() || !f.title.trim()) { toast("Add a project and a title", "danger"); return; }
+    setBusy(true);
+    const r = await safeWrite("progress report", () => supabase.from("development_updates").insert([{
+      project: f.project.trim(), title: f.title.trim(), body: f.body || null,
+      stage: f.stage || null, percent: f.percent === "" ? null : Number(f.percent),
+      update_date: f.update_date || null, published: !!publish,
+      created_by: (identity && identity.email) || null
+    }]));
+    setBusy(false);
+    if (!r.ok) return;
+    toast(publish ? "Progress report published" : "Draft saved", "success");
+    setF({ project: "", title: "", body: "", stage: "", percent: "", update_date: new Date().toISOString().slice(0, 10) });
+    setOpen(false); load();
+  };
+
+  const publishToggle = async (row) => {
+    const r = await safeWrite("progress report", () => supabase.from("development_updates").update({ published: !row.published }).eq("id", row.id));
+    if (r.ok) { toast(row.published ? "Unpublished" : "Published", "success"); load(); }
+  };
+
+  const byProject = {};
+  (rows || []).forEach(r => { (byProject[r.project] = byProject[r.project] || []).push(r); });
+  const projects = Object.keys(byProject);
+
+  return <div>
+    <H2 title="Progress reports" sub="Development updates, timelines and photographs"
+      right={canPublish ? <PmBtn kind="gold" icon={Plus} onClick={() => setOpen(true)}>Add update</PmBtn> : null} />
+
+    {rows === null ? <PmCard><div style={{ color: "var(--muted)" }}>Loading…</div></PmCard>
+      : projects.length === 0 ? <PmCard><div style={{ textAlign: "center", padding: 26 }}>
+          <LineChart size={26} color="var(--muted)" style={{ marginBottom: 10 }} />
+          <div style={{ color: "var(--ink)", fontWeight: 700 }}>No progress reports yet</div>
+          <div style={{ color: "var(--muted)", fontSize: 13.5, marginTop: 4 }}>{canPublish ? "Publish the first update to keep subscribers informed." : "Updates on your development will appear here."}</div>
+        </div></PmCard>
+      : projects.map(proj => <div key={proj} style={{ marginBottom: 22 }}>
+          <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "var(--ink)", marginBottom: 10 }}>{proj}</div>
+          <div style={{ display: "grid", gap: 12 }}>
+            {byProject[proj].map(r => <PmCard key={r.id} style={{ marginBottom: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontWeight: 700, color: "var(--ink)" }}>{r.title}</span>
+                    {r.stage && <PmPill label={r.stage} />}
+                    {!r.published && <PmPill label="Draft" />}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>{r.update_date || ""}</div>
+                  {r.body && <div style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{r.body}</div>}
+                  {typeof r.percent === "number" && <div style={{ marginTop: 10 }}>
+                    <div style={{ height: 8, borderRadius: 999, background: "var(--ivory)", overflow: "hidden" }}>
+                      <div style={{ width: Math.max(0, Math.min(100, r.percent)) + "%", height: "100%", background: "var(--gold)" }} />
+                    </div>
+                    <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 4 }}>{r.percent}% complete</div>
+                  </div>}
+                  {Array.isArray(r.images) && r.images.length > 0 && <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+                    {r.images.slice(0, 4).map((src, i) => <img key={i} src={src} alt="" style={{ width: 96, height: 72, objectFit: "cover", borderRadius: 8, border: "1px solid var(--cream-line)" }} />)}
+                  </div>}
+                </div>
+                {canPublish && <PmBtn size="sm" kind="ghost" onClick={() => publishToggle(r)}>{r.published ? "Unpublish" : "Publish"}</PmBtn>}
+              </div>
+            </PmCard>)}
+          </div>
+        </div>)}
+
+    {open && <PmModal title="Add a progress report" onClose={() => setOpen(false)} wide>
+      <div style={{ display: "grid", gap: 12 }}>
+        <PmField label="Project" value={f.project} onChange={v => setF({ ...f, project: v })} />
+        <PmField label="Title" value={f.title} onChange={v => setF({ ...f, title: v })} />
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 160 }}><PmField label="Stage" value={f.stage} onChange={v => setF({ ...f, stage: v })} /></div>
+          <div style={{ flex: 1, minWidth: 120 }}><PmField label="Percent complete" value={f.percent} onChange={v => setF({ ...f, percent: String(v).replace(/\D/g, "").slice(0, 3) })} /></div>
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Date</label>
+          <input type="date" value={f.update_date} onChange={e => setF({ ...f, update_date: e.target.value })} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 12px", fontSize: 14, color: "var(--ink)", fontFamily: "inherit" }} />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Update</label>
+          <textarea value={f.body} onChange={e => setF({ ...f, body: e.target.value })} rows={5} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 12px", fontSize: 14, color: "var(--ink)", fontFamily: "inherit", resize: "vertical" }} />
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <PmBtn kind="gold" icon={CheckCircle2} disabled={busy} onClick={() => save(true)}>{busy ? "Saving…" : "Publish"}</PmBtn>
+          <PmBtn kind="ghost" disabled={busy} onClick={() => save(false)}>Save as draft</PmBtn>
+        </div>
+      </div>
+    </PmModal>}
+  </div>;
+}
+
 function IntelScreen() {
   const [market, setMarket] = useState("Nigeria");
   const d = INTEL[market];
@@ -4155,7 +4269,7 @@ function usrLoad() {
       { name: "Tunde Adeyemi", email: "tunde@example.com", role: "owner", status: "Active" },
       { name: "Chidera Okonkwo", email: "chidera@example.com", role: "tenant", status: "Active" },
       { name: "Bola Agent", email: "bola@example.com", role: "agent", status: "Active" },
-      { name: "Ken Investor", email: "ken@example.com", role: "investor", status: "Suspended" }
+      { name: "Ken Subscriber", email: "ken@example.com", role: "investor", status: "Suspended" }
     ]
   };
   try { localStorage.setItem(USR_KEY, JSON.stringify(s)); } catch (e) {}
@@ -4373,12 +4487,12 @@ function SignupsScreen() {
     { name: "Tenants", v: roleCount("tenant"), c: "#3B82F6" },
     { name: "Owners", v: roleCount("owner"), c: "#8B5CF6" },
     { name: "Agents", v: roleCount("agent"), c: "#F59E0B" },
-    { name: "Investors", v: roleCount("investor"), c: "#10B981" }
+    { name: "Subscribers", v: roleCount("investor"), c: "#10B981" }
   ].filter(x => x.v > 0);
   const thisMonth = users.filter(u => String(u.createdAt || u.created_at || "").slice(0, 7) === new Date().toISOString().slice(0, 7)).length;
   const verified = users.filter(u => u.verified || u.kyc === "Complete").length;
   const funnel = [{ label: "Sign-ups", v: total }, { label: "Active", v: users.filter(u => u.status === "Active").length }, { label: "Suspended", v: users.filter(u => u.status !== "Active").length }];
-  const roleName = { tenant: "Tenant", owner: "Owner", agent: "Agent", investor: "Investor", admin: "Admin" };
+  const roleName = { tenant: "Tenant", owner: "Owner", agent: "Agent", investor: "Subscriber", admin: "Admin" };
   return <div>
     <H2 title="Sign-ups & growth" sub="New accounts and activation across all roles" right={<PmBtn kind="ghost" icon={FileText}>Export</PmBtn>} />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
