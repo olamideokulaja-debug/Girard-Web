@@ -3153,11 +3153,11 @@ function WorkspaceSoon({ identity }) {
 
 /* ---------- APP SHELL ---------- */
 const NAV = {
-  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["branding", "Branding", Sparkles], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   admin: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  manager: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["props", "Properties", Building2], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["inbox", "Tenant messages", MessageSquare], ["docs", "Leases & documents", FileText], ["moderation", "Flagged reports", AlertTriangle], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["askai", "Ask " + AI_NAME, Sparkles], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  manager: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["agents", "Agent oversight", Users], ["props", "Properties", Building2], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["inbox", "Tenant messages", MessageSquare], ["docs", "Leases & documents", FileText], ["moderation", "Flagged reports", AlertTriangle], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["askai", "Ask " + AI_NAME, Sparkles], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   investor: [["work", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
 };
 function AdaAssistant({ st, identity }) {
@@ -3210,6 +3210,29 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const identity = { ...identity0, role: activeRole };
   /* WhatsApp-style counts on the nav. Each is a real count of things waiting,
      refreshed on a slow poll so a badge cannot go stale for long. */
+  /* Branding: a landlord sees their own; a tenant sees the branding of the
+     landlord whose property they rent. Reverts to Girard when disabled or when
+     the person has no branded landlord. */
+  const [brand, setBrand] = useState(null);
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      let b = null;
+      try {
+        if (activeRole === "owner") {
+          b = await brandingFetch(identity0.email);
+        } else if (activeRole === "tenant" && supabase) {
+          const { data } = await supabase.from("leases").select("landlord_email")
+            .eq("tenant_email", String(identity0.email || "").toLowerCase()).limit(1);
+          const ll = data && data[0] && data[0].landlord_email;
+          if (ll) b = await brandingFetch(ll);
+        }
+      } catch (e) {}
+      if (!dead) { setBrand(b); brandingApply(b); }
+    })();
+    return () => { dead = true; brandingApply(null); };
+  }, [activeRole, identity0.email]);
+
   const [badges, setBadges] = useState({});
   useEffect(() => {
     let dead = false;
@@ -3282,6 +3305,8 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "maint") return <JobsScreen identity={identity} toast={toast} properties={st.properties} />;
     if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" toAi={P.toAi} />;
     if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" toAi={P.toAi} />;
+    if (view === "branding") return <BrandingScreen identity={identity} toast={toast} />;
+    if (view === "agents") return <AgentOversight identity={identity} />;
     if (view === "progress") return <ProgressReportsScreen identity={identity} toast={toast} />;
     if (view === "intel") return <IntelScreen />;
     if (view === "support") return <SupportServices identity={identity} toast={toast} />;
@@ -3776,6 +3801,54 @@ function LiveFeed({ identity }) {
 
 /* ---------- Pipeline / CRM ---------- */
 const CRM_COLS = ["Lead", "Qualifying", "Negotiation", "Agreed", "Completed"];
+
+/* The pipeline used to live only in localStorage, so each agent's deals existed
+   in one browser and nobody could oversee them. It now persists to crm_cards,
+   where an agent sees their own and staff see all. The stage is stored as its
+   label rather than an index so the table reads sensibly on its own. */
+function crmRowToCard(r) {
+  const idx = CRM_COLS.indexOf(r.stage);
+  return {
+    id: r.id, name: r.title || r.client || "", kind: r.kind || "Lead",
+    market: r.market || "Nigeria", detail: r.note || "",
+    stage: idx < 0 ? 0 : idx, agentEmail: r.agent_email, value: r.value || 0
+  };
+}
+function crmCardToRow(c, email) {
+  return {
+    id: c.id, agent_email: String(c.agentEmail || email || "").toLowerCase(),
+    title: c.name || null, kind: c.kind || null, market: c.market || null,
+    note: c.detail || null, value: c.value || null,
+    stage: CRM_COLS[Math.max(0, Math.min(4, c.stage || 0))],
+    updated_at: new Date().toISOString()
+  };
+}
+async function crmFetch() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from("crm_cards").select("*").order("updated_at", { ascending: false });
+    if (error || !data) return null;
+    return data.map(crmRowToCard);
+  } catch (e) { return null; }
+}
+async function crmUpsert(card, email) {
+  return safeWrite("pipeline card", () => supabase.from("crm_cards").upsert([crmCardToRow(card, email)], { onConflict: "id" }));
+}
+/* One-time lift of whatever is sitting in this browser, so an agent who has
+   been working locally does not lose their pipeline the day this ships. */
+async function crmMigrateLocal(email) {
+  if (!supabase || !email) return;
+  try {
+    if (localStorage.getItem("girard_crm_migrated")) return;
+    const raw = localStorage.getItem(CRM_KEY);
+    const local = raw ? (JSON.parse(raw).cards || []) : [];
+    if (local.length) {
+      const rows = local.map(c => crmCardToRow(c, email));
+      await supabase.from("crm_cards").upsert(rows, { onConflict: "id" });
+    }
+    localStorage.setItem("girard_crm_migrated", "1");
+  } catch (e) {}
+}
 const CRM_KIND_C = { Application: "#2F6FB0", Offer: "#E0A106", Swap: "var(--gold-2)", Lead: "var(--navy)" };
 function crmSeed() {
   if (isPurged()) return { cards: [] };
@@ -3793,12 +3866,218 @@ const CRM_KEY = "girard_crm_v1";
 function crmLoad() { try { const r = localStorage.getItem(CRM_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = crmSeed(); try { localStorage.setItem(CRM_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 function crmSave(s) { try { localStorage.setItem(CRM_KEY, JSON.stringify(s)); } catch (e) {} }
 
+/* Agent oversight for property managers and admins: who is carrying what, and
+   how much of it converts. Reads the same crm_cards the agents work in, so the
+   numbers are theirs rather than a separate report that can drift. */
+/* ---------- Landlord white-labelling ----------
+   A landlord on a paid plan can put their own name, logo and colours on their
+   portal, and their tenants see it too. Applied by overwriting the CSS custom
+   properties the whole interface already reads, so nothing else needs to know
+   branding exists. Reverts cleanly when disabled. */
+async function brandingFetch(ownerEmail) {
+  if (!supabase || !ownerEmail) return null;
+  try {
+    const { data, error } = await supabase.from("landlord_branding")
+      .select("*").eq("owner_email", String(ownerEmail).toLowerCase()).maybeSingle();
+    if (error || !data) return null;
+    return data.enabled ? data : null;
+  } catch (e) { return null; }
+}
+function brandingApply(b) {
+  const root = document.documentElement;
+  if (!b) {
+    ["--navy", "--navy-2", "--gold", "--gold-2"].forEach(k => root.style.removeProperty(k));
+    return;
+  }
+  if (b.primary_color) { root.style.setProperty("--navy", b.primary_color); root.style.setProperty("--navy-2", b.primary_color); }
+  if (b.accent_color) { root.style.setProperty("--gold", b.accent_color); root.style.setProperty("--gold-2", b.accent_color); }
+}
+
+function BrandingScreen({ identity, toast }) {
+  const email = String((identity && identity.email) || "").toLowerCase();
+  const [row, setRow] = useState(null);
+  const [paid, setPaid] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const logoRef = useRef(null);
+  useEffect(() => {
+    (async () => {
+      setPaid(await subActive(email));
+      if (!supabase) { setRow({}); return; }
+      try {
+        const { data } = await supabase.from("landlord_branding").select("*").eq("owner_email", email).maybeSingle();
+        setRow(data || { owner_email: email, business_name: "", logo_url: "", primary_color: "#0A1A38", accent_color: "#C6A15B", enabled: false });
+      } catch (e) { setRow({ owner_email: email }); }
+    })();
+  }, [email]);
+
+  const save = async (patch) => {
+    const next = { ...row, ...patch, owner_email: email, updated_at: new Date().toISOString() };
+    setRow(next); setBusy(true);
+    const r = await safeWrite("branding", () => supabase.from("landlord_branding").upsert([next], { onConflict: "owner_email" }));
+    setBusy(false);
+    if (r.ok) { brandingApply(next.enabled ? next : null); toast("Branding saved", "success"); }
+  };
+
+  const uploadLogo = async (file) => {
+    if (!file || !supabase) return;
+    if (!/^image\//.test(file.type)) { toast("Choose an image file", "danger"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast("Logo must be under 2MB", "danger"); return; }
+    setBusy(true);
+    try {
+      const ext = (file.name.split(".").pop() || "png").toLowerCase().slice(0, 6);
+      const path = email + "/logo-" + Date.now() + "." + ext;
+      const { error } = await supabase.storage.from("branding").upload(path, file, { contentType: file.type, upsert: true });
+      if (error) { toast(error.message || "Upload failed", "danger"); setBusy(false); return; }
+      const { data: pub } = supabase.storage.from("branding").getPublicUrl(path);
+      await save({ logo_url: pub.publicUrl });
+    } catch (e) { toast("Upload failed", "danger"); }
+    setBusy(false);
+  };
+
+  if (row === null || paid === null) return <div><H2 title="Branding" sub="Put your own name and colours on your portal" /><PmCard><div style={{ color: "var(--muted)" }}>Loading…</div></PmCard></div>;
+
+  if (!paid) return <div>
+    <H2 title="Branding" sub="Put your own name and colours on your portal" />
+    <PmCard><div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <Lock size={20} color="var(--muted)" style={{ marginTop: 2, flexShrink: 0 }} />
+      <div>
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Available on a paid plan</div>
+        <div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>Branding lets you show your own business name, logo and colours across your portal, and to your tenants when they view your property. It is included with a paid membership.</div>
+      </div>
+    </div></PmCard>
+  </div>;
+
+  return <div>
+    <H2 title="Branding" sub="Put your own name and colours on your portal" />
+    <PmCard>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+        <div>
+          <div style={{ fontWeight: 700, color: "var(--ink)" }}>Use my branding</div>
+          <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>Applies to your portal and to your tenants' view of your property.</div>
+        </div>
+        <button onClick={() => save({ enabled: !row.enabled })} disabled={busy} style={{ width: 52, height: 30, borderRadius: 999, border: "none", cursor: "pointer", background: row.enabled ? "var(--gold)" : "var(--cream-line)", position: "relative", flexShrink: 0 }}>
+          <span style={{ position: "absolute", top: 3, left: row.enabled ? 25 : 3, width: 24, height: 24, borderRadius: 999, background: "#fff", transition: "left .15s" }} />
+        </button>
+      </div>
+
+      <div style={{ display: "grid", gap: 14 }}>
+        <PmField label="Business name" value={row.business_name || ""} onChange={v => setRow({ ...row, business_name: v })} placeholder="Shown in place of Girard in your portal" />
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Logo</label>
+          <input ref={logoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const fl = e.target.files && e.target.files[0]; e.target.value = ""; uploadLogo(fl); }} />
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            {row.logo_url && <img src={row.logo_url} alt="" style={{ height: 46, width: "auto", borderRadius: 8, border: "1px solid var(--cream-line)", background: "var(--ivory)" }} />}
+            <PmBtn kind="ghost" icon={Upload} disabled={busy} onClick={() => logoRef.current && logoRef.current.click()}>{row.logo_url ? "Replace logo" : "Upload logo"}</PmBtn>
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>PNG or SVG on a transparent background works best. Under 2MB.</div>
+        </div>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {[["primary_color", "Main colour", "Headers and sidebar"], ["accent_color", "Accent colour", "Buttons and highlights"]].map(([k, lab, note]) =>
+            <div key={k} style={{ minWidth: 190 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>{lab}</label>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <input type="color" value={row[k] || "#0A1A38"} onChange={e => setRow({ ...row, [k]: e.target.value })} style={{ width: 44, height: 38, border: "1px solid var(--cream-line)", borderRadius: 8, background: "var(--white)", cursor: "pointer", padding: 3 }} />
+                <input value={row[k] || ""} onChange={e => setRow({ ...row, [k]: e.target.value })} style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 13.5, color: "var(--ink)", fontFamily: "inherit" }} />
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 5 }}>{note}</div>
+            </div>)}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <PmBtn kind="gold" icon={CheckCircle2} disabled={busy} onClick={() => save({})}>{busy ? "Saving…" : "Save branding"}</PmBtn>
+          <PmBtn kind="ghost" disabled={busy} onClick={() => { const d = { business_name: "", logo_url: "", primary_color: "#0A1A38", accent_color: "#C6A15B", enabled: false }; setRow({ ...row, ...d }); save(d); }}>Reset to Girard</PmBtn>
+        </div>
+      </div>
+    </PmCard>
+    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 12, lineHeight: 1.6 }}>
+      Public listing pages stay in Girard branding, since they are shared across the whole marketplace.
+    </div>
+  </div>;
+}
+
+function AgentOversight({ identity }) {
+  const [cards, setCards] = useState(null);
+  useEffect(() => { crmFetch().then(r => setCards(r || [])); }, []);
+  if (cards === null) return <div><H2 title="Agent oversight" sub="Pipeline and conversion across the agent network" /><PmCard><div style={{ color: "var(--muted)" }}>Loading…</div></PmCard></div>;
+
+  const byAgent = {};
+  cards.forEach(c => {
+    const k = (c.agentEmail || "unassigned").toLowerCase();
+    const a = byAgent[k] || (byAgent[k] = { email: k, total: 0, completed: 0, value: 0, stages: [0, 0, 0, 0, 0] });
+    a.total += 1;
+    a.stages[Math.max(0, Math.min(4, c.stage || 0))] += 1;
+    if ((c.stage || 0) >= 4) a.completed += 1;
+    a.value += c.value || 0;
+  });
+  const agents = Object.values(byAgent).sort((x, y) => y.total - x.total);
+  const totalCards = cards.length;
+  const totalDone = cards.filter(c => (c.stage || 0) >= 4).length;
+  const overall = totalCards ? Math.round(totalDone / totalCards * 100) : 0;
+
+  return <div>
+    <H2 title="Agent oversight" sub="Pipeline and conversion across the agent network" />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
+      <CStat icon={Users} label="Agents active" value={String(agents.length)} sub={agents.length ? "With items in play" : "None yet"} c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={LayoutGrid} label="Items in pipeline" value={String(totalCards)} sub="Across all stages" c="#8B5CF6" bg="#F1ECFE" />
+      <CStat icon={CheckCircle2} label="Completed" value={String(totalDone)} sub="Reached the final stage" c="#10B981" bg="#E7F7F0" />
+      <CStat icon={TrendingUp} label="Conversion" value={overall + "%"} sub="Completed against total" c="#F59E0B" bg="#FEF3E2" />
+    </div>
+
+    {agents.length === 0
+      ? <PmCard><div style={{ textAlign: "center", padding: 26 }}>
+          <Users size={26} color="var(--muted)" style={{ marginBottom: 10 }} />
+          <div style={{ color: "var(--ink)", fontWeight: 700 }}>No agent pipeline yet</div>
+          <div style={{ color: "var(--muted)", fontSize: 13.5, marginTop: 4 }}>Once agents start working leads, their pipeline and conversion appear here.</div>
+        </div></PmCard>
+      : <PmCard pad={0} style={{ overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
+              <thead><tr style={{ background: "var(--ivory)" }}>
+                {["Agent", "In pipeline", ...CRM_COLS, "Conversion", "Value"].map(h =>
+                  <th key={h} style={{ textAlign: h === "Agent" ? "left" : "center", padding: "11px 14px", color: "var(--muted)", fontWeight: 700, fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {agents.map(a => {
+                  const conv = a.total ? Math.round(a.completed / a.total * 100) : 0;
+                  return <tr key={a.email} style={{ borderTop: "1px solid var(--cream-line)" }}>
+                    <td style={{ padding: "12px 14px", color: "var(--ink)", fontWeight: 600, whiteSpace: "nowrap" }}>{a.email}</td>
+                    <td style={{ padding: "12px 14px", textAlign: "center", color: "var(--ink)" }}>{a.total}</td>
+                    {a.stages.map((v, i) => <td key={i} style={{ padding: "12px 14px", textAlign: "center", color: v ? "var(--ink)" : "var(--muted)" }}>{v}</td>)}
+                    <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                      <span style={{ fontWeight: 700, color: conv >= 50 ? "#1F9D57" : conv >= 20 ? "#E0A106" : "var(--muted)" }}>{conv}%</span>
+                    </td>
+                    <td style={{ padding: "12px 14px", textAlign: "center", color: "var(--ink)" }}>{a.value ? money(a.value) : "\u2014"}</td>
+                  </tr>;
+                })}
+              </tbody>
+            </table>
+          </div>
+        </PmCard>}
+    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 12, lineHeight: 1.6 }}>
+      Conversion is items that reached {CRM_COLS[4]} as a share of everything that agent has carried. Agents see only their own pipeline; this view is for Girard staff.
+    </div>
+  </div>;
+}
+
 function PipelineCRM({ identity, toast }) {
   const [crm, setCrmRaw] = useState(crmLoad);
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      await crmMigrateLocal(identity && identity.email);
+      const rows = await crmFetch();
+      if (!dead && rows) setCrmRaw({ cards: rows });
+    })();
+    return () => { dead = true; };
+  }, []);
   const [kind, setKind] = useState("All");
   const [market, setMarket] = useState("All");
   const setCrm = (n) => { setCrmRaw(n); crmSave(n); };
-  const move = (id, dir) => { setCrm({ ...crm, cards: crm.cards.map(c => c.id === id ? { ...c, stage: Math.max(0, Math.min(4, c.stage + dir)) } : c) }); };
+  const move = (id, dir) => {
+    const next = crm.cards.map(c => c.id === id ? { ...c, stage: Math.max(0, Math.min(4, c.stage + dir)) } : c);
+    setCrm({ ...crm, cards: next });
+    const moved = next.find(c => c.id === id);
+    if (moved) crmUpsert(moved, identity && identity.email);
+  };
   const cards = crm.cards.filter(c => (kind === "All" || c.kind === kind) && (market === "All" || c.market === market));
   const refOf = {}; crm.cards.forEach((c, n) => { refOf[c.id] = "GC-" + String(n + 1).padStart(3, "0"); });
   return <div>
@@ -3992,6 +4271,31 @@ function ProgressReportsScreen({ identity, toast }) {
   const [rows, setRows] = useState(null);
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ project: "", title: "", body: "", stage: "", percent: "", update_date: new Date().toISOString().slice(0, 10) });
+  const [media, setMedia] = useState([]);
+  const [upBusy, setUpBusy] = useState(false);
+  const mediaRef = useRef(null);
+  /* Images, video and voice notes on a progress report. They live in the public
+     progress-media bucket: a published update is meant to be seen, and a site
+     photograph is not confidential. Writes are staff-only at the bucket. */
+  const MEDIA_MAX = 25 * 1024 * 1024;
+  const uploadMedia = async (files) => {
+    if (!files || !files.length || !supabase) return;
+    setUpBusy(true);
+    for (const file of Array.from(files).slice(0, 8)) {
+      if (file.size > MEDIA_MAX) { toast(file.name + " is over 25MB", "danger"); continue; }
+      const kind = String(file.type || "").split("/")[0];
+      if (!["image", "video", "audio"].includes(kind)) { toast("Only images, video and audio can be attached", "danger"); continue; }
+      try {
+        const safe = file.name.replace(/[^A-Za-z0-9._-]/g, "-").slice(-60);
+        const path = String(f.project || "general").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) + "/" + Date.now() + "-" + safe;
+        const { error } = await supabase.storage.from("progress-media").upload(path, file, { contentType: file.type, upsert: true });
+        if (error) { toast(error.message || "Upload failed", "danger"); continue; }
+        const { data: pub } = supabase.storage.from("progress-media").getPublicUrl(path);
+        setMedia(m => [...m, { url: pub.publicUrl, type: kind, name: file.name }]);
+      } catch (e) { toast("Upload failed", "danger"); }
+    }
+    setUpBusy(false);
+  };
   const [busy, setBusy] = useState(false);
   const isStaff = !!(identity && (identity.role === "admin" || identity.role === "manager" || /@girardpropertylimited\.com$/i.test(String(identity.email || "").toLowerCase())));
   /* Publishing is a staff action AND depends on the workspace you are in.
@@ -4009,7 +4313,7 @@ function ProgressReportsScreen({ identity, toast }) {
     const r = await safeWrite("progress report", () => supabase.from("development_updates").insert([{
       project: f.project.trim(), title: f.title.trim(), body: f.body || null,
       stage: f.stage || null, percent: f.percent === "" ? null : Number(f.percent),
-      update_date: f.update_date || null, published: !!publish,
+      update_date: f.update_date || null, published: !!publish, images: media,
       created_by: (identity && identity.email) || null
     }]));
     setBusy(false);
@@ -4057,8 +4361,17 @@ function ProgressReportsScreen({ identity, toast }) {
                     </div>
                     <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 4 }}>{r.percent}% complete</div>
                   </div>}
-                  {Array.isArray(r.images) && r.images.length > 0 && <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                    {r.images.slice(0, 4).map((src, i) => <img key={i} src={src} alt="" style={{ width: 96, height: 72, objectFit: "cover", borderRadius: 8, border: "1px solid var(--cream-line)" }} />)}
+                  {Array.isArray(r.images) && r.images.length > 0 && <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+                    {r.images.map((it, i) => {
+                      /* Older rows stored a bare URL string; newer ones store
+                         { url, type, name }. Handle both. */
+                      const url = typeof it === "string" ? it : it.url;
+                      const kind = typeof it === "string" ? "image" : (it.type || "image");
+                      if (!url) return null;
+                      if (kind === "video") return <video key={i} src={url} controls style={{ width: 220, borderRadius: 8, border: "1px solid var(--cream-line)", display: "block" }} />;
+                      if (kind === "audio") return <audio key={i} src={url} controls style={{ width: 240 }} />;
+                      return <a key={i} href={url} target="_blank" rel="noopener noreferrer"><img src={url} alt="" style={{ width: 110, height: 82, objectFit: "cover", borderRadius: 8, border: "1px solid var(--cream-line)", display: "block" }} /></a>;
+                    })}
                   </div>}
                 </div>
                 {canPublish && <PmBtn size="sm" kind="ghost" onClick={() => publishToggle(r)}>{r.published ? "Unpublish" : "Publish"}</PmBtn>}
@@ -4082,6 +4395,21 @@ function ProgressReportsScreen({ identity, toast }) {
         <div>
           <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Update</label>
           <textarea value={f.body} onChange={e => setF({ ...f, body: e.target.value })} rows={5} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 12px", fontSize: 14, color: "var(--ink)", fontFamily: "inherit", resize: "vertical" }} />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Photos, video and voice notes</label>
+          <input ref={mediaRef} type="file" accept="image/*,video/*,audio/*" multiple style={{ display: "none" }}
+            onChange={e => { const picked = e.target.files; e.target.value = ""; uploadMedia(picked); }} />
+          <PmBtn kind="ghost" icon={Upload} disabled={upBusy} onClick={() => mediaRef.current && mediaRef.current.click()}>{upBusy ? "Uploading\u2026" : "Add media"}</PmBtn>
+          {media.length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+            {media.map((m, i) => <div key={i} style={{ position: "relative", width: 92, borderRadius: 8, overflow: "hidden", border: "1px solid var(--cream-line)" }}>
+              {m.type === "image"
+                ? <img src={m.url} alt="" style={{ width: 92, height: 70, objectFit: "cover", display: "block" }} />
+                : <div style={{ width: 92, height: 70, display: "grid", placeItems: "center", background: "var(--ivory)", color: "var(--muted)" }}>{m.type === "video" ? <Play size={20} /> : <Send size={20} />}</div>}
+              <button onClick={() => setMedia(x => x.filter((_, k) => k !== i))} title="Remove" style={{ position: "absolute", top: 2, right: 2, width: 20, height: 20, borderRadius: 999, border: "none", background: "rgba(0,0,0,.6)", color: "#fff", cursor: "pointer", fontSize: 12, lineHeight: 1 }}>&times;</button>
+            </div>)}
+          </div>}
+          <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>Up to 8 files, 25MB each.</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <PmBtn kind="gold" icon={CheckCircle2} disabled={busy} onClick={() => save(true)}>{busy ? "Saving…" : "Publish"}</PmBtn>
