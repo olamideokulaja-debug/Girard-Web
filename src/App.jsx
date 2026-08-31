@@ -2402,6 +2402,18 @@ function OwnerDash({ st, identity }) {
   const byArea = PM_AREAS.slice(0, 7).map(a => ({ m: a, v: Math.round(st.properties.filter(p => p.area === a).reduce((s, p) => s + p.rent, 0) / 1e6) }));
   const occData = [{ name: "Leased", v: leased, c: "#10B981" }, { name: "Available", v: st.properties.length - leased, c: "#F59E0B" }];
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  /* Added for the Property Manager dashboard: outstanding rent, overdue leases
+     and open inspections. All derived from real rows — an empty platform shows
+     zeroes rather than invented numbers. */
+  const outstanding = (st.invoices || []).filter(i => i.status !== "Paid").reduce((t, i) => t + (i.amount || 0), 0);
+  const outstandingCount = (st.invoices || []).filter(i => i.status !== "Paid").length;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const overdueLeases = (st.properties || []).filter(pr => {
+    const end = pr.end || (pr.data && pr.data.end);
+    return pr.status === "Leased" && end && String(end) < todayIso;
+  }).length;
+  const inspections = (st.tickets || []).filter(t => /inspect/i.test(String(t.category || t.title || "")) && t.status !== "Resolved").length;
+  const collected = (st.invoices || []).filter(i => i.status === "Paid").reduce((t, i) => t + (i.amount || 0), 0);
   const activity = (() => {
     const out = [];
     (st.applications || []).slice(0, 2).forEach(a => { const pr = st.properties.find(x => x.id === a.property); out.push({ icon: Users, t: "Application \u00b7 " + a.tenant + (pr ? " \u00b7 " + pr.title : ""), s: a.status }); });
@@ -2418,6 +2430,12 @@ function OwnerDash({ st, identity }) {
       <CStat icon={Home} label="Occupancy" value={occ + "%"} sub={leased + " leased"} c="#10B981" bg="#E7F7F0" />
       <CStat icon={Wrench} label="Open tickets" value={String((st.tickets || []).filter(t => t.status !== "Resolved").length)} sub={((st.tickets || []).filter(t => t.status !== "Resolved" && t.priority === "Emergency").length || 0) + " emergency"} c="#F59E0B" bg="#FEF4E3" />
     </div>
+    {(identity.role === "admin" || identity.role === "manager") && <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
+      <CStat icon={CreditCard} label="Outstanding rent" value={moneyC(outstanding)} sub={outstandingCount ? outstandingCount + (outstandingCount === 1 ? " invoice unpaid" : " invoices unpaid") : "All settled"} c="#D0453B" bg="#FDEDEC" />
+      <CStat icon={CalendarDays} label="Overdue leases" value={String(overdueLeases)} sub={overdueLeases ? "Past the end date" : "None past due"} c="#F59E0B" bg="#FEF3E2" />
+      <CStat icon={ClipboardCheck} label="Inspections" value={String(inspections)} sub={inspections ? "Open" : "None scheduled"} c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={TrendingUp} label="Collected to date" value={moneyC(collected)} sub={"Against " + moneyC(collected + outstanding) + " billed"} c="#10B981" bg="#E7F7F0" />
+    </div>}
     <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 16, marginBottom: 16 }} className="pm-grid2">
       <PmCard>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}><div className="serif" style={{ fontWeight: 600, fontSize: 17, color: "var(--ink)" }}>Rental income trend</div><span style={{ fontSize: 12, color: "var(--muted)" }}>₦ millions</span></div>
@@ -3139,7 +3157,7 @@ const NAV = {
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   admin: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  manager: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["props", "Properties", Building2], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["maint", "Jobs & repairs", Wrench], ["inbox", "Tenant messages", MessageSquare], ["docs", "Leases & documents", FileText], ["moderation", "Flagged reports", AlertTriangle], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["askai", "Ask " + AI_NAME, Sparkles], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  manager: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["props", "Properties", Building2], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["inbox", "Tenant messages", MessageSquare], ["docs", "Leases & documents", FileText], ["moderation", "Flagged reports", AlertTriangle], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["askai", "Ask " + AI_NAME, Sparkles], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   investor: [["work", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
 };
 function AdaAssistant({ st, identity }) {
@@ -3234,12 +3252,6 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "rent") return <RentScreen {...P} />;
     if (view === "maint") return <JobsScreen identity={identity} toast={toast} properties={st.properties} />;
     if (view === "swap") return <SwapHub identity={identity} toast={toast} initial="browse" toAi={P.toAi} />;
-    /* A property manager is Girard staff but operational only. Leaving these
-       screens out of the nav is not a control on its own, since the view can be
-       reached by other means, so the restriction is enforced here too. */
-    if (activeRole === "manager" && ["financials", "payouts", "payments", "vetting", "reminders", "sales", "plans", "reports", "users", "adminreq", "signups"].includes(view)) {
-      return <div><H2 title="Not available" sub="Property management" /><PmCard><div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}><Lock size={18} color="var(--muted)" style={{ marginTop: 2, flexShrink: 0 }} /><div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>Financial and account administration sits outside property management. Speak to a platform administrator if you need something from this area.</div></div></PmCard></div>;
-    }
     if (view === "swpipe") return <SwapHub identity={identity} toast={toast} initial="deals" toAi={P.toAi} />;
     if (view === "progress") return <ProgressReportsScreen identity={identity} toast={toast} />;
     if (view === "intel") return <IntelScreen />;
@@ -3959,7 +3971,11 @@ function ProgressReportsScreen({ identity, toast }) {
   const [f, setF] = useState({ project: "", title: "", body: "", stage: "", percent: "", update_date: new Date().toISOString().slice(0, 10) });
   const [busy, setBusy] = useState(false);
   const isStaff = !!(identity && (identity.role === "admin" || identity.role === "manager" || /@girardpropertylimited\.com$/i.test(String(identity.email || "").toLowerCase())));
-  const canPublish = !!(identity && (identity.role === "admin" || /@girardpropertylimited\.com$/i.test(String(identity.email || "").toLowerCase())));
+  /* Publishing is a staff action AND depends on the workspace you are in.
+     Testing the email alone let a Girard staff member who had switched to the
+     Subscriber view still see Add update and Unpublish. */
+  const isStaffWorkspace = !!(identity && (identity.role === "admin" || identity.role === "manager"));
+  const canPublish = isStaffWorkspace && !!(identity && (identity.role === "admin" || /@girardpropertylimited\.com$/i.test(String(identity.email || "").toLowerCase())));
 
   const load = () => devUpdatesFetch().then(setRows);
   useEffect(() => { load(); }, []);
