@@ -3874,6 +3874,65 @@ function crmSave(s) { try { localStorage.setItem(CRM_KEY, JSON.stringify(s)); } 
    portal, and their tenants see it too. Applied by overwriting the CSS custom
    properties the whole interface already reads, so nothing else needs to know
    branding exists. Reverts cleanly when disabled. */
+/* Suggest a palette from the logo itself. Done by reading the image's own
+   pixels rather than asking a model to guess: it is instant, free, works
+   offline, and the colours are literally the ones in the logo. Analysed from
+   the local File before upload, which also sidesteps canvas CORS entirely. */
+function paletteFromImage(file) {
+  return new Promise(resolve => {
+    try {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const N = 64;
+          const cv = document.createElement("canvas");
+          cv.width = N; cv.height = N;
+          const ctx = cv.getContext("2d");
+          ctx.drawImage(img, 0, 0, N, N);
+          const px = ctx.getImageData(0, 0, N, N).data;
+          const buckets = {};
+          for (let i = 0; i < px.length; i += 4) {
+            const a = px[i + 3];
+            if (a < 200) continue;                       // ignore transparency
+            const r = px[i], g = px[i + 1], b = px[i + 2];
+            const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+            const lum = (mx + mn) / 2;
+            if (lum > 245 || lum < 8) continue;           // ignore paper and pure black
+            const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+            const bkt = buckets[key] || (buckets[key] = { r: 0, g: 0, b: 0, c: 0 });
+            bkt.r += r; bkt.g += g; bkt.b += b; bkt.c += 1;
+          }
+          const cols = Object.values(buckets)
+            .filter(x => x.c > 3)
+            .map(x => {
+              const r = Math.round(x.r / x.c), g = Math.round(x.g / x.c), b = Math.round(x.b / x.c);
+              const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+              return { r, g, b, count: x.c, sat: mx ? (mx - mn) / mx : 0, lum: (mx + mn) / 2 };
+            })
+            .sort((a2, b2) => b2.count - a2.count)
+            .slice(0, 12);
+          URL.revokeObjectURL(url);
+          if (!cols.length) return resolve(null);
+          const hex = c => "#" + [c.r, c.g, c.b].map(v => v.toString(16).padStart(2, "0")).join("");
+          // Main colour: the darkest well-used colour, since it sits behind white text.
+          const dark = [...cols].sort((a2, b2) => a2.lum - b2.lum)[0];
+          /* Accent must genuinely CONTRAST with the main colour, not merely be
+             saturated. Ranking on saturation alone picked a second navy almost
+             identical to the main one, because the navy dominates the logo. */
+          const apart = (c, d) => Math.abs(c.r - d.r) + Math.abs(c.g - d.g) + Math.abs(c.b - d.b);
+          const cands = cols.filter(c => apart(c, dark) > 120);
+          const vivid = (cands.length ? cands : cols.filter(c => hex(c) !== hex(dark)))
+            .sort((a2, b2) => (b2.sat * 0.7 + (b2.lum / 255) * 0.3) - (a2.sat * 0.7 + (a2.lum / 255) * 0.3))[0];
+          resolve({ primary: hex(dark), accent: hex(vivid || dark), all: cols.slice(0, 6).map(hex) });
+        } catch (e) { resolve(null); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    } catch (e) { resolve(null); }
+  });
+}
+
 async function brandingFetch(ownerEmail) {
   if (!supabase || !ownerEmail) return null;
   try {
@@ -3899,6 +3958,7 @@ function BrandingScreen({ identity, toast }) {
   const [paid, setPaid] = useState(null);
   const [busy, setBusy] = useState(false);
   const logoRef = useRef(null);
+  const [suggest, setSuggest] = useState(null);
   useEffect(() => {
     (async () => {
       setPaid(await subActive(email));
@@ -3922,6 +3982,7 @@ function BrandingScreen({ identity, toast }) {
     if (!file || !supabase) return;
     if (!/^image\//.test(file.type)) { toast("Choose an image file", "danger"); return; }
     if (file.size > 2 * 1024 * 1024) { toast("Logo must be under 2MB", "danger"); return; }
+    paletteFromImage(file).then(setSuggest);
     setBusy(true);
     try {
       const ext = (file.name.split(".").pop() || "png").toLowerCase().slice(0, 6);
@@ -3970,6 +4031,19 @@ function BrandingScreen({ identity, toast }) {
             <PmBtn kind="ghost" icon={Upload} disabled={busy} onClick={() => logoRef.current && logoRef.current.click()}>{row.logo_url ? "Replace logo" : "Upload logo"}</PmBtn>
           </div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 6 }}>PNG or SVG on a transparent background works best. Under 2MB.</div>
+          {suggest && <div style={{ marginTop: 12, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 13 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+              <Sparkles size={15} color="var(--gold-2)" />
+              <span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13 }}>Colours picked out of your logo</span>
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              {(suggest.all || []).map((c, i) => <span key={i} title={c} style={{ width: 26, height: 26, borderRadius: 6, background: c, border: "1px solid rgba(0,0,0,.15)" }} />)}
+              <PmBtn size="sm" kind="soft" onClick={() => setRow({ ...row, primary_color: suggest.primary, accent_color: suggest.accent })}>Use these</PmBtn>
+            </div>
+            <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.5 }}>
+              Main {suggest.primary}, accent {suggest.accent}. Applying only fills the boxes below, so you can adjust before saving.
+            </div>
+          </div>}
         </div>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
           {[["primary_color", "Main colour", "Headers and sidebar"], ["accent_color", "Accent colour", "Buttons and highlights"]].map(([k, lab, note]) =>
