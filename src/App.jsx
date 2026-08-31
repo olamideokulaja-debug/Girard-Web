@@ -3208,6 +3208,36 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const canSwitch = identity0.allAccess;
   const [activeRole, setActiveRole] = useState(identity0.role);
   const identity = { ...identity0, role: activeRole };
+  /* WhatsApp-style counts on the nav. Each is a real count of things waiting,
+     refreshed on a slow poll so a badge cannot go stale for long. */
+  const [badges, setBadges] = useState({});
+  useEffect(() => {
+    let dead = false;
+    const load = async () => {
+      if (!supabase) return;
+      const out = {};
+      try {
+        const seen = (() => { try { return localStorage.getItem("girard_inbox_seen") || ""; } catch (e) { return ""; } })();
+        const { data: msgs } = await supabase.from("messages").select("tenant,sender,created_at");
+        if (msgs) {
+          const newest = {};
+          msgs.forEach(m => { const k = m.tenant; if (!newest[k] || String(m.created_at) > String(newest[k].created_at)) newest[k] = m; });
+          out.inbox = Object.values(newest).filter(m => m.sender !== "girard" && (!seen || String(m.created_at) > seen)).length;
+        }
+        const { data: jobs } = await supabase.from("jobs").select("id,status");
+        if (jobs) out.maint = jobs.filter(j => String(j.status || "").toLowerCase() !== "completed" && String(j.status || "").toLowerCase() !== "rated").length;
+        const { data: enq } = await supabase.from("enquiries").select("id,status");
+        if (enq) out.enquiries = enq.filter(e => String(e.status || "New").toLowerCase() === "new").length;
+        const { data: apps } = await supabase.from("applications").select("id,status");
+        if (apps) out.apps = apps.filter(a => String(a.status || "").toLowerCase() === "applied").length;
+      } catch (e) {}
+      if (!dead) setBadges(out);
+    };
+    load();
+    const t = setInterval(load, 45000);
+    return () => { dead = true; clearInterval(t); };
+  }, [activeRole]);
+
   let nav = NAV[activeRole] || NAV.agent; if (activeRole === "admin" && !isSuperAdmin(identity.email)) nav = nav.filter(x => x[0] !== "financials" && x[0] !== "adminreq");
   if (activeRole === "admin" && !isApprovedAdmin(identity.email)) nav = nav.filter(x => x[0] !== "audit" && x[0] !== "payouts");
   const [view, setView] = useState(nav[0][0]);
@@ -3220,7 +3250,6 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   const switchWorkspace = (r) => { setActiveRole(r); setView((NAV[r] || NAV.agent)[0][0]); setRoleMenu(false); };
   const [st, setStRaw] = useState(pmLoad);
   const [nav2Open, setNav2Open] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const setSt = (next) => { syncShared(st, next); setStRaw(next); pmSave(next); };
   // Hydrate shared listings/invoices, and this user's own payout account, so the
@@ -3303,7 +3332,11 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     <aside className={"pm-side" + (nav2Open ? " open" : "")}>
       <div role="button" tabIndex={0} title="Go to dashboard" onClick={() => { setView(nav[0][0]); setNav2Open(false); }} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { setView(nav[0][0]); setNav2Open(false); } }} style={{ padding: "4px 8px 18px", cursor: "pointer" }}><BrandMark /></div>
       <nav style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
-        {nav.map(([k, label, Icon]) => <button key={k} className={"pm-nav" + (view === k ? " on" : "")} onClick={() => { setView(k); setNav2Open(false); }}><Icon size={17} />{label}</button>)}
+        {nav.map(([k, label, Icon]) => <button key={k} className={"pm-nav" + (view === k ? " on" : "")} onClick={() => { setView(k); setNav2Open(false); }}>
+          <Icon size={17} />
+          <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
+          {badges[k] > 0 && <span style={{ minWidth: 19, height: 19, padding: "0 6px", borderRadius: 999, background: "#D0453B", color: "#fff", fontSize: 11, fontWeight: 700, display: "grid", placeItems: "center", lineHeight: 1, flexShrink: 0 }}>{badges[k] > 99 ? "99+" : badges[k]}</span>}
+        </button>)}
       </nav>
       <button className="pm-nav" onClick={onSwitchRole}><LayoutGrid size={17} />Change role</button>
       <div className="pm-show-mobile" style={{ display: "none", flexDirection: "column", gap: 3, borderTop: "1px solid var(--navy-line)", marginTop: 6, paddingTop: 6 }}>
@@ -3331,7 +3364,7 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
         <div className="pm-topbar-right" style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
           <select value={cur} onChange={e => setCur(e.target.value)} title="Display currency" className="pm-hide-mobile" style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "6px 8px", color: "var(--ink)", fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>{["\u20a6", "$", "\u00a3", "\u20ac"].map(x => <option key={x} value={x}>{x}</option>)}</select>
           <button onClick={() => setTheme(t => t === "dark" ? "light" : "dark")} title="Toggle theme" style={{ background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, cursor: "pointer", color: "var(--ink)", width: 34, height: 34, display: "grid", placeItems: "center" }}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
-          <NotifBell identity={identity} />
+          <NotifBell identity={identity} onGo={setView} />
           {canSwitch && <div className="pm-hide-mobile" style={{ position: "relative" }}>
             <button onClick={() => setRoleMenu(o => !o)} style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--navy)", color: "#fff", border: "1px solid var(--navy-line)", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
               <span style={{ color: "var(--gold)", fontSize: 10, fontWeight: 800, letterSpacing: .5 }}>WORKSPACE</span>
@@ -3346,16 +3379,6 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
             </div>}
           </div>}
           <div className="pm-hide-mobile" style={{ position: "relative" }}>
-            <button onClick={() => setNotifOpen(o => !o)} title="Notifications" style={{ position: "relative", background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, width: 36, height: 36, display: "grid", placeItems: "center", cursor: "pointer", color: "var(--ink)" }}>
-              <Bell size={17} /><span style={{ position: "absolute", top: 7, right: 8, width: 7, height: 7, borderRadius: 999, background: "var(--gold)" }} />
-            </button>
-            {notifOpen && <div style={{ position: "absolute", right: 0, top: 44, width: 300, background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, boxShadow: "0 20px 50px rgba(10,31,60,.16)", zIndex: 50, overflow: "hidden" }}>
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--cream-line)", fontWeight: 700, color: "var(--ink)", fontSize: 13.5 }}>Notifications</div>
-              {NOTIFS.map((n, i) => <div key={i} style={{ padding: "12px 16px", borderBottom: i < NOTIFS.length - 1 ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 10 }}>
-                <span style={{ width: 7, height: 7, borderRadius: 999, background: n.unread ? "var(--gold)" : "var(--cream-line)", marginTop: 5, flexShrink: 0 }} />
-                <div><div style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.4 }}>{n.text}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{n.time}</div></div>
-              </div>)}
-            </div>}
           </div>
           <button onClick={() => { setView("settings"); setNav2Open(false); }} title="Settings" className="pm-hide-mobile" style={{ background: "none", border: "1px solid var(--cream-line)", borderRadius: 8, width: 36, height: 36, display: "grid", placeItems: "center", cursor: "pointer", color: "var(--ink)" }}><Settings size={17} /></button>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -4193,6 +4216,41 @@ function RequestModal({ svc, onClose, onSubmit }) {
    STAGE 9: notifications, settings and admin user management.
    =================================================================== */
 
+/* Notifications were hard-coded demo rows with a permanently lit dot, which is
+   why they never cleared when viewed. The bell now reads the real notifications
+   table, marks them seen when opened, and links each one to the right screen.
+   "Seen" is kept per user in localStorage: good enough per device, and it needs
+   no schema change. */
+/* Where each notification should take you. Matched on the wording we generate. */
+function notifTarget(n) {
+  const t = String((n && (n.title || n.text)) || "").toLowerCase();
+  if (t.includes("message")) return "inbox";
+  if (t.includes("vendor") || t.includes("job") || t.includes("repair")) return "maint";
+  if (t.includes("enquiry") || t.includes("enquiries")) return "enquiries";
+  if (t.includes("application")) return "apps";
+  if (t.includes("lease") || t.includes("agreement") || t.includes("signature")) return "docs";
+  if (t.includes("rent") || t.includes("payment") || t.includes("invoice")) return "rent";
+  if (t.includes("listing") || t.includes("propert")) return "props";
+  return null;
+}
+function stamp(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + " \u00b7 " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+function timeAgo(iso) {
+  if (!iso) return "";
+  const then = new Date(iso).getTime(); if (isNaN(then)) return "";
+  const mins = Math.round((Date.now() - then) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + "m ago";
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return hrs + "h ago";
+  const days = Math.round(hrs / 24);
+  if (days < 7) return days + "d ago";
+  return new Date(iso).toLocaleDateString();
+}
 const NOTIFS = [
   { text: "New application received for a 3-Bed in Ikoyi", time: "12m ago", unread: true },
   { text: "Rent payment confirmed for INV-9001", time: "1h ago", unread: true },
@@ -6254,7 +6312,7 @@ function DocumentsScreen({ identity, toast }) {
 }
 
 /* ---------- Notification bell + Activity log ---------- */
-function NotifBell({ identity }) {
+function NotifBell({ identity, onGo }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [read, setRead] = useState(() => notifReadSet());
@@ -6273,11 +6331,19 @@ function NotifBell({ identity }) {
         <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--cream-line)", fontWeight: 700, color: "var(--ink)" }}>Notifications</div>
         <div style={{ maxHeight: 380, overflow: "auto" }}>
           {items.length === 0 ? <div style={{ padding: 20, color: "var(--muted)", fontSize: 13.5 }}>You're all caught up.</div>
-            : items.map(n => <div key={n.id} style={{ padding: "11px 16px", borderBottom: "1px solid var(--cream-line)", background: read.has(n.id) ? "transparent" : "var(--gold-soft)" }}>
-              <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 13.5 }}>{n.title}</div>
-              {n.body && <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{n.body}</div>}
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{n.created_at ? new Date(n.created_at).toLocaleString() : ""}</div>
-            </div>)}
+            : items.map(n => {
+              /* Clicking a notification should land you on the thing it is
+                 about, rather than leaving you to hunt for it. */
+              const target = notifTarget(n);
+              return <div key={n.id} role={target ? "button" : undefined} tabIndex={target ? 0 : undefined}
+                onClick={() => { if (target && onGo) { onGo(target); setOpen(false); } }}
+                onKeyDown={e => { if (target && onGo && (e.key === "Enter" || e.key === " ")) { onGo(target); setOpen(false); } }}
+                style={{ padding: "11px 16px", borderBottom: "1px solid var(--cream-line)", background: read.has(n.id) ? "transparent" : "var(--gold-soft)", cursor: target ? "pointer" : "default" }}>
+                <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: 13.5 }}>{n.title}</div>
+                {n.body && <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{n.body}</div>}
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>{timeAgo(n.created_at)}</div>
+              </div>;
+            })}
         </div>
       </div>
     </>}
@@ -6449,7 +6515,7 @@ function TenantPortal({ identity, toast, section, go }) {
     <PmCard>
       <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, height: 340, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
         {msgs.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13.5, margin: "auto" }}>No messages yet. Say hello, ask a question, or raise a concern.</div>
-          : msgs.map(m => <div key={m.id} style={{ alignSelf: m.sender === "tenant" ? "flex-end" : "flex-start", maxWidth: "78%", background: m.sender === "tenant" ? "var(--navy)" : "var(--white)", color: m.sender === "tenant" ? "#fff" : "var(--ink)", border: m.sender === "tenant" ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "9px 13px", fontSize: 13.5 }}>{m.body}</div>)}
+          : msgs.map(m => <div key={m.id} style={{ alignSelf: m.sender === "tenant" ? "flex-end" : "flex-start", maxWidth: "78%", background: m.sender === "tenant" ? "var(--navy)" : "var(--white)", color: m.sender === "tenant" ? "#fff" : "var(--ink)", border: m.sender === "tenant" ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "9px 13px", fontSize: 13.5 }}><div>{m.body}</div><div style={{ fontSize: 10.5, marginTop: 4, opacity: .65 }}>{stamp(m.created_at)}</div></div>)}
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder="Type a message" style={{ ...inp, flex: 1 }} /><PmBtn kind="gold" onClick={send}>Send</PmBtn></div>
     </PmCard>
@@ -6486,7 +6552,16 @@ function MessagesInbox({ identity, toast }) {
   const [all, setAll] = useState([]); const [active, setActive] = useState(null); const [text, setText] = useState(""); const [invite, setInvite] = useState(false); const [bTick, setBTick] = useState(0);
   const load = () => msgFetchAll().then(setAll).catch(() => {});
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
-  const threads = [...new Set(all.map(m => m.tenant))].map(email => { const ms = all.filter(m => m.tenant === email); return { email, last: ms[ms.length - 1], count: ms.length }; });
+  /* A thread counts as unread when the newest message came from the tenant and
+     arrived after the last time this inbox was opened on this device. */
+  const [seenAt, setSeenAt] = useState(() => { try { return localStorage.getItem("girard_inbox_seen") || ""; } catch (e) { return ""; } });
+  useEffect(() => { try { localStorage.setItem("girard_inbox_seen", new Date().toISOString()); } catch (e) {} }, []);
+  const threads = [...new Set(all.map(m => m.tenant))].map(email => {
+    const ms = all.filter(m => m.tenant === email);
+    const last = ms[ms.length - 1];
+    const unread = !!(last && last.sender !== "girard" && (!seenAt || String(last.created_at || "") > seenAt) && active !== email);
+    return { email, last, count: ms.length, unread };
+  });
   const thread = active ? all.filter(m => m.tenant === active) : [];
   const reply = async () => { if (!text.trim() || !active) return; const row = await msgSend(active, { sender: "girard", body: text }); setAll(a => [...a, row]); setText(""); notify({ title: "Reply from Girard", body: text.slice(0, 60), audience: active }); };
   return <div>
@@ -6495,15 +6570,21 @@ function MessagesInbox({ identity, toast }) {
       <PmCard pad={0} style={{ overflow: "hidden" }}>
         {threads.length === 0 ? <div style={{ padding: 18, color: "var(--muted)", fontSize: 13.5 }}>No messages yet.</div>
           : threads.filter(t => (bTick, !isBlocked(t.email))).map(t => <button key={t.email} onClick={() => setActive(t.email)} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 14px", border: "none", borderBottom: "1px solid var(--cream-line)", background: active === t.email ? "var(--gold-soft)" : "transparent", cursor: "pointer" }}>
-            <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.email}</div>
-            <div style={{ fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.last ? (t.last.sender === "girard" ? "You: " : "") + t.last.body : ""}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+              <div style={{ fontWeight: t.unread ? 800 : 700, color: "var(--ink)", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.email}</div>
+              <div style={{ fontSize: 10.5, color: "var(--muted)", flexShrink: 0 }}>{t.last ? timeAgo(t.last.created_at) : ""}</div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 12, color: t.unread ? "var(--ink)" : "var(--muted)", fontWeight: t.unread ? 600 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.last ? (t.last.sender === "girard" ? "You: " : "") + t.last.body : ""}</div>
+              {t.unread && <span style={{ minWidth: 8, height: 8, borderRadius: 999, background: "var(--gold)", flexShrink: 0 }} />}
+            </div>
           </button>)}
       </PmCard>
       <PmCard>
         {!active ? <div style={{ color: "var(--muted)", padding: "34px 0", textAlign: "center" }}>Select a conversation to reply.</div> : <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 10 }}><span style={{ fontWeight: 700, color: "var(--ink)" }}>{active}</span><ReportBlock targetType="conversation" targetId={active} targetLabel={"Conversation with " + active} userRef={active} reporter="girard" toast={toast} onBlocked={() => { setActive(null); setBTick(t => t + 1); }} /></div>
           <div style={{ background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: 14, height: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
-            {thread.map(m => <div key={m.id} style={{ alignSelf: m.sender === "girard" ? "flex-end" : "flex-start", maxWidth: "78%", background: m.sender === "girard" ? "var(--navy)" : "var(--white)", color: m.sender === "girard" ? "#fff" : "var(--ink)", border: m.sender === "girard" ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "9px 13px", fontSize: 13.5 }}>{m.body}</div>)}
+            {thread.map(m => <div key={m.id} style={{ alignSelf: m.sender === "girard" ? "flex-end" : "flex-start", maxWidth: "78%", background: m.sender === "girard" ? "var(--navy)" : "var(--white)", color: m.sender === "girard" ? "#fff" : "var(--ink)", border: m.sender === "girard" ? "none" : "1px solid var(--cream-line)", borderRadius: 12, padding: "9px 13px", fontSize: 13.5 }}><div>{m.body}</div><div style={{ fontSize: 10.5, marginTop: 4, opacity: .65 }}>{stamp(m.created_at)}</div></div>)}
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && reply()} placeholder="Type a reply" style={{ flex: 1, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit" }} /><PmBtn kind="gold" onClick={reply}>Reply</PmBtn></div>
         </>}
