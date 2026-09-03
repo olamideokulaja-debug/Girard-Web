@@ -5642,7 +5642,7 @@ function LeadershipSection() {
       <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
         {TEAM.map(t => (
           <button key={t.name} onClick={() => setOpen(t)} className="lift card-soft" style={{ background: "var(--white)", borderRadius: 14, overflow: "hidden", border: "none", padding: 0, cursor: "pointer", textAlign: "left", display: "block", width: "100%" }}>
-            <div style={{ height: 300, background: "var(--navy-2)", overflow: "hidden" }}><img src={t.photo} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} /></div>
+            <div style={{ aspectRatio: "4 / 5", background: "var(--navy-2)", overflow: "hidden" }}><img src={t.photo} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%", display: "block" }} /></div>
             <div style={{ padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
               <div style={{ minWidth: 0 }}>
                 <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{t.name}</div>
