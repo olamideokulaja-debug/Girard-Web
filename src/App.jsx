@@ -760,74 +760,52 @@ function Landing({ onStart, onSignIn }) {
       `}</style>
 
       {/* NAV */}
-      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,31,60,.9)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--navy-line)" }}>
-        <div style={{ maxWidth: 1560, margin: "0 auto", height: 74, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap", padding: "0 26px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+      {/* Flat navigation: seven destinations, no dropdowns. The bar runs the
+          full width with the mark hard left and the actions hard right, rather
+          than sitting in a centred column with dead space either side. */}
+      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,31,60,.92)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--navy-line)" }}>
+        <div style={{ height: 74, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "0 26px" }}>
+
+          <button onClick={() => go("home")} style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer" }} aria-label="Girard, home">
             <GirardMark size={38} />
-            <div>
+            <div style={{ textAlign: "left" }}>
               <div className="serif" style={{ fontSize: 20, fontWeight: 600, letterSpacing: 1, color: "#fff" }}>GIRARD</div>
-              <div style={{ fontSize: 8, letterSpacing: 2.6, color: "var(--gold)", marginTop: -1 }}>PROPERTY LIMITED</div>
+              <div style={{ fontSize: 8.5, letterSpacing: 2.6, color: "var(--gold)", fontWeight: 600 }}>PROPERTY LIMITED</div>
             </div>
-          </div>
-          <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", whiteSpace: "nowrap", flex: 1, justifyContent: "space-evenly", padding: "0 22px" }}>
-            {/* Home is now a single page: the review asked for Platform,
-                Partners and Developments to live ON the homepage rather than
-                behind a dropdown, so Home is a plain link and those sections
-                are reached by scrolling or by the in-page links. */}
-            <button className="nav-link" onClick={() => go("home")} style={tab === "home" ? { color: "var(--gold)" } : undefined}>Home</button>
-            <div className="navdrop">
-              <button className="nav-link" onClick={() => go("leadership")} style={["leadership", "excellence", "advantages", "who"].includes(tab) ? { color: "var(--gold)" } : undefined}>About &#9662;</button>
-              <div className="navdrop-menu">
-                <button className={"navdrop-item" + (tab === "leadership" ? " active" : "")} onClick={() => go("leadership")}>Leadership</button>
-                <button className={"navdrop-item" + (tab === "who" ? " active" : "")} onClick={() => go("who")}>Who we serve</button>
-                <button className={"navdrop-item" + (tab === "excellence" ? " active" : "")} onClick={() => go("excellence")}>Redefining excellence in real estate development</button>
-                <button className={"navdrop-item" + (tab === "advantages" ? " active" : "")} onClick={() => go("advantages")}>Strategic advantages that set us apart</button>
-              </div>
-            </div>
-            <div className="navdrop">
-              <button className="nav-link" onClick={() => go("services")} style={["services", "tour"].includes(tab) ? { color: "var(--gold)" } : undefined}>Services &#9662;</button>
-              <div className="navdrop-menu">
-                <button className={"navdrop-item" + (tab === "services" ? " active" : "")} onClick={() => go("services")}>What we do</button>
-                <button className={"navdrop-item" + (tab === "tour" ? " active" : "")} onClick={() => go("tour")}>How it works</button>
-                <button className={"navdrop-item" + (tab === "swapinfo" ? " active" : "")} onClick={() => go("swapinfo")}>Property swap</button>
-              </div>
-            </div>
-            <div className="navdrop">
-              <button className="nav-link" onClick={() => go("listings")} style={["listings", "returns"].includes(tab) ? { color: "var(--gold)" } : undefined}>Listings &#9662;</button>
-              <div className="navdrop-menu">
-                <button className={"navdrop-item" + (tab === "listings" ? " active" : "")} onClick={() => go("listings")}>Browse our listings</button>
-                <button className={"navdrop-item" + (tab === "bourdillon" ? " active" : "")} onClick={() => go("bourdillon")}>Our developments</button>
-                <button className={"navdrop-item" + (tab === "returns" ? " active" : "")} onClick={() => go("returns")}>Estimate your returns</button>
-              </div>
-            </div>
-            <button className="nav-link" onClick={() => go("contact")} style={tab === "contact" ? { color: "var(--gold)" } : undefined}>Contact</button>
+          </button>
+
+          <nav className="mainnav" style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "nowrap", overflow: "hidden" }}>
+            {[["home", "Home"], ["listings", "Listings"], ["bourdillon", "Developments"], ["services", "Services"],
+              ["swapinfo", "Property swap"], ["leadership", "About"], ["contact", "Contact"]].map(([k, label]) =>
+              <button key={k} className="nav-link" onClick={() => go(k)}
+                style={tab === k ? { color: "var(--gold)" } : undefined}>{label}</button>)}
           </nav>
-          <div className="nav-cta" style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ padding: "9px 16px" }}>Sign in</a>
-            <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <button className="btn-line on-navy nav-signin" onClick={onStart}>Sign in</button>
+            <button className="btn-gold" onClick={onStart}>Get started <ArrowUpRight size={15} /></button>
+            <button className="menu-btn" onClick={() => setMenu(m => !m)} aria-label="Menu" style={{ display: "none", background: "none", border: "1px solid var(--navy-line)", borderRadius: 8, width: 40, height: 40, color: "#fff", cursor: "pointer" }}>
+              {menu ? <X size={18} /> : <Menu size={18} />}
+            </button>
           </div>
-          <button className="burger" onClick={() => setMenu(m => !m)} style={{ display: "none", background: "none", border: "none", cursor: "pointer", color: "#fff" }}>{menu ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
-        {menu && (
-          <div className="wrap" style={{ paddingBottom: 18, display: "flex", flexDirection: "column", gap: 14 }}>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("home"); setMenu(false); }}>Home</button>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>About</div>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("leadership"); setMenu(false); }}>Leadership</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("excellence"); setMenu(false); }}>Redefining excellence</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("advantages"); setMenu(false); }}>Strategic advantages</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("who"); setMenu(false); }}>Who we serve</button>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Services</div>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("services"); setMenu(false); }}>What we do</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("tour"); setMenu(false); }}>How it works</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("swapinfo"); setMenu(false); }}>Property swap</button>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Listings</div>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("listings"); setMenu(false); }}>Browse our listings</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("bourdillon"); setMenu(false); }}>Our developments</button>
-            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("returns"); setMenu(false); }}>Estimate your returns</button>
-            <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("contact"); setMenu(false); }}>Contact</button>
-            <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
-          </div>
-        )}
+
+        {menu && <div className="mobilemenu" style={{ borderTop: "1px solid var(--navy-line)", padding: "10px 26px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
+          {[["home", "Home"], ["listings", "Listings"], ["bourdillon", "Developments"], ["services", "Services"],
+            ["swapinfo", "Property swap"], ["leadership", "About"], ["tour", "How it works"], ["returns", "Estimate your returns"], ["contact", "Contact"]].map(([k, label]) =>
+            <button key={k} className="nav-link" style={{ textAlign: "left", padding: "10px 0" }}
+              onClick={() => { go(k); setMenu(false); }}>{label}</button>)}
+        </div>}
+
+        <style>{`
+          .nav-link{padding:9px 14px;border-radius:6px}
+          .nav-link:hover{color:#fff;background:rgba(255,255,255,.06)}
+          @media(max-width:1180px){
+            .mainnav{display:none!important}
+            .menu-btn{display:grid!important;place-items:center}
+          }
+          @media(max-width:560px){ .nav-signin{display:none!important} }
+        `}</style>
       </header>
 
       {/* HERO */}
@@ -869,7 +847,7 @@ function Landing({ onStart, onSignIn }) {
       </section>)}
 
       {/* HOW IT WORKS (own tab) */}
-      {tab === "tour" && (<section style={{ background: "var(--navy)", color: "#fff", minHeight: "calc(100vh - 74px)", display: "flex", alignItems: "center", padding: "36px 0" }}>
+      {(tab === "tour" || tab === "services") && (<section style={{ background: "var(--navy)", color: "#fff", minHeight: "calc(100vh - 74px)", display: "flex", alignItems: "center", padding: "36px 0" }}>
         <div className="wrap" style={{ width: "100%" }}>
           <div style={{ textAlign: "center", marginBottom: 26 }}>
             <div style={{ color: "var(--gold)", fontSize: 13, letterSpacing: 3, fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>See how it works</div>
@@ -893,7 +871,7 @@ function Landing({ onStart, onSignIn }) {
       </section>)}
 
       {/* ABOUT */}
-      {tab === "excellence" && (<section id="about" style={{ background: "var(--ivory-2)", padding: "84px 0" }}>
+      {(tab === "excellence" || tab === "leadership") && (<section id="about" style={{ background: "var(--ivory-2)", padding: "84px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 820 }}>
             <Rule light />
@@ -1031,7 +1009,7 @@ function Landing({ onStart, onSignIn }) {
       {tab === "listings" && <PublicListings onSignIn={onSignIn} />}
 
       {/* WHY CHOOSE GIRARD */}
-      {tab === "advantages" && (<section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
+      {(tab === "advantages" || tab === "leadership") && (<section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 640, marginBottom: 40 }}>
             <Rule />
@@ -1047,10 +1025,10 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>)}
 
-      {tab === "returns" && <RoiCalculator />}
+      {(tab === "returns" || tab === "bourdillon") && <RoiCalculator />}
 
       {/* WHO WE SERVE */}
-      {tab === "who" && (<section id="who" style={{ background: "var(--ivory)", padding: "88px 0" }}>
+      {(tab === "who" || tab === "leadership") && (<section id="who" style={{ background: "var(--ivory)", padding: "88px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 640, marginBottom: 46 }}>
             <Rule light />
