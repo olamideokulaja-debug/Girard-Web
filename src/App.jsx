@@ -716,7 +716,7 @@ function Landing({ onStart, onSignIn }) {
   return (
     <div>
       <style>{`
-        .wrap{max-width:1440px;margin:0 auto;padding:0 40px}
+        .wrap{max-width:none;margin:0 auto;padding:0 26px}
         .eyebrow{font-size:12px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase}
         .btn-gold{background:var(--gold);color:#201601;border:none;padding:13px 24px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .18s,transform .06s;letter-spacing:.2px}
         .btn-gold:hover{background:var(--gold-2)}
@@ -1561,7 +1561,7 @@ function BrandMark({ dark }) {
 
 function EntryStyles() {
   return <style>{`
-    .wrap{max-width:1440px;margin:0 auto;padding:0 40px}
+    .wrap{max-width:none;margin:0 auto;padding:0 26px}
     .eyebrow{font-size:12px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase}
     .btn-gold{background:var(--gold);color:#201601;border:none;padding:13px 24px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .18s;letter-spacing:.2px}
     .btn-gold:hover{background:var(--gold-2)}
