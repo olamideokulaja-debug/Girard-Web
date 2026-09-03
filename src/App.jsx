@@ -241,8 +241,13 @@ function HeroTower() {
     shaft(2.1, 13, 4.5, 1.0, 2.6);
     shaft(1.7, 9, 1.6, 4.4, 1.6);
 
-    for (let i = 0; i < 70; i++) {
-      const a = Math.random() * Math.PI * 2, r = 16 + Math.random() * 70;
+    // The filler ring starts well outside the camera (which orbits at ~39 from
+    // origin). At the old inner radius of 16 a filler swung right through the
+    // camera every rotation and rendered as a flat black slab across a third of
+    // the frame. That was invisible while the framed photo covered the right
+    // half; with the photo gone it is the first thing you see.
+    for (let i = 0; i < 90; i++) {
+      const a = Math.random() * Math.PI * 2, r = 52 + Math.random() * 68;
       const h = 3 + Math.pow(Math.random(), 2.2) * 20;
       const w = 1.4 + Math.random() * 2.4;
       const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w),
@@ -817,7 +822,12 @@ function Landing({ onStart, onSignIn }) {
         <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", background: "radial-gradient(1000px 620px at 70% 50%, transparent 0%, rgba(10,26,56,.15) 58%, var(--navy) 100%)" }} />
 
         <div className="wrap" style={{ paddingTop: 96, paddingBottom: 104, position: "relative", zIndex: 2 }}>
-          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.02fr .98fr", gap: 40, alignItems: "center" }}>
+          {/* The right column is deliberately empty. The framed render and the
+              properties-under-management card were both removed on 3 Sept 2026:
+              the render duplicated the tower the 3D scene already draws, and the
+              count was not a figure worth standing behind on the landing page.
+              The empty column is what lets the towers be seen. */}
+          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,700px) 1fr", gap: 40, alignItems: "center" }}>
             <div className="rise">
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 22 }}>Digital management &amp; cross-border swaps</div>
               <h1 className="serif hero-h">
@@ -836,15 +846,7 @@ function Landing({ onStart, onSignIn }) {
                 <ShieldCheck size={16} color="var(--gold)" /> Governance-led and compliance-first, with human oversight at every critical step.
               </div>
             </div>
-            <div className="hero-photo rise" style={{ position: "relative" }}>
-              <div style={{ border: "1px solid var(--gold)", padding: 10, borderRadius: 4 }}>
-                <Photo src={IMG.hero} hue={210} alt="Modern residential towers" style={{ height: 440 }} overlay="linear-gradient(180deg, rgba(10,31,60,.18), rgba(10,31,60,.55))" />
-              </div>
-              <div style={{ position: "absolute", bottom: -22, left: -22, background: "var(--white)", color: "var(--ink)", borderRadius: 8, padding: "16px 20px", boxShadow: "0 20px 50px rgba(0,0,0,.35)" }}>
-                <PropertyCounter style={{ fontSize: 30, fontWeight: 600, color: "var(--ink)", display: "block" }} />
-                <div style={{ fontSize: 12, color: "var(--muted)", maxWidth: 140 }}>Properties under management</div>
-              </div>
-            </div>
+            <div aria-hidden="true" />
           </div>
         </div>
       </section>)}
