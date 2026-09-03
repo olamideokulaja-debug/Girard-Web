@@ -5661,7 +5661,7 @@ function SwapModel() {
       const g = new THREE.BoxGeometry(1.7, h, 1.7);
       const grp = new THREE.Group();
       const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
-        color: gold ? 0x7d6230 : 0x0f1e3a, roughness: 0.34, metalness: 0.9 }));
+        color: gold ? 0xA07C36 : 0x1B3563, roughness: 0.4, metalness: 0.72 }));
       const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
         new THREE.LineBasicMaterial({ color: 0xC6A15B, transparent: true, opacity: 0.9 }));
       m.position.y = h / 2; e.position.y = h / 2;
@@ -5723,7 +5723,7 @@ const SWAP_STEPS = [
 function SwapInfoSection({ go }) {
   return <>
     <section style={{ background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
-      <div className="wrap" style={{ padding: "84px 0 92px" }}>
+      <div className="wrap" style={{ paddingTop: 84, paddingBottom: 92 }}>
         <div className="swapinfo-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 54, alignItems: "center" }}>
           <div>
             <Rule />
