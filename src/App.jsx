@@ -776,7 +776,7 @@ function Landing({ onStart, onSignIn }) {
 
           <nav className="mainnav" style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "nowrap", overflow: "hidden" }}>
             {[["home", "Home"], ["listings", "Listings"], ["bourdillon", "Developments"], ["services", "Services"],
-              ["swapinfo", "Property swap"], ["leadership", "About"], ["contact", "Contact"]].map(([k, label]) =>
+              ["swapinfo", "Property swap"], ["leadership", "Our People"], ["about", "About"], ["contact", "Contact"]].map(([k, label]) =>
               <button key={k} className="nav-link" onClick={() => go(k)}
                 style={tab === k ? { color: "var(--gold)" } : undefined}>{label}</button>)}
           </nav>
@@ -792,7 +792,7 @@ function Landing({ onStart, onSignIn }) {
 
         {menu && <div className="mobilemenu" style={{ borderTop: "1px solid var(--navy-line)", padding: "10px 26px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
           {[["home", "Home"], ["listings", "Listings"], ["bourdillon", "Developments"], ["services", "Services"],
-            ["swapinfo", "Property swap"], ["leadership", "About"], ["tour", "How it works"], ["returns", "Estimate your returns"], ["contact", "Contact"]].map(([k, label]) =>
+            ["swapinfo", "Property swap"], ["leadership", "Our People"], ["about", "About"], ["tour", "How it works"], ["returns", "Estimate your returns"], ["contact", "Contact"]].map(([k, label]) =>
             <button key={k} className="nav-link" style={{ textAlign: "left", padding: "10px 0" }}
               onClick={() => { go(k); setMenu(false); }}>{label}</button>)}
         </div>}
@@ -871,7 +871,7 @@ function Landing({ onStart, onSignIn }) {
       </section>)}
 
       {/* ABOUT */}
-      {(tab === "excellence" || tab === "leadership") && (<section id="about" style={{ background: "var(--ivory-2)", padding: "84px 0" }}>
+      {(tab === "excellence" || tab === "about") && (<section id="about" style={{ background: "var(--ivory-2)", padding: "84px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 820 }}>
             <Rule light />
@@ -1009,7 +1009,7 @@ function Landing({ onStart, onSignIn }) {
       {tab === "listings" && <PublicListings onSignIn={onSignIn} />}
 
       {/* WHY CHOOSE GIRARD */}
-      {(tab === "advantages" || tab === "leadership") && (<section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
+      {(tab === "advantages" || tab === "about") && (<section style={{ background: "var(--navy)", color: "#fff", padding: "88px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 640, marginBottom: 40 }}>
             <Rule />
@@ -1028,7 +1028,7 @@ function Landing({ onStart, onSignIn }) {
       {(tab === "returns" || tab === "bourdillon") && <RoiCalculator />}
 
       {/* WHO WE SERVE */}
-      {(tab === "who" || tab === "leadership") && (<section id="who" style={{ background: "var(--ivory)", padding: "88px 0" }}>
+      {(tab === "who" || tab === "about") && (<section id="who" style={{ background: "var(--ivory)", padding: "88px 0" }}>
         <div className="wrap">
           <div style={{ maxWidth: 640, marginBottom: 46 }}>
             <Rule light />
@@ -1112,7 +1112,7 @@ function Landing({ onStart, onSignIn }) {
               ["Company", [
                 ["About", "/about"],
                 ["Why Girard", "/why-girard"],
-                ["Leadership", "/leadership"],
+                ["Our People", "/leadership"],
                 ["Contact", "/contact"],
                 ["Sign in", "signin"]
               ]]
@@ -5896,7 +5896,7 @@ function LeadershipSection() {
       <div style={{ maxWidth: 780, marginBottom: 40 }}>
         <Rule />
         <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Our people</div>
-        <h2 className="serif sec-h">Our leadership.</h2>
+        <h2 className="serif sec-h">The people behind the work.</h2>
         <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65 }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships. Select a profile to read more.</p>
       </div>
       <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
