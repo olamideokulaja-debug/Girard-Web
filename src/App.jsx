@@ -7681,7 +7681,7 @@ function ConsentBanner() {
   const [show, setShow] = useState(() => { try { return localStorage.getItem("girard_consent") !== "1"; } catch (e) { return true; } });
   if (!show) return null;
   const ok = () => { try { localStorage.setItem("girard_consent", "1"); } catch (e) {} setShow(false); };
-  return <div style={{ position: "fixed", left: 16, right: 16, bottom: 16, zIndex: 9999, maxWidth: 640, margin: "0 auto", background: "var(--navy)", color: "#fff", borderRadius: 12, padding: "14px 16px", boxShadow: "0 18px 50px rgba(0,0,0,.4)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+  return <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 9999, background: "rgba(10,26,56,.97)", backdropFilter: "blur(8px)", color: "#fff", borderTop: "1px solid var(--navy-line)", padding: "12px 20px", display: "flex", gap: 14, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
     <div style={{ flex: 1, minWidth: 220, fontSize: 12.5, color: "rgba(255,255,255,.85)", lineHeight: 1.5 }}>We use essential cookies and local storage to run Girard and remember your preferences, in line with the Nigeria Data Protection Act. See Data & privacy for details.</div>
     <button onClick={ok} style={{ background: "var(--gold)", color: "#201601", border: "none", borderRadius: 8, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Got it</button>
   </div>;
