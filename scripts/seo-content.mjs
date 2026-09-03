@@ -111,12 +111,15 @@ export const AUDIENCES = [
 ];
 
 export const TEAM = [
-  { name: "Dr. Olamide Okulaja", role: "Executive Chairman", photo: "/img/team-1.jpg", bio: "A respected healthcare executive and entrepreneur with over two decades across clinical practice, public health and healthcare management, and CEO of Genesys Health Information Systems. His expertise in systems reform, policy and strategic leadership guides Girard's mission of excellence and impact." },
-  { name: "Jennifer Kaja", role: "CEO / Managing Director", photo: "/img/team-2.jpg", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
-  { name: "Pedro Cabulo", role: "Chief Strategy & Partnerships Officer", photo: "/img/team-3.jpg", bio: "Leads corporate strategy and cultivates the partnerships that power Girard's growth and investment platforms." },
-  { name: "Olayinka O. Odunlami", role: "Finance, Operations & Management", photo: "/img/team-4.jpg", bio: "Drives financial discipline, operational excellence and management systems across the Girard portfolio." },
-  { name: "Engr. Tomi Adebayo", role: "Projects Director", photo: "/img/team-5.jpg", bio: "Oversees project delivery, engineering standards and construction quality across Girard developments." },
-  { name: "Goodness Onyeneke", role: "Property Manager", photo: "/img/team-onyeneke.jpg", bio: "Runs the managed portfolio day to day: tenancies, inspections, maintenance and the standard every Girard property is held to once the keys have changed hands." }
+  /* Mirrors TEAM in src/App.jsx. The group directors are NOT here: they are
+     listed separately in GROUP_BOARD on the site and must not read as Girard's
+     own team on the crawlable page either. Keep this list in step with App.jsx. */
+  { name: "Dr. Olamide Okulaja", role: "Executive Chairman", photo: "/img/team-okulaja.jpg", bio: "A respected healthcare executive and entrepreneur with over two decades across clinical practice, public health and healthcare management, and CEO of Genesys Health Information Systems. His work in systems reform and strategic leadership sets Girard's direction." },
+  { name: "Jennifer Kaja", role: "Chief Executive Officer", photo: "/img/team-kaja.jpg", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
+  { name: "Goodness Onyeneke", role: "Property Manager", photo: "/img/team-onyeneke.jpg", bio: "Runs the managed portfolio day to day: tenancies, inspections, maintenance and the standard every Girard property is held to once the keys have changed hands." },
+  { name: "Sandra Ndukwe", role: "Head of People & Culture", photo: "/img/team-ndukwe.jpg", bio: "A people and culture leader with over 10 years across fintech, legal, property and facility management, real estate, media and venture capital, in Nigeria and the United Kingdom. She joined BRB Capital as its first employee and built both the HR function and the business infrastructure around it from nothing, scaling the group past 200 people, and went on to lead HR for its property arm, Juban Realty. Chartered by the Chartered Institute of Personnel Management of Nigeria, she is reading for an MBA in Human Resources at the University of Lagos and holds a degree from the University of Port Harcourt." },
+  { name: "Okediji Adebayo Alao", role: "Finance Manager", photo: "/img/team-adebayo.jpg", bio: "A chartered accountant who has built a finance department from nothing and run group reporting on top of it. At C-3V Holdings he rose from accountant to Head of Account, setting up the accounts function and carrying monthly group reporting, payables, payroll, bank reconciliation and PAYE remittance while the group's poultry operation grew 150% and its logistics fleet went from 1 truck to 4. Most recently Reporting Manager at Hartleys Supermarket and Stores, preparing monthly, quarterly and annual accounts, managing budgets and handling external audit. ACA and AAT of the Institute of Chartered Accountants of Nigeria, HND Accounting from Lagos State Polytechnic, with a postgraduate diploma in Economics." },
+  { name: "Emmanuella Ezeakor", role: "Client Services Officer", photo: "/img/team-ezeakor.jpg", bio: "Came to Girard from aviation, where she worked the counter and the ramp for Dornier Aviation: passenger check-in and travel documentation, special assistance for elderly and disabled passengers and unaccompanied minors, and the complaints that arrive when a flight does not go to plan. She also supported ground operations, dispatching flight plans, load sheets and weather briefings, and completed the Flight Dispatcher Programme at Lagos Aviation Academy. She holds a BSc in History and International Relations from Chukwuemeka Odumegwu Ojukwu University and is certified in data analysis." }
 ];
 
 export const AT_A_GLANCE = [
@@ -146,7 +149,7 @@ export const IMAGES = {
   howItWorks: "/walkthrough/1.jpg",
   whoWeServe: "/img/bourdillon_bedroom.jpg",
   whyGirard: "/img/bourdillon_lobby.jpg",
-  leadership: "/img/bourdillon_entrance.jpg",
+  leadership: "/img/our-people.jpg",
   developments: "/img/bourdillon_tower.jpg",
   partners: "/img/bourdillon_pool.jpg",
   contact: "/img/bourdillon_entrance.jpg",

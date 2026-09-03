@@ -447,7 +447,10 @@ const ADVANTAGES = [
 const TEAM = [
   { name: "Dr. Olamide Okulaja", role: "Executive Chairman", photo: "/img/team-okulaja.jpg", bio: "A respected healthcare executive and entrepreneur with over two decades across clinical practice, public health and healthcare management, and CEO of Genesys Health Information Systems. His work in systems reform and strategic leadership sets Girard's direction." },
   { name: "Jennifer Kaja", role: "Chief Executive Officer", photo: "/img/team-kaja.jpg", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
-  { name: "Goodness Onyeneke", role: "Property Manager", photo: "/img/team-onyeneke.jpg", bio: "Runs the managed portfolio day to day: tenancies, inspections, maintenance and the standard every Girard property is held to once the keys have changed hands." }
+  { name: "Goodness Onyeneke", role: "Property Manager", photo: "/img/team-onyeneke.jpg", bio: "Runs the managed portfolio day to day: tenancies, inspections, maintenance and the standard every Girard property is held to once the keys have changed hands." },
+  { name: "Sandra Ndukwe", role: "Head of People & Culture", photo: "/img/team-ndukwe.jpg", bio: "A people and culture leader with over 10 years across fintech, legal, property and facility management, real estate, media and venture capital, in Nigeria and the United Kingdom. She joined BRB Capital as its first employee and built both the HR function and the business infrastructure around it from nothing, scaling the group past 200 people, and went on to lead HR for its property arm, Juban Realty. Chartered by the Chartered Institute of Personnel Management of Nigeria, she is reading for an MBA in Human Resources at the University of Lagos and holds a degree from the University of Port Harcourt." },
+  { name: "Okediji Adebayo Alao", role: "Finance Manager", photo: "/img/team-adebayo.jpg", bio: "A chartered accountant who has built a finance department from nothing and run group reporting on top of it. At C-3V Holdings he rose from accountant to Head of Account, setting up the accounts function and carrying monthly group reporting, payables, payroll, bank reconciliation and PAYE remittance while the group's poultry operation grew 150% and its logistics fleet went from 1 truck to 4. Most recently Reporting Manager at Hartleys Supermarket and Stores, preparing monthly, quarterly and annual accounts, managing budgets and handling external audit. ACA and AAT of the Institute of Chartered Accountants of Nigeria, HND Accounting from Lagos State Polytechnic, with a postgraduate diploma in Economics." },
+  { name: "Emmanuella Ezeakor", role: "Client Services Officer", photo: "/img/team-ezeakor.jpg", bio: "Came to Girard from aviation, where she worked the counter and the ramp for Dornier Aviation: passenger check-in and travel documentation, special assistance for elderly and disabled passengers and unaccompanied minors, and the complaints that arrive when a flight does not go to plan. She also supported ground operations, dispatching flight plans, load sheets and weather briefings, and completed the Flight Dispatcher Programme at Lagos Aviation Academy. She holds a BSc in History and International Relations from Chukwuemeka Odumegwu Ojukwu University and is certified in data analysis." }
 ];
 
 /* Group leadership. Named and roled, deliberately without portraits, so the
@@ -928,6 +931,24 @@ function Landing({ onStart, onSignIn }) {
             </div>)}
           </div>
           <style>{`.svc-row:hover{background:rgba(198,161,91,.05)}@media(max-width:820px){.svc-row{grid-template-columns:34px 1fr!important;row-gap:10px!important}.svc-row > p{grid-column:2}}`}</style>
+          {/* Illustrative photography for the service lines. Deliberately no
+              address, price or availability on any of them: the promise that
+              Girard publishes only real properties lives on the listings, and
+              nothing here is dressed up to look like one. Square containers
+              because three of the four sources are square or near it. */}
+          <div className="svc-shots" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginTop: 54 }}>
+            {[["/img/work-01.jpg", "Managed residences"],
+              ["/img/work-02.jpg", "Residential lettings"],
+              ["/img/work-03.jpg", "Private homes"],
+              ["/img/listing-vi-studio.jpg", "Short-let and serviced"]].map(([src, cap]) =>
+              <figure key={cap} style={{ margin: 0 }}>
+                <div style={{ aspectRatio: "1 / 1", overflow: "hidden", borderRadius: 10, background: "var(--navy-2)" }}>
+                  <img src={src} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                </div>
+                <figcaption style={{ fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--gold-2)", marginTop: 12, fontWeight: 700 }}>{cap}</figcaption>
+              </figure>)}
+          </div>
+          <style>{`@media(max-width:820px){.svc-shots{grid-template-columns:1fr 1fr!important}}`}</style>
         </div>
       </section>)}
 
@@ -961,6 +982,20 @@ function Landing({ onStart, onSignIn }) {
         </div>
       </section>)}
 
+
+      {/* A quiet full-bleed plate between the argument and the work. A static
+          image and a line of type: both render with JavaScript disabled. */}
+      {tab === "home" && (<section style={{ position: "relative", background: "var(--navy)" }}>
+        <img src="/img/hero-plate.jpg" alt="" style={{ width: "100%", height: "clamp(260px,40vw,520px)", objectFit: "cover", display: "block" }} />
+        <div style={{ position: "absolute", inset: 0, display: "grid", alignItems: "end", background: "linear-gradient(180deg,rgba(8,27,58,.10),rgba(8,27,58,.86))" }}>
+          <div className="wrap" style={{ width: "100%", margin: 0, paddingBottom: "clamp(26px,4vw,54px)" }}>
+            <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 10 }}>Lagos</div>
+            <p className="serif" style={{ color: "#fff", fontSize: "clamp(20px,3vw,34px)", fontWeight: 600, lineHeight: 1.2, maxWidth: "22ch", margin: 0 }}>
+              One city, and the only one we claim to know.
+            </p>
+          </div>
+        </div>
+      </section>)}
 
       {/* FEATURED DEVELOPMENT */}
       {tab === "bourdillon" && <DevelopmentsSection go={go} />}
@@ -5898,6 +5933,11 @@ function LeadershipSection() {
         <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Our people</div>
         <h2 className="serif sec-h">The people behind the work.</h2>
         <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65 }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships. Select a profile to read more.</p>
+      </div>
+      {/* The wide plate sits between the heading and the faces so the section
+          opens on the work rather than on a row of portraits. */}
+      <div style={{ margin: "0 0 40px", borderRadius: 14, overflow: "hidden", border: "1px solid var(--navy-line)" }}>
+        <img src="/img/our-people.jpg" alt="" style={{ width: "100%", aspectRatio: "21 / 9", objectFit: "cover", display: "block" }} />
       </div>
       <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
         {TEAM.map(t => (
