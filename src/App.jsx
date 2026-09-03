@@ -841,7 +841,7 @@ function Landing({ onStart, onSignIn }) {
           before being shown the work. */}
       {tab === "home" && (<section style={{ background: "var(--ivory)", padding: "clamp(72px,9vw,120px) 0" }}>
         <div className="wrap">
-          <div style={{ maxWidth: 900 }}>
+          <div>
             <Rule light />
             <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 18px" }}>Why we exist</div>
             <h2 className="serif" style={{ fontSize: "clamp(30px,4.6vw,58px)", fontWeight: 600, lineHeight: 1.06, letterSpacing: -.8, color: "var(--ink)", maxWidth: "18ch" }}>
@@ -852,13 +852,13 @@ function Landing({ onStart, onSignIn }) {
               directly through a licensed processor. Tenants sign an agreement with a recorded, attributed
               signature. The work that used to happen over WhatsApp and in paper files happens here, on the record.
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0, marginTop: 48, borderTop: "1px solid var(--cream-line)" }} className="case-figs">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0, marginTop: 54, borderTop: "1px solid var(--cream-line)" }} className="case-figs">
               {[["Verified", "Every listing checked before it is published"],
                 ["5%", "Taken out of rent, never added on top"],
                 ["One place", "Apply, sign and pay without leaving the platform"]].map(([b, t]) =>
-                <div key={t} style={{ padding: "30px 26px 26px", borderBottom: "1px solid var(--cream-line)", borderRight: "1px solid var(--cream-line)" }}>
+                <div key={t} style={{ padding: "34px 32px 30px", borderBottom: "1px solid var(--cream-line)", borderRight: "1px solid var(--cream-line)" }}>
                   <div className="serif" style={{ fontSize: "clamp(24px,3vw,38px)", fontWeight: 600, color: "var(--gold-2)", lineHeight: 1 }}>{b}</div>
-                  <div style={{ marginTop: 12, fontSize: 13, lineHeight: 1.55, color: "var(--muted)", maxWidth: "24ch" }}>{t}</div>
+                  <div style={{ marginTop: 13, fontSize: 13.5, lineHeight: 1.6, color: "var(--muted)", maxWidth: "26ch" }}>{t}</div>
                 </div>)}
             </div>
             <style>{`.case-figs > div:last-child{border-right:none}@media(max-width:820px){.case-figs{grid-template-columns:1fr!important}.case-figs > div{border-right:none!important}}`}</style>
