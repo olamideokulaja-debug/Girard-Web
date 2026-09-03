@@ -199,7 +199,7 @@ function HeroTower() {
     let alive = true;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0A1A38, 0.022);
+    scene.fog = new THREE.FogExp2(0x0A1A38, 0.010);
     const camera = new THREE.PerspectiveCamera(42, el.clientWidth / Math.max(1, el.clientHeight), 0.1, 300);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -209,22 +209,24 @@ function HeroTower() {
     const GOLD = 0xC6A15B;
     const city = new THREE.Group();
     scene.add(city);
-    scene.add(new THREE.AmbientLight(0x2b4d84, 0.7));
-    const key = new THREE.PointLight(0xF0D9A8, 2.2, 140);
+    scene.add(new THREE.AmbientLight(0x2b4d84, 1.1));
+    const key = new THREE.PointLight(0xF0D9A8, 3.4, 160);
     key.position.set(12, 34, 16);
     scene.add(key);
-    const rim = new THREE.PointLight(0x2f6ec0, 1.4, 160);
-    rim.position.set(-22, 16, -26);
+    // Directional, not a point light: a point light this close sat inside the
+    // scene and rendered as a visible blue blob behind the towers.
+    const rim = new THREE.DirectionalLight(0x4a86d8, 0.7);
+    rim.position.set(-30, 26, -34);
     scene.add(rim);
 
-    const metal = new THREE.MeshStandardMaterial({ color: 0x14336B, roughness: 0.36, metalness: 0.82 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0x0E2247, roughness: 0.34, metalness: 0.86 });
     const shaft = (w, h, x, z, spire) => {
       const g = new THREE.BoxGeometry(w, h, w);
       const m = new THREE.Mesh(g, metal);
       m.position.set(x, h / 2, z);
       city.add(m);
       const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
-        new THREE.LineBasicMaterial({ color: GOLD, transparent: true, opacity: 0.55 }));
+        new THREE.LineBasicMaterial({ color: GOLD, transparent: true, opacity: 1 }));
       e.position.copy(m.position);
       city.add(e);
       if (spire) {
@@ -244,7 +246,7 @@ function HeroTower() {
       const h = 3 + Math.pow(Math.random(), 2.2) * 20;
       const w = 1.4 + Math.random() * 2.4;
       const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w),
-        new THREE.MeshStandardMaterial({ color: 0x0C2450, roughness: 0.85, metalness: 0.35 }));
+        new THREE.MeshStandardMaterial({ color: 0x0A1C3C, roughness: 0.9, metalness: 0.3 }));
       b.position.set(Math.cos(a) * r, h / 2, Math.sin(a) * r);
       city.add(b);
     }
@@ -285,8 +287,8 @@ function HeroTower() {
       t += reduced ? 0 : 0.0022;
       city.rotation.y = t * 0.5;
       arc.rotation.z = Math.PI * 0.25 + t * 0.16;
-      camera.position.set(px * 8, 21 + py * -4, 52);
-      camera.lookAt(0, 11, 0);
+      camera.position.set(9 + px * 8, 14 + py * -4, 38);
+      camera.lookAt(0, 10, 0);
       renderer.render(scene, camera);
     };
     loop();
@@ -714,7 +716,7 @@ function Landing({ onStart, onSignIn }) {
       {/* HERO */}
       {tab === "home" && (<section style={{ background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
         <HeroTower />
-        <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", background: "radial-gradient(900px 520px at 78% 50%, transparent 0%, rgba(10,26,56,.6) 62%, var(--navy) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", background: "radial-gradient(1000px 620px at 70% 50%, transparent 0%, rgba(10,26,56,.15) 58%, var(--navy) 100%)" }} />
 
         <div className="wrap" style={{ paddingTop: 96, paddingBottom: 104, position: "relative", zIndex: 2 }}>
           <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 54, alignItems: "center" }}>
