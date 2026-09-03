@@ -189,6 +189,69 @@ function readPropCount() {
    reflective plane, turning slowly. three.js is loaded from a CDN in
    index.html rather than added as a dependency, so the build is untouched and
    the hero degrades to the plain navy section if the CDN is unreachable. */
+/* Shared night-glass texture. One canvas of lit and unlit cells, cloned per
+   tower so each can carry its own repeat. Without it a tower is a slab; with
+   it, it is a building at night, which is the whole difference. */
+let WIN_TEX = null;
+function windowTexture(THREE) {
+  if (WIN_TEX) return WIN_TEX;
+  const c = document.createElement("canvas");
+  c.width = 128; c.height = 256;
+  const g = c.getContext("2d");
+  g.fillStyle = "#000"; g.fillRect(0, 0, 128, 256);
+  const cols = 8, rows = 26, pw = 128 / cols, ph = 256 / rows;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (Math.random() < 0.44) continue;
+      const a = 0.3 + Math.random() * 0.7;
+      const gr = Math.floor(198 + Math.random() * 46);
+      const bl = Math.floor(120 + Math.random() * 70);
+      g.fillStyle = "rgba(255," + gr + "," + bl + "," + a + ")";
+      g.fillRect(x * pw + pw * 0.24, y * ph + ph * 0.24, pw * 0.52, ph * 0.46);
+    }
+  }
+  WIN_TEX = new THREE.CanvasTexture(c);
+  WIN_TEX.wrapS = WIN_TEX.wrapT = THREE.RepeatWrapping;
+  return WIN_TEX;
+}
+
+/* A soft additive halo. r128 core has no bloom pass and the example
+   post-processing files are not on the CDN we load, so the glow is painted
+   into a sprite instead. Cheaper than a composer and it survives on phones. */
+function glowSprite(THREE, size, inner) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, inner || "rgba(255,228,176,.95)");
+  gr.addColorStop(0.32, "rgba(198,161,91,.42)");
+  gr.addColorStop(1, "rgba(198,161,91,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(c), transparent: true,
+    blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.9 }));
+  s.scale.set(size, size, 1);
+  return s;
+}
+
+/* Turn a group into its own reflection: flipped, dimmed, and kept out of the
+   depth buffer so the plate below reads as water rather than as glass. */
+function reflect(THREE, group, opacity) {
+  const m = group.clone(true);
+  m.scale.y = -1;
+  m.traverse(o => {
+    if (!o.material) return;
+    o.material = o.material.clone();
+    o.material.transparent = true;
+    o.material.opacity = opacity;
+    o.material.depthWrite = false;
+    o.material.side = THREE.DoubleSide;
+    if (o.material.emissiveIntensity !== undefined) o.material.emissiveIntensity *= 0.55;
+    o.renderOrder = -1;
+  });
+  return m;
+}
+
 function HeroTower() {
   const host = useRef(null);
   useEffect(() => {
@@ -199,8 +262,8 @@ function HeroTower() {
     let alive = true;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0A1A38, 0.010);
-    const camera = new THREE.PerspectiveCamera(42, el.clientWidth / Math.max(1, el.clientHeight), 0.1, 300);
+    scene.fog = new THREE.FogExp2(0x0A1A38, 0.0092);
+    const camera = new THREE.PerspectiveCamera(42, el.clientWidth / Math.max(1, el.clientHeight), 0.1, 320);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(el.clientWidth, el.clientHeight);
@@ -208,32 +271,53 @@ function HeroTower() {
 
     const GOLD = 0xC6A15B;
     const city = new THREE.Group();
+    // The four named towers sit in their own group so the reflection can mirror
+    // them without also mirroring 90 filler blocks.
+    const core = new THREE.Group();
+    city.add(core);
     scene.add(city);
-    scene.add(new THREE.AmbientLight(0x2b4d84, 1.1));
-    const key = new THREE.PointLight(0xF0D9A8, 3.4, 160);
+    scene.add(new THREE.AmbientLight(0x2b4d84, 1.0));
+    const key = new THREE.PointLight(0xF0D9A8, 3.2, 170);
     key.position.set(12, 34, 16);
     scene.add(key);
     // Directional, not a point light: a point light this close sat inside the
     // scene and rendered as a visible blue blob behind the towers.
-    const rim = new THREE.DirectionalLight(0x4a86d8, 0.7);
+    const rim = new THREE.DirectionalLight(0x4a86d8, 0.72);
     rim.position.set(-30, 26, -34);
     scene.add(rim);
 
-    const metal = new THREE.MeshStandardMaterial({ color: 0x0E2247, roughness: 0.34, metalness: 0.86 });
+    const winTex = windowTexture(THREE);
+    const beacons = [];
+
     const shaft = (w, h, x, z, spire) => {
       const g = new THREE.BoxGeometry(w, h, w);
-      const m = new THREE.Mesh(g, metal);
+      const t = winTex.clone();
+      t.needsUpdate = true;
+      // Window scale is the whole illusion: too many rows and it reads as gold
+      // noise, too few and it reads as a chessboard. About one storey band per
+      // 11 units of height is where it starts looking like a building.
+      t.repeat.set(Math.max(1, Math.round(w / 1.7)), Math.max(2, Math.round(h / 11)));
+      const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+        color: 0x0E2247, roughness: 0.34, metalness: 0.86,
+        emissive: 0xFFAE55, emissiveMap: t, emissiveIntensity: 1.25 }));
       m.position.set(x, h / 2, z);
-      city.add(m);
+      core.add(m);
       const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
         new THREE.LineBasicMaterial({ color: GOLD, transparent: true, opacity: 1 }));
       e.position.copy(m.position);
-      city.add(e);
+      core.add(e);
       if (spire) {
-        city.add(new THREE.Line(
+        core.add(new THREE.Line(
           new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(x, h, z), new THREE.Vector3(x, h + spire, z)]),
           new THREE.LineBasicMaterial({ color: GOLD })));
+        const crown = glowSprite(THREE, w * 2.8);
+        crown.position.set(x, h + 0.4, z);
+        core.add(crown);
+        const b = glowSprite(THREE, 2.6, "rgba(255,244,214,1)");
+        b.position.set(x, h + spire, z);
+        core.add(b);
+        beacons.push(b);
       }
     };
     shaft(3.2, 26, 0, 0, 6);
@@ -241,38 +325,48 @@ function HeroTower() {
     shaft(2.1, 13, 4.5, 1.0, 2.6);
     shaft(1.7, 9, 1.6, 4.4, 1.6);
 
+    city.add(reflect(THREE, core, 0.26));
+
     // The filler ring starts well outside the camera (which orbits at ~39 from
     // origin). At the old inner radius of 16 a filler swung right through the
     // camera every rotation and rendered as a flat black slab across a third of
     // the frame. That was invisible while the framed photo covered the right
     // half; with the photo gone it is the first thing you see.
+    const fillerMat = new THREE.MeshStandardMaterial({
+      color: 0x081A38, roughness: 0.9, metalness: 0.3,
+      emissive: 0xFFAE55, emissiveMap: winTex, emissiveIntensity: 0.38 });
     for (let i = 0; i < 90; i++) {
       const a = Math.random() * Math.PI * 2, r = 52 + Math.random() * 68;
-      const h = 3 + Math.pow(Math.random(), 2.2) * 20;
+      const h = 3 + Math.pow(Math.random(), 2.2) * 22;
       const w = 1.4 + Math.random() * 2.4;
-      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w),
-        new THREE.MeshStandardMaterial({ color: 0x0A1C3C, roughness: 0.9, metalness: 0.3 }));
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), fillerMat);
       b.position.set(Math.cos(a) * r, h / 2, Math.sin(a) * r);
       city.add(b);
     }
 
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400),
-      new THREE.MeshStandardMaterial({ color: 0x0A1A38, roughness: 0.18, metalness: 0.92 }));
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(440, 440),
+      new THREE.MeshStandardMaterial({ color: 0x081730, roughness: 0.16,
+        metalness: 0.95, transparent: true, opacity: 0.66 }));
     floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.02;
+    floor.renderOrder = 1;
     scene.add(floor);
 
+    // The arc from the mark, turning slowly above the towers.
     const arc = new THREE.Mesh(new THREE.TorusGeometry(21, 0.07, 8, 180, Math.PI * 1.5),
-      new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.3 }));
+      new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.34 }));
     arc.position.y = 15;
     arc.rotation.z = Math.PI * 0.25;
     scene.add(arc);
 
+    const dust = new THREE.Group();
     const pts = [];
-    for (let i = 0; i < 320; i++) pts.push(new THREE.Vector3(
-      (Math.random() - 0.5) * 180, Math.random() * 34, (Math.random() - 0.5) * 180));
-    scene.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.PointsMaterial({ color: GOLD, size: 0.16, transparent: true, opacity: 0.5,
+    for (let i = 0; i < 420; i++) pts.push(new THREE.Vector3(
+      (Math.random() - 0.5) * 190, Math.random() * 38, (Math.random() - 0.5) * 190));
+    dust.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.PointsMaterial({ color: GOLD, size: 0.18, transparent: true, opacity: 0.55,
         blending: THREE.AdditiveBlending })));
+    scene.add(dust);
 
     let px = 0, py = 0;
     const onMove = (e) => { px = e.clientX / window.innerWidth - 0.5; py = e.clientY / window.innerHeight - 0.5; };
@@ -292,8 +386,19 @@ function HeroTower() {
       t += reduced ? 0 : 0.0022;
       city.rotation.y = t * 0.5;
       arc.rotation.z = Math.PI * 0.25 + t * 0.16;
-      camera.position.set(9 + px * 8, 14 + py * -4, 38);
-      camera.lookAt(0, 10, 0);
+      dust.rotation.y = -t * 0.2;
+      for (let i = 0; i < beacons.length; i++) {
+        beacons[i].material.opacity = 0.28 + 0.72 * Math.abs(Math.sin(t * 2.6 + i * 1.3));
+      }
+      // A slow breath on top of the mouse parallax, so the scene is alive even
+      // when nobody moves the pointer and on touch devices where nobody can.
+      camera.position.set(
+        9 + px * 8 + Math.sin(t * 0.55) * 2.2,
+        15 + py * -4 + Math.sin(t * 0.4) * 1.1,
+        43 + Math.cos(t * 0.47) * 2.6);
+      // Aimed a little above centre so the water line and the reflections sit
+      // inside the frame rather than below it.
+      camera.lookAt(0, 11.5, 0);
       renderer.render(scene, camera);
     };
     loop();
@@ -307,7 +412,7 @@ function HeroTower() {
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     };
   }, []);
-  return <div ref={host} aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0 }} />;
+  return <div ref={host} className="herocanvas" aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0 }} />;
 }
 
 function PropertyCounter({ style }) {
@@ -813,6 +918,10 @@ function Landing({ onStart, onSignIn }) {
             .menu-btn{display:grid!important;place-items:center}
           }
           @media(max-width:560px){ .nav-signin{display:none!important} }
+          /* Once the hero collapses towards one column the copy sits directly
+             over the towers, and lit windows behind body text is unreadable.
+             The scene stays, dimmed to texture. */
+          @media(max-width:1000px){ .herocanvas{opacity:.4} }
           /* Below 560px the logo lockup plus the CTA plus the menu button were
              wider than the viewport, so the header overflowed by about 56px and
              the menu button sat off-screen: on a phone the site could not be
@@ -5789,34 +5898,89 @@ function SwapModel() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let alive = true;
     const sc = new THREE.Scene();
-    const cam = new THREE.PerspectiveCamera(38, el.clientWidth / Math.max(1, el.clientHeight), 0.1, 120);
-    cam.position.set(0, 4.6, 13.5);
-    cam.lookAt(0, 1, 0);
+    sc.fog = new THREE.FogExp2(0x0A1A38, 0.018);
+    const cam = new THREE.PerspectiveCamera(38, el.clientWidth / Math.max(1, el.clientHeight), 0.1, 140);
+    const R = 2.8;
+    cam.position.set(0, 5.4, 15.2);
+    cam.lookAt(0, 1.4, 0);
     const rn = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     rn.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     rn.setSize(el.clientWidth, el.clientHeight);
     el.appendChild(rn.domElement);
 
-    sc.add(new THREE.AmbientLight(0x2b4a7a, 0.9));
-    const pl = new THREE.PointLight(0xF0D9A8, 2.4, 80);
+    const GOLD = 0xC6A15B;
+    sc.add(new THREE.AmbientLight(0x2b4a7a, 0.95));
+    const pl = new THREE.PointLight(0xF0D9A8, 2.6, 90);
     pl.position.set(6, 13, 9);
     sc.add(pl);
+    const rim = new THREE.DirectionalLight(0x4a86d8, 0.6);
+    rim.position.set(-9, 7, -10);
+    sc.add(rim);
+
+    const winTex = windowTexture(THREE);
+    const stage = new THREE.Group();
+    sc.add(stage);
 
     const block = (h, gold) => {
       const g = new THREE.BoxGeometry(1.7, h, 1.7);
       const grp = new THREE.Group();
+      const t = winTex.clone();
+      t.needsUpdate = true;
+      t.repeat.set(1, Math.max(2, Math.round(h / 1.7)));
       const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
-        color: gold ? 0xA07C36 : 0x1B3563, roughness: 0.4, metalness: 0.72 }));
+        color: gold ? 0xA07C36 : 0x1B3563, roughness: 0.4, metalness: 0.72,
+        emissive: 0xFFAE55, emissiveMap: t, emissiveIntensity: gold ? 1.05 : 0.85 }));
       const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
-        new THREE.LineBasicMaterial({ color: 0xC6A15B, transparent: true, opacity: 0.9 }));
+        new THREE.LineBasicMaterial({ color: GOLD, transparent: true, opacity: 0.9 }));
       m.position.y = h / 2; e.position.y = h / 2;
-      grp.add(m); grp.add(e); sc.add(grp); return grp;
+      const crown = glowSprite(THREE, 3.0);
+      crown.position.y = h;
+      grp.add(m); grp.add(e); grp.add(crown);
+      stage.add(grp);
+      return grp;
     };
     const a = block(3.6, true), b = block(2.4, false);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.9, 0.01, 8, 150),
-      new THREE.MeshBasicMaterial({ color: 0xC6A15B, transparent: true, opacity: 0.4 }));
+
+    // The plate and its reflection. The exchange happening over water rather
+    // than over nothing is what stops the model reading as a diagram.
+    const plate = new THREE.Mesh(new THREE.CircleGeometry(11, 64),
+      new THREE.MeshStandardMaterial({ color: 0x081730, roughness: 0.14,
+        metalness: 0.96, transparent: true, opacity: 0.45 }));
+    plate.rotation.x = -Math.PI / 2;
+    plate.position.y = -0.02;
+    plate.renderOrder = 1;
+    sc.add(plate);
+    const mirrorA = reflect(THREE, a, 0.3), mirrorB = reflect(THREE, b, 0.3);
+    stage.add(mirrorA); stage.add(mirrorB);
+
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(R, 0.012, 8, 160),
+      new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.45 }));
     ring.rotation.x = Math.PI / 2;
     sc.add(ring);
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(R + 1.5, 0.008, 8, 180),
+      new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.22 }));
+    ring2.rotation.x = Math.PI / 2.35;
+    sc.add(ring2);
+
+    // The exchange itself, drawn once and turned with the pair: an arc from the
+    // crown of one tower, over the centre, down to the crown of the other. A
+    // bead runs along it so the direction of the transfer is legible.
+    const curve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(R, 3.6, 0), new THREE.Vector3(0, 6.9, 0), new THREE.Vector3(-R, 2.4, 0));
+    const link = new THREE.Group();
+    link.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 60, 0.028, 8, false),
+      new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.55 })));
+    const bead = glowSprite(THREE, 1.5, "rgba(255,246,222,1)");
+    link.add(bead);
+    sc.add(link);
+
+    const pts = [];
+    for (let i = 0; i < 160; i++) pts.push(new THREE.Vector3(
+      (Math.random() - 0.5) * 20, Math.random() * 9, (Math.random() - 0.5) * 20));
+    const dust = new THREE.Points(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.PointsMaterial({ color: GOLD, size: 0.06, transparent: true, opacity: 0.5,
+        blending: THREE.AdditiveBlending }));
+    sc.add(dust);
 
     let t = 0, drag = false, lastX = 0, spin = 0, vel = 0, raf = 0;
     const down = (e) => { drag = true; lastX = e.clientX; };
@@ -5833,14 +5997,25 @@ function SwapModel() {
     };
     window.addEventListener("resize", onResize);
 
+    const beadPt = new THREE.Vector3();
     const loop = () => {
       if (!alive) return;
       raf = requestAnimationFrame(loop);
       if (!drag) { t += reduced ? 0 : 0.005; vel *= 0.95; spin += vel; }
       const ang = t + spin;
-      a.position.set(Math.cos(ang) * 3.9, 0, Math.sin(ang) * 3.9);
-      b.position.set(Math.cos(ang + Math.PI) * 3.9, 0, Math.sin(ang + Math.PI) * 3.9);
+      const pa = [Math.cos(ang) * R, 0, Math.sin(ang) * R];
+      const pb = [Math.cos(ang + Math.PI) * R, 0, Math.sin(ang + Math.PI) * R];
+      a.position.set(pa[0], 0, pa[2]);
+      b.position.set(pb[0], 0, pb[2]);
       a.rotation.y = -ang; b.rotation.y = -ang;
+      mirrorA.position.set(pa[0], 0, pa[2]);
+      mirrorB.position.set(pb[0], 0, pb[2]);
+      mirrorA.rotation.y = -ang; mirrorB.rotation.y = -ang;
+      link.rotation.y = -ang;
+      curve.getPoint((t * 0.55 + spin * 0.2) % 1, beadPt);
+      bead.position.copy(beadPt);
+      ring2.rotation.z = t * 0.5;
+      dust.rotation.y = t * 0.14;
       rn.render(sc, cam);
     };
     loop();
