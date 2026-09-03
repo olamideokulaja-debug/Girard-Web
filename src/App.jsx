@@ -184,6 +184,125 @@ function readPropCount() {
   try { const r = localStorage.getItem("girard_pm_v3"); if (r) { const d = JSON.parse(r); if (d && d.properties) return d.properties.length; } } catch (e) {}
   return 30;
 }
+/* The Girard mark is a tower drawn in gold hairlines, so the homepage hero
+   builds that tower for real: solid shafts in dark metal, edged in gold, on a
+   reflective plane, turning slowly. three.js is loaded from a CDN in
+   index.html rather than added as a dependency, so the build is untouched and
+   the hero degrades to the plain navy section if the CDN is unreachable. */
+function HeroTower() {
+  const host = useRef(null);
+  useEffect(() => {
+    const el = host.current;
+    if (!el || !window.THREE) return;               // no CDN, no canvas: fine
+    const THREE = window.THREE;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let alive = true;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0A1A38, 0.022);
+    const camera = new THREE.PerspectiveCamera(42, el.clientWidth / Math.max(1, el.clientHeight), 0.1, 300);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(el.clientWidth, el.clientHeight);
+    el.appendChild(renderer.domElement);
+
+    const GOLD = 0xC6A15B;
+    const city = new THREE.Group();
+    scene.add(city);
+    scene.add(new THREE.AmbientLight(0x2b4d84, 0.7));
+    const key = new THREE.PointLight(0xF0D9A8, 2.2, 140);
+    key.position.set(12, 34, 16);
+    scene.add(key);
+    const rim = new THREE.PointLight(0x2f6ec0, 1.4, 160);
+    rim.position.set(-22, 16, -26);
+    scene.add(rim);
+
+    const metal = new THREE.MeshStandardMaterial({ color: 0x14336B, roughness: 0.36, metalness: 0.82 });
+    const shaft = (w, h, x, z, spire) => {
+      const g = new THREE.BoxGeometry(w, h, w);
+      const m = new THREE.Mesh(g, metal);
+      m.position.set(x, h / 2, z);
+      city.add(m);
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
+        new THREE.LineBasicMaterial({ color: GOLD, transparent: true, opacity: 0.55 }));
+      e.position.copy(m.position);
+      city.add(e);
+      if (spire) {
+        city.add(new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(x, h, z), new THREE.Vector3(x, h + spire, z)]),
+          new THREE.LineBasicMaterial({ color: GOLD })));
+      }
+    };
+    shaft(3.2, 26, 0, 0, 6);
+    shaft(2.4, 18, -4.6, 1.4, 3.4);
+    shaft(2.1, 13, 4.5, 1.0, 2.6);
+    shaft(1.7, 9, 1.6, 4.4, 1.6);
+
+    for (let i = 0; i < 70; i++) {
+      const a = Math.random() * Math.PI * 2, r = 16 + Math.random() * 70;
+      const h = 3 + Math.pow(Math.random(), 2.2) * 20;
+      const w = 1.4 + Math.random() * 2.4;
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w),
+        new THREE.MeshStandardMaterial({ color: 0x0C2450, roughness: 0.85, metalness: 0.35 }));
+      b.position.set(Math.cos(a) * r, h / 2, Math.sin(a) * r);
+      city.add(b);
+    }
+
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400),
+      new THREE.MeshStandardMaterial({ color: 0x0A1A38, roughness: 0.18, metalness: 0.92 }));
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(21, 0.07, 8, 180, Math.PI * 1.5),
+      new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.3 }));
+    arc.position.y = 15;
+    arc.rotation.z = Math.PI * 0.25;
+    scene.add(arc);
+
+    const pts = [];
+    for (let i = 0; i < 320; i++) pts.push(new THREE.Vector3(
+      (Math.random() - 0.5) * 180, Math.random() * 34, (Math.random() - 0.5) * 180));
+    scene.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.PointsMaterial({ color: GOLD, size: 0.16, transparent: true, opacity: 0.5,
+        blending: THREE.AdditiveBlending })));
+
+    let px = 0, py = 0;
+    const onMove = (e) => { px = e.clientX / window.innerWidth - 0.5; py = e.clientY / window.innerHeight - 0.5; };
+    window.addEventListener("pointermove", onMove);
+    const onResize = () => {
+      if (!el.clientWidth) return;
+      camera.aspect = el.clientWidth / Math.max(1, el.clientHeight);
+      camera.updateProjectionMatrix();
+      renderer.setSize(el.clientWidth, el.clientHeight);
+    };
+    window.addEventListener("resize", onResize);
+
+    let t = 0, raf = 0;
+    const loop = () => {
+      if (!alive) return;
+      raf = requestAnimationFrame(loop);
+      t += reduced ? 0 : 0.0022;
+      city.rotation.y = t * 0.5;
+      arc.rotation.z = Math.PI * 0.25 + t * 0.16;
+      camera.position.set(px * 8, 21 + py * -4, 52);
+      camera.lookAt(0, 11, 0);
+      renderer.render(scene, camera);
+    };
+    loop();
+
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("resize", onResize);
+      renderer.dispose();
+      if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+    };
+  }, []);
+  return <div ref={host} aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0 }} />;
+}
+
 function PropertyCounter({ style }) {
   const [n, setN] = useState(readPropCount);
   const [disp, setDisp] = useState(0);
@@ -594,9 +713,10 @@ function Landing({ onStart, onSignIn }) {
 
       {/* HERO */}
       {tab === "home" && (<section style={{ background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
-        <div className="float-orb" style={{ position: "absolute", top: -90, right: -50, width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle, rgba(198,161,91,.20), transparent 70%)", pointerEvents: "none" }} />
-        <div className="float-orb" style={{ position: "absolute", bottom: -110, left: -90, width: 380, height: 380, borderRadius: "50%", background: "radial-gradient(circle, rgba(22,53,100,.55), transparent 70%)", pointerEvents: "none", animationDelay: "2.5s" }} />
-        <div className="wrap" style={{ paddingTop: 72, paddingBottom: 78, position: "relative" }}>
+        <HeroTower />
+        <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", background: "radial-gradient(900px 520px at 78% 50%, transparent 0%, rgba(10,26,56,.6) 62%, var(--navy) 100%)" }} />
+
+        <div className="wrap" style={{ paddingTop: 96, paddingBottom: 104, position: "relative", zIndex: 2 }}>
           <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 54, alignItems: "center" }}>
             <div className="rise">
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 22 }}>Digital management &amp; cross-border swaps</div>
