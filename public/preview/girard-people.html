@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Our People — Girard Property Limited</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Archivo:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="girard.css">
+<style>
+  /* page-specific: the board and the values grid */
+  .mast{height:64vh;min-height:420px}
+  .mast img.loaded{opacity:.62}
+
+  /* portraits at full height, names underneath, no cards */
+  .people{display:grid;grid-template-columns:repeat(3,1fr);gap:34px}
+  .person figure{margin:0;position:relative;aspect-ratio:4/5;overflow:hidden;
+    background:var(--deep);border:1px solid var(--hair)}
+  .person img{width:100%;height:100%;object-fit:cover;display:block;
+    filter:saturate(.9) contrast(1.03);transition:transform 1.2s var(--ease),filter .6s}
+  .person:hover img{transform:scale(1.035);filter:saturate(1) contrast(1.05)}
+  .person figure::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,transparent 55%,rgba(8,27,58,.55));transition:opacity .6s}
+  .person:hover figure::after{opacity:.5}
+  .person h3{margin:20px 0 0;font-family:'Lora',serif;font-weight:400;
+    font-size:clamp(20px,2.1vw,26px);line-height:1.2}
+  .person .role{margin-top:7px;font-size:11px;letter-spacing:.24em;color:var(--gold)}
+  .person p{margin:14px 0 0;font-size:14px;line-height:1.75;color:#9DAABE}
+
+  /* Group leadership: named, roled, no portraits. Deliberately a different
+     treatment from the Girard team above — these are group directors, and the
+     page should not imply otherwise. */
+  .group{border-top:1px solid var(--hair)}
+  .group-row{display:grid;grid-template-columns:1fr 1fr;gap:30px;padding:26px 0;
+    border-bottom:1px solid var(--hair);align-items:baseline}
+  .group-row h4{margin:0;font-family:'Lora',serif;font-weight:400;font-size:clamp(19px,2vw,24px)}
+  .group-row .r{font-size:11px;letter-spacing:.22em;color:var(--gold)}
+
+  .values{display:grid;grid-template-columns:repeat(2,1fr);border-top:1px solid var(--hair)}
+  .val{padding:34px 30px;border-bottom:1px solid var(--hair);border-right:1px solid var(--hair)}
+  .val:nth-child(2n){border-right:none}
+  .val h4{margin:0;font-family:'Lora',serif;font-weight:400;font-size:22px}
+  .val p{margin:10px 0 0;font-size:14px;line-height:1.7;color:#9DAABE;max-width:44ch}
+
+  @media (max-width:900px){
+    .people{grid-template-columns:1fr 1fr;gap:24px}
+    .values{grid-template-columns:1fr}
+    .val{border-right:none}
+    .group-row{grid-template-columns:1fr;gap:6px}
+  }
+  @media (max-width:600px){.people{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="prog"></div><div class="grain"></div>
+<div class="cur"></div><div class="cur-dot"></div>
+
+<div class="mast">
+  <img data-src="../img/our-people.jpg" alt="A Girard meeting room in Lagos at dusk" />
+  <span class="tint"></span>
+  <div class="inner"><div class="wrap">
+    <div class="eyebrow fade"><i></i><span>OUR PEOPLE</span></div>
+    <h1 class="h1" style="margin-top:22px">
+      <span class="mask"><span>The people</span></span>
+      <span class="mask"><span>behind the <i>work</i>.</span></span>
+    </h1>
+  </div></div>
+</div>
+
+<section>
+  <div class="wrap">
+    <p class="lede reveal">Girard is led by people who have built, financed and governed property in Lagos, and
+      who answer for it by name. The work below is theirs.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="people reveal">
+
+      <article class="person">
+        <figure><img src="../img/team-okulaja.jpg" alt="Dr Olamide Okulaja" loading="lazy" /></figure>
+        <h3>Dr Olamide Okulaja</h3>
+        <div class="role">EXECUTIVE CHAIRMAN</div>
+        <p>A healthcare executive and entrepreneur with over two decades across clinical practice, public health
+          and healthcare management, and CEO of Genesys Health Information Systems. His work in systems reform
+          and strategic leadership sets Girard's direction.</p>
+      </article>
+
+      <article class="person">
+        <figure><img src="../img/team-kaja.jpg" alt="Ms Jennifer Kaja" loading="lazy" /></figure>
+        <h3>Ms Jennifer Kaja</h3>
+        <div class="role">CHIEF EXECUTIVE OFFICER</div>
+        <p>A Nigerian lawyer with first-class honours from the University of Wales and a decade of practice
+          across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she
+          oversaw landmark transactions, governance and compliance.</p>
+      </article>
+
+      <article class="person">
+        <figure><img src="../img/team-onyeneke.jpg" alt="Goodness Onyeneke" loading="lazy" /></figure>
+        <h3>Goodness Onyeneke</h3>
+        <div class="role">PROPERTY MANAGER</div>
+        <p>Runs the managed portfolio day to day: tenancies, inspections, maintenance and the standard every
+          Girard property is held to once the keys have changed hands.</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== GROUP LEADERSHIP =====
+     Delete this whole <section> to leave the group board off the page.
+     Nothing else depends on it. -->
+<section>
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:14px"><div class="eyebrow"><i></i><span>THE GROUP</span></div></div>
+    <p class="lede reveal" style="margin-bottom:34px">Girard is part of the Imadeforte group, which also holds
+      interests in healthcare, technology and consulting. Its directors sit behind the business.</p>
+    <div class="group reveal">
+      <div class="group-row"><h4>Pedro Cabulo</h4><span class="r">CHIEF STRATEGY &amp; PARTNERSHIPS OFFICER</span></div>
+      <div class="group-row"><h4>Olayinka O. Odunlami</h4><span class="r">FINANCE, OPERATIONS &amp; MANAGEMENT</span></div>
+      <div class="group-row"><h4>Engr. Tomi Adebayo</h4><span class="r">PROJECTS DIRECTOR</span></div>
+    </div>
+  </div>
+</section>
+<!-- ===== END GROUP LEADERSHIP ===== -->
+
+<section>
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:36px"><div class="eyebrow"><i></i><span>HOW WE WORK</span></div></div>
+    <div class="values reveal">
+      <div class="val"><h4>Integrity</h4><p>Transparency, sound governance and ethical practice, including when it costs us the deal.</p></div>
+      <div class="val"><h4>Precision</h4><p>Disciplined planning, rigorous due diligence and strict compliance on every instruction.</p></div>
+      <div class="val"><h4>Innovation</h4><p>Technology-led operations, because a property business should not run on paper files.</p></div>
+      <div class="val"><h4>Long-term value</h4><p>Growth for clients, partners and the communities the buildings sit in.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap reveal">
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <a class="btn btn-gold" href="girard-contact.html">Speak to Girard</a>
+      <a class="btn btn-line" href="girard-services.html">What we do</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="eyebrow"><i></i><span>GIRARD PROPERTY LIMITED</span></div>
+    <p class="small" style="margin-top:22px">21 Fatai Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos<br />
+      +234 704 817 3866 &nbsp; info@girardpropertylimited.com</p>
+  </div>
+</footer>
+
+<script src="girard.js"></script>
+</body>
+</html>
