@@ -12,7 +12,8 @@ export const SITE = {
   phoneHref: "tel:+2347048173866",
   email: "info@girardpropertylimited.com",
   hours: "Monday to Saturday, 8am to 5pm. Sunday closed.",
-  play: "https://play.google.com/store/apps/details?id=com.girardpropertylimited.twa"
+  play: "https://play.google.com/store/apps/details?id=com.girardpropertylimited.twa",
+  appStore: "https://apps.apple.com/app/id6795445952"
 };
 
 /* The 6 service lines. The slugs for property-and-estate-management and
@@ -65,6 +66,18 @@ export const SERVICES = [
   }
 ];
 
+/* The case the homepage now leads with. Kept here so the static pages make the
+   same argument as the site rather than an older one. */
+export const CASE = {
+  heading: "A market full of listings that were never real.",
+  body: "Girard verifies title, ownership and condition before anything is published. Landlords are paid directly through a licensed processor. Tenants sign an agreement with a recorded, attributed signature. The work that used to happen over WhatsApp and in paper files happens here, on the record.",
+  points: [
+    ["Verified", "Every listing checked before it is published"],
+    ["5%", "Taken out of rent, never added on top"],
+    ["One place", "Apply, sign and pay without leaving the platform"]
+  ]
+};
+
 export const MODULES = [
   {
     n: "01",
@@ -102,7 +115,8 @@ export const TEAM = [
   { name: "Jennifer Kaja", role: "CEO / Managing Director", photo: "/img/team-2.jpg", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
   { name: "Pedro Cabulo", role: "Chief Strategy & Partnerships Officer", photo: "/img/team-3.jpg", bio: "Leads corporate strategy and cultivates the partnerships that power Girard's growth and investment platforms." },
   { name: "Olayinka O. Odunlami", role: "Finance, Operations & Management", photo: "/img/team-4.jpg", bio: "Drives financial discipline, operational excellence and management systems across the Girard portfolio." },
-  { name: "Engr. Tomi Adebayo", role: "Projects Director", photo: "/img/team-5.jpg", bio: "Oversees project delivery, engineering standards and construction quality across Girard developments." }
+  { name: "Engr. Tomi Adebayo", role: "Projects Director", photo: "/img/team-5.jpg", bio: "Oversees project delivery, engineering standards and construction quality across Girard developments." },
+  { name: "Goodness Onyeneke", role: "Property Manager", photo: "/img/team-onyeneke.jpg", bio: "Runs the managed portfolio day to day: tenancies, inspections, maintenance and the standard every Girard property is held to once the keys have changed hands." }
 ];
 
 export const AT_A_GLANCE = [
