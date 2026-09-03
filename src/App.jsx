@@ -772,13 +772,13 @@ function Landing({ onStart, onSignIn }) {
           full width with the mark hard left and the actions hard right, rather
           than sitting in a centred column with dead space either side. */}
       <header style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,31,60,.92)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--navy-line)" }}>
-        <div style={{ height: 74, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "0 26px" }}>
+        <div className="navrow" style={{ height: 74, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "0 26px" }}>
 
           <button onClick={() => go("home")} style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer" }} aria-label="Girard, home">
             <GirardMark size={38} />
-            <div style={{ textAlign: "left" }}>
-              <div className="serif" style={{ fontSize: 20, fontWeight: 600, letterSpacing: 1, color: "#fff" }}>GIRARD</div>
-              <div style={{ fontSize: 8.5, letterSpacing: 2.6, color: "var(--gold)", fontWeight: 600 }}>PROPERTY LIMITED</div>
+            <div style={{ textAlign: "left", minWidth: 0 }}>
+              <div className="serif" style={{ fontSize: 20, fontWeight: 600, letterSpacing: 1, color: "#fff", whiteSpace: "nowrap" }}>GIRARD</div>
+              <div className="brandsub" style={{ fontSize: 8.5, letterSpacing: 2.6, color: "var(--gold)", fontWeight: 600, whiteSpace: "nowrap" }}>PROPERTY LIMITED</div>
             </div>
           </button>
 
@@ -813,6 +813,21 @@ function Landing({ onStart, onSignIn }) {
             .menu-btn{display:grid!important;place-items:center}
           }
           @media(max-width:560px){ .nav-signin{display:none!important} }
+          /* Below 560px the logo lockup plus the CTA plus the menu button were
+             wider than the viewport, so the header overflowed by about 56px and
+             the menu button sat off-screen: on a phone the site could not be
+             navigated at all. Both groups were flex-shrink:0, so nothing gave.
+             Dropping the PROPERTY LIMITED line and tightening the CTA brings the
+             row back inside the viewport with room to spare. */
+          @media(max-width:560px){
+            .brandsub{display:none!important}
+            header .btn-gold{padding:11px 14px!important;font-size:13.5px!important}
+            header .menu-btn{flex-shrink:0}
+          }
+          @media(max-width:400px){
+            .navrow{padding:0 16px!important;gap:12px!important}
+            header .btn-gold{padding:11px 11px!important;font-size:13px!important}
+          }
         `}</style>
       </header>
 
@@ -959,6 +974,7 @@ function Landing({ onStart, onSignIn }) {
           before being shown the work. */}
       {tab === "home" && (<section style={{ background: "var(--ivory)", padding: "clamp(72px,9vw,120px) 0" }}>
         <div className="wrap">
+          <div className="case-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 56, alignItems: "center" }}>
           <div>
             <Rule light />
             <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 18px" }}>Why we exist</div>
@@ -974,13 +990,20 @@ function Landing({ onStart, onSignIn }) {
               {[["Verified", "Every listing checked before it is published"],
                 ["5%", "Taken out of rent, never added on top"],
                 ["One place", "Apply, sign and pay without leaving the platform"]].map(([b, t]) =>
-                <div key={t} style={{ padding: "34px 32px 30px", borderBottom: "1px solid var(--cream-line)", borderRight: "1px solid var(--cream-line)" }}>
-                  <div className="serif" style={{ fontSize: "clamp(24px,3vw,38px)", fontWeight: 600, color: "var(--gold-2)", lineHeight: 1 }}>{b}</div>
-                  <div style={{ marginTop: 13, fontSize: 13.5, lineHeight: 1.6, color: "var(--muted)", maxWidth: "26ch" }}>{t}</div>
+                <div key={t} style={{ padding: "30px 22px 28px", borderBottom: "1px solid var(--cream-line)", borderRight: "1px solid var(--cream-line)" }}>
+                  {/* Sized to hold "One place" on one line now that the figures
+                      share the row with the photograph. */}
+                  <div className="serif" style={{ fontSize: "clamp(22px,2.1vw,32px)", fontWeight: 600, color: "var(--gold-2)", lineHeight: 1, whiteSpace: "nowrap" }}>{b}</div>
+                  <div style={{ marginTop: 12, fontSize: 13, lineHeight: 1.55, color: "var(--muted)", maxWidth: "24ch" }}>{t}</div>
                 </div>)}
             </div>
             <style>{`.case-figs > div:last-child{border-right:none}@media(max-width:820px){.case-figs{grid-template-columns:1fr!important}.case-figs > div{border-right:none!important}}`}</style>
           </div>
+          <div className="case-shot">
+            <img src="/img/hero-keys.jpg" alt="Keys and a signed tenancy agreement on a desk at night" style={{ width: "100%", aspectRatio: "3 / 2", objectFit: "cover", display: "block", borderRadius: 4, border: "1px solid var(--gold-2)" }} />
+          </div>
+          </div>
+          <style>{`@media(max-width:960px){.case-grid{grid-template-columns:1fr!important;gap:36px!important}.case-shot{order:-1}}`}</style>
         </div>
       </section>)}
 
