@@ -5637,7 +5637,7 @@ function LeadershipSection() {
         <Rule />
         <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Our people</div>
         <h2 className="serif sec-h">Our leadership.</h2>
-        <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65 }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships. Tap a profile to read more.</p>
+        <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65 }}>We draw on our global network to assemble a team of experts, with a strong interest in coaching and capability building, and an emphasis on emotional intelligence and effective stakeholder relationships. Select a profile to read more.</p>
       </div>
       <div className="team-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
         {TEAM.map(t => (
