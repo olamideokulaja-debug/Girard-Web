@@ -323,16 +323,46 @@ function PropertyCounter({ style }) {
 }
 
 function ContactSection() {
-  const [cf, setCf] = useState({ name: "", email: "", msg: "" });
-  const send = () => {
-    const subject = encodeURIComponent("Website enquiry from " + (cf.name || "a visitor"));
-    const body = encodeURIComponent((cf.msg || "") + "\n\nFrom: " + cf.name + " (" + cf.email + ")");
-    window.location.href = "mailto:info@girardpropertylimited.com?subject=" + subject + "&body=" + body;
+  const [cf, setCf] = useState({ name: "", email: "", phone: "", msg: "" });
+  const [sending, setSending] = useState(false);
+  const [note, setNote] = useState(null);   // { text, bad }
+  const send = async () => {
+    const name = cf.name.trim(), email = cf.email.trim();
+    if (!name || !email || email.indexOf("@") < 1) {
+      setNote({ text: "Please add your name and a valid email address.", bad: true });
+      return;
+    }
+    setSending(true); setNote(null);
+    try {
+      const r = await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channels: ["email"],
+          to: { email: "info@girardpropertylimited.com" },
+          subject: "Website enquiry from " + name,
+          message: "Name: " + name + "\nEmail: " + email +
+                   (cf.phone.trim() ? "\nPhone: " + cf.phone.trim() : "") +
+                   "\n\n" + (cf.msg || "")
+        })
+      });
+      const d = await r.json();
+      if (d && d.email) {
+        setCf({ name: "", email: "", phone: "", msg: "" });
+        setNote({ text: "Thank you. We have your enquiry and will reply within one working day.", bad: false });
+      } else {
+        setNote({ text: "That did not send. Please call +234 704 817 3866 or email us directly.", bad: true });
+      }
+    } catch (e) {
+      setNote({ text: "That did not send. Please call +234 704 817 3866 or email us directly.", bad: true });
+    }
+    setSending(false);
   };
   const inp = { width: "100%", background: "var(--navy-2)", border: "1px solid var(--navy-line)", borderRadius: 8, padding: "12px 14px", color: "#fff", fontSize: 14, marginBottom: 12, fontFamily: "inherit" };
   const items = [
     { icon: MapPin, label: "Visit us", value: "21 Fatai Arobieke Street, Off Admiralty Way, Lekki Phase 1, Lagos" },
     { icon: Phone, label: "Call us", value: "+234 704 817 3866", href: "tel:+2347048173866" },
+    { icon: MessageSquare, label: "WhatsApp", value: "+234 704 817 3866", href: "https://wa.me/2347048173866" },
     { icon: Mail, label: "Email us", value: "info@girardpropertylimited.com", href: "mailto:info@girardpropertylimited.com" },
     { icon: Clock, label: "Open hours", value: "Mon – Sat: 8am – 5pm · Sunday closed" }
   ];
@@ -352,8 +382,12 @@ function ContactSection() {
           <div className="serif" style={{ color: "#fff", fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Send a message</div>
           <input value={cf.name} onChange={e => setCf({ ...cf, name: e.target.value })} placeholder="Your name" style={inp} />
           <input value={cf.email} onChange={e => setCf({ ...cf, email: e.target.value })} placeholder="Email address" style={inp} />
+          <input value={cf.phone} onChange={e => setCf({ ...cf, phone: e.target.value })} placeholder="Phone (optional)" style={inp} />
           <textarea value={cf.msg} onChange={e => setCf({ ...cf, msg: e.target.value })} rows={4} placeholder="How can we help?" style={{ ...inp, resize: "vertical" }} />
-          <button onClick={send} className="btn-gold" style={{ width: "100%", justifyContent: "center", marginTop: 2 }}>Send message <ArrowUpRight size={16} /></button>
+          <button onClick={send} disabled={sending} className="btn-gold" style={{ width: "100%", justifyContent: "center", marginTop: 2, opacity: sending ? .6 : 1 }}>{sending ? "Sending\u2026" : "Send message"} {!sending && <ArrowUpRight size={16} />}</button>
+          <div role="status" aria-live="polite" style={{ marginTop: 12, fontSize: 12.5, lineHeight: 1.6, color: note && note.bad ? "#E8A33D" : "rgba(255,255,255,.62)" }}>
+            {note ? note.text : "Your details go to the Girard team only. We do not pass them on."}
+          </div>
         </div>
       </div>
     </div>
