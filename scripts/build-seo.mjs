@@ -15,7 +15,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, SERVICES, MODULES, ADVANTAGES, AUDIENCES, TEAM, AT_A_GLANCE, VALUES, IMAGES, DEVELOPMENT_GALLERY, WALKTHROUGH } from "./seo-content.mjs";
+import { SITE, SERVICES, MODULES, ADVANTAGES, AUDIENCES, TEAM, AT_A_GLANCE, VALUES, IMAGES, DEVELOPMENT_GALLERY, WALKTHROUGH, CASE } from "./seo-content.mjs";
 
 const DIST = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 const urls = [];
@@ -199,6 +199,9 @@ async function buildSections() {
     jsonld: ORG_JSONLD,
     body: `
 <p>Driven by a leadership team of seasoned professionals in real estate law, project development, finance, governance and estate management, the company upholds an unyielding commitment to quality, compliance and strategic growth.</p>
+<h2>${esc(CASE.heading)}</h2>
+<p>${esc(CASE.body)}</p>
+<dl>${CASE.points.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
 <h2>At a glance</h2>
 <dl>${AT_A_GLANCE.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
 <h2>Our vision</h2>
@@ -351,6 +354,7 @@ ${APP_CTA}`
 <dt>Call us</dt><dd><a href="${SITE.phoneHref}">${esc(SITE.phone)}</a></dd>
 <dt>Email us</dt><dd><a href="mailto:${SITE.email}">${esc(SITE.email)}</a></dd>
 <dt>Open hours</dt><dd>${esc(SITE.hours)}</dd>
+<dt>Mobile app</dt><dd><a href="${SITE.appStore}">Download on the App Store</a> or <a href="${SITE.play}">get it on Google Play</a></dd>
 </dl>
 <p><a class="cta" href="mailto:${SITE.email}">Send a message</a><a class="cta line" href="/">Open the platform</a></p>`
   }));
