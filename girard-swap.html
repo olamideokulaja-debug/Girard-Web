@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Property Swap · Girard Property Limited</title>
+<meta name="description" content="Trade a property instead of selling it. Two owners, two properties, one exchange, with independent valuation, escrow and title transfer on each side." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="girard.css">
+<style>
+  .mast.swapmast{min-height:76vh;padding-bottom:56px}
+  .swaphero{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;width:100%}
+  #swapbig{width:100%;aspect-ratio:1/1;display:block;cursor:grab;max-height:60vh;margin-left:auto}
+  #swapbig:active{cursor:grabbing}
+  @media (max-width:900px){
+    .swaphero{grid-template-columns:1fr;gap:34px}
+    .mast.swapmast{min-height:0}
+    #swapbig{max-height:none}
+  }
+
+  /* --- the four stages, drawn as a run of columns with a line through --- */
+  .stage{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--hair);
+    position:relative}
+  .stage::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--gold);
+    transform-origin:left;transform:scaleX(0);transition:transform 1.6s cubic-bezier(.16,1,.3,1) .2s}
+  .stage.in::before{transform:scaleX(1)}
+  .stg{padding:40px 26px 38px;border-bottom:1px solid var(--hair);border-right:1px solid var(--hair)}
+  .stg:last-child{border-right:none}
+  .stg b{font-family:'Lora',serif;font-size:13px;letter-spacing:.24em;color:var(--gold)}
+  .stg h3{margin:16px 0 0;font-family:'Lora',serif;font-weight:400;font-size:clamp(20px,2.2vw,26px);line-height:1.16}
+  .stg p{margin:14px 0 0;font-size:13.5px;line-height:1.74;color:#9DAABE}
+  @media (max-width:940px){
+    .stage{grid-template-columns:1fr 1fr}
+    .stg:nth-child(2){border-right:none}
+  }
+  @media (max-width:560px){.stage{grid-template-columns:1fr}.stg{border-right:none}}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
+  @media (max-width:900px){.two{grid-template-columns:1fr;gap:34px}}
+
+  /* --- the worked example, set like a statement --- */
+  .sheet{border:1px solid var(--hair)}
+  .sheet .row{display:grid;grid-template-columns:1fr auto;gap:20px;padding:18px 24px;
+    border-bottom:1px solid var(--hair);font-size:14px;color:#9DAABE;align-items:baseline}
+  .sheet .row:last-child{border-bottom:none}
+  .sheet .row span:last-child{font-family:'Lora',serif;font-size:17px;color:var(--bone);white-space:nowrap}
+  .sheet .row.head{background:rgba(18,49,102,.3);color:var(--gold);font-size:10.5px;letter-spacing:.26em}
+  .sheet .row.total span:last-child{color:var(--gold);font-size:22px}
+
+  .qa{border-top:1px solid var(--hair)}
+  .qa details{border-bottom:1px solid var(--hair)}
+  .qa summary{padding:24px 0;cursor:pointer;list-style:none;display:flex;gap:20px;align-items:baseline;
+    font-family:'Lora',serif;font-size:clamp(18px,2vw,23px);line-height:1.3;
+    transition:color .4s}
+  .qa summary::-webkit-details-marker{display:none}
+  .qa summary::after{content:"+";margin-left:auto;color:var(--gold);font-size:20px;
+    transition:transform .4s}
+  .qa details[open] summary::after{transform:rotate(45deg)}
+  .qa summary:hover{color:var(--gold)}
+  .qa p{margin:0 0 26px;font-size:14.5px;line-height:1.8;color:#9DAABE;max-width:64ch}
+</style>
+</head>
+<body>
+
+<div class="prog"></div>
+<div class="grain"></div>
+<div class="cur" id="cur"></div><div class="cur-dot" id="curdot"></div>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="mark" href="girard-home-v4.html">GIRARD<em>.</em></a>
+    <div class="navlinks">
+      <a href="girard-listings.html">LISTINGS</a>
+      <a href="girard-services.html">SERVICES</a>
+      <a class="here" href="girard-swap.html">SWAP</a>
+      <a href="girard-people.html">OUR PEOPLE</a>
+      <a href="girard-about.html">ABOUT</a>
+      <a href="girard-contact.html">CONTACT</a>
+    </div>
+    <a class="navcta" href="girard-contact.html">BOOK A VIEWING</a>
+  </div>
+</nav>
+
+<div class="mast swapmast">
+  <span class="mast-tint" style="background:linear-gradient(180deg,rgba(8,27,58,.35),rgba(8,27,58,.85))"></span>
+  <div class="wrap">
+    <div class="swaphero">
+      <div>
+        <div class="eyebrow"><i></i><span>PROPERTY SWAP</span></div>
+        <h1 class="h1" style="margin-top:22px">Trade a<br />property instead<br />of <i>selling</i> it.</h1>
+        <p class="lede" style="margin-top:28px">Two owners, two properties, one exchange. Girard values both
+          independently, matches them in a common currency, holds any difference in escrow and guides the title
+          transfer on each side.</p>
+        <div class="btnrow" style="margin-top:34px">
+          <a class="btn btn-gold" href="girard-contact.html#swap">Register a property to swap</a>
+          <a class="btn btn-line" href="#how">How it works</a>
+        </div>
+        <p class="small" style="margin-top:22px">Drag the model to turn it.</p>
+      </div>
+      <div><canvas id="swapbig"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:40px">
+      <div class="eyebrow"><i></i><span>HOW A SWAP WORKS</span></div>
+      <h2 class="h2" style="margin-top:24px;max-width:20ch">Four stages, and a difference settled in cash.</h2>
+    </div>
+    <div class="stage reveal">
+      <div class="stg"><b>01</b><h3>Independent valuation</h3>
+        <p>Each property is valued on its own merits by a valuer instructed for that property. Neither owner
+          values their own asset, and neither valuation is shown to the other side before both are complete.</p></div>
+      <div class="stg"><b>02</b><h3>Matching</h3>
+        <p>Both values are expressed in one currency at a rate fixed on an agreed date, so a house in Lagos and a
+          flat in London can be compared without argument about which day the rate came from.</p></div>
+      <div class="stg"><b>03</b><h3>Escrow</h3>
+        <p>Properties rarely match to the naira. The difference is paid into escrow by the owner of the lesser
+          asset and released only when both transfers complete.</p></div>
+      <div class="stg"><b>04</b><h3>Title transfer</h3>
+        <p>Each side transfers under the law that governs its own property, with its own conveyancer. Girard
+          holds the timetable and neither transfer completes without the other.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="two">
+      <div class="reveal">
+        <div class="eyebrow"><i></i><span>A WORKED EXAMPLE</span></div>
+        <h3 class="h3" style="margin-top:22px">Lagos to London, without two separate sales.</h3>
+        <p class="body" style="margin-top:20px">The figures below are an illustration of the mechanics, not an
+          offer, a valuation or a guide to what any property is worth. Real numbers come from real valuations.</p>
+        <p class="body" style="margin-top:14px">The point is the shape: two assets, one difference, one escrow,
+          and no period where either owner is holding cash and hoping to find the next purchase before prices
+          move against them.</p>
+      </div>
+      <div class="reveal">
+        <div class="sheet">
+          <div class="row head"><span>ILLUSTRATION ONLY</span><span>VALUE</span></div>
+          <div class="row"><span>Property A, Lekki Phase 1</span><span>&#8358;420,000,000</span></div>
+          <div class="row"><span>Property B, London</span><span>&#8358;465,000,000</span></div>
+          <div class="row"><span>Difference, paid by owner of A</span><span>&#8358;45,000,000</span></div>
+          <div class="row"><span>Held in escrow until both transfers complete</span><span>&#8358;45,000,000</span></div>
+          <div class="row total"><span>Released to owner of B on completion</span><span>&#8358;45,000,000</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:34px"><div class="eyebrow"><i></i><span>WHO IT SUITS</span></div></div>
+    <div class="led reveal">
+      <div class="led-row"><h3>Relocating, and holding both ends</h3>
+        <p>You are moving country and would rather arrive owning something than arrive holding a transfer that has
+          not landed.</p></div>
+      <div class="led-row"><h3>Trading up or down within Lagos</h3>
+        <p>The house is too big or too small, and a sale followed by a purchase means two sets of costs and a gap
+          in the middle.</p></div>
+      <div class="led-row"><h3>An asset that is hard to sell quickly</h3>
+        <p>The market for your property is narrow. The market for an exchange with somebody who wants exactly it
+          may not be.</p></div>
+      <div class="led-row"><h3>Estate and family restructuring</h3>
+        <p>Property needs to move between related parties or entities, and a straight sale is the wrong
+          instrument.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:30px"><div class="eyebrow"><i></i><span>QUESTIONS</span></div></div>
+    <div class="qa reveal">
+      <details>
+        <summary>Is a match guaranteed?</summary>
+        <p>No. A swap needs a counterparty who wants your property as much as you want theirs. Registering a
+          property puts it in front of that search. It does not create the other side of it, and we will not
+          pretend otherwise while you wait.</p>
+      </details>
+      <details>
+        <summary>What does it cost?</summary>
+        <p>Valuation, legal work and any transfer taxes are payable on each side as they would be on a sale.
+          Girard charges a transaction fee for running the exchange, agreed in writing before the process starts.
+          There is no fee for registering a property or for a search that finds nothing.</p>
+      </details>
+      <details>
+        <summary>Who holds the escrow?</summary>
+        <p>A licensed third party under written escrow terms both owners sign. Girard does not hold the money,
+          and the release condition is the completion of both transfers rather than anybody's satisfaction.</p>
+      </details>
+      <details>
+        <summary>What if one side cannot complete?</summary>
+        <p>Neither transfer completes. The escrow returns to the party who paid it in, less costs already
+          incurred, on the terms agreed at the start. The failure mode is written down before anybody signs,
+          which is the part most informal arrangements skip.</p>
+      </details>
+      <details>
+        <summary>Can a swap cross borders?</summary>
+        <p>Yes, and that is the case it was built for. Each property transfers under its own law with its own
+          conveyancer. What Girard adds is the common valuation, the fixed rate, the escrow and one timetable
+          across both jurisdictions.</p>
+      </details>
+      <details>
+        <summary>Does the property have to be mortgage-free?</summary>
+        <p>Not necessarily, but any charge on the title has to be dealt with before transfer, and the lender has
+          to agree. A property with an unresolved charge cannot be exchanged, the same as it could not be sold.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="panel reveal">
+      <h3 class="h3">Where this stands today.</h3>
+      <p class="body" style="margin-top:16px">The swap service is open for registrations and the process above is
+        the process we will run. It is a young service, so if you are the first through it you will be dealing
+        with people who will tell you so rather than implying a queue that is not there.</p>
+      <div class="btnrow" style="margin-top:28px">
+        <a class="btn btn-gold" href="girard-contact.html#swap">Register a property to swap</a>
+        <a class="btn btn-line" href="girard-contact.html">Ask a question first</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <div class="eyebrow"><i></i><span>GIRARD PROPERTY LIMITED</span></div>
+        <p class="small" style="margin-top:22px">21 Fatai Arobieke Street, Off Admiralty Way,<br />
+          Lekki Phase 1, Lagos<br />
+          +234 704 817 3866<br />info@girardpropertylimited.com</p>
+      </div>
+      <div>
+        <h5>PAGES</h5>
+        <ul>
+          <li><a href="girard-listings.html">Listings</a></li>
+          <li><a href="girard-services.html">Services</a></li>
+          <li><a href="girard-people.html">Our people</a></li>
+          <li><a href="girard-about.html">About</a></li>
+          <li><a href="girard-contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>THE APP</h5>
+        <ul>
+          <li><a href="https://apps.apple.com/app/id6795445952">Download on the App Store</a></li>
+          <li><a href="https://play.google.com/store/apps/details?id=com.girardpropertylimited.twa">Get it on Google Play</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span class="small">&copy; 2026 Girard Property Limited</span>
+      <span class="small">Lagos, Nigeria</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="girard.js"></script>
+<script>
+/* The exchange model, carried over from the home page and given room.
+   Turning it yourself is the point: an exchange you control. */
+(function () {
+  var cv = document.getElementById('swapbig');
+  if (!cv || !window.THREE) return;
+  var sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(38, 1, .1, 100);
+  cam.position.set(0, 4.8, 13.6); cam.lookAt(0, 1, 0);
+  var r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+  r.setPixelRatio(Math.min(devicePixelRatio, 2));
+  sc.add(new THREE.AmbientLight(0x3f6bb0, 1.25));
+  var pl = new THREE.PointLight(0xF2DCAE, 2.4, 80); pl.position.set(6, 12, 9); sc.add(pl);
+  var fill = new THREE.PointLight(0x74A6EE, 1.2, 90); fill.position.set(-9, 7, -7); sc.add(fill);
+
+  function blk(h, gold) {
+    var g = new THREE.BoxGeometry(1.7, h, 1.7);
+    var grp = new THREE.Group();
+    grp.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+      color: gold ? 0x8F6F34 : 0x18356A, roughness: .42, metalness: .55 })));
+    grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(g),
+      new THREE.LineBasicMaterial({ color: 0xC6A15B, transparent: true, opacity: .85 })));
+    grp.children.forEach(function (c) { c.position.y = h / 2; });
+    sc.add(grp); return grp;
+  }
+  var a = blk(3.6, true), b = blk(2.5, false);
+
+  var ring = new THREE.Mesh(new THREE.TorusGeometry(3.9, .008, 8, 160),
+    new THREE.MeshBasicMaterial({ color: 0xC6A15B, transparent: true, opacity: .4 }));
+  ring.rotation.x = Math.PI / 2; sc.add(ring);
+
+  /* the escrow: a small held mass at the centre, pulsing quietly */
+  var esc = new THREE.Mesh(new THREE.OctahedronGeometry(.5),
+    new THREE.MeshStandardMaterial({ color: 0x7d6230, roughness: .3, metalness: .95 }));
+  esc.position.y = 1.5; sc.add(esc);
+  var escEdge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.OctahedronGeometry(.5)),
+    new THREE.LineBasicMaterial({ color: 0xF4E1B6, transparent: true, opacity: .8 }));
+  escEdge.position.copy(esc.position); sc.add(escEdge);
+
+  function size() { var w = cv.clientWidth || 480; r.setSize(w, w, false); }
+  size(); addEventListener('resize', size);
+
+  var t = 0, drag = false, lastX = 0, spin = 0, vel = 0;
+  cv.addEventListener('pointerdown', function (e) {
+    drag = true; lastX = e.clientX; cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    vel = (e.clientX - lastX) * .012; spin += vel; lastX = e.clientX;
+  });
+  addEventListener('pointerup', function () { drag = false; });
+
+  (function loop() {
+    requestAnimationFrame(loop);
+    if (!drag) { t += window.GIRARD_REDUCED ? 0 : .006; vel *= .94; spin += vel; }
+    var ang = t + spin;
+    a.position.set(Math.cos(ang) * 3.9, 0, Math.sin(ang) * 3.9);
+    b.position.set(Math.cos(ang + Math.PI) * 3.9, 0, Math.sin(ang + Math.PI) * 3.9);
+    a.rotation.y = -ang; b.rotation.y = -ang;
+    esc.rotation.y = ang * 1.6; esc.rotation.x = ang * .7;
+    escEdge.rotation.copy(esc.rotation);
+    var s = 1 + Math.sin(ang * 2) * .06;
+    esc.scale.set(s, s, s); escEdge.scale.set(s, s, s);
+    r.render(sc, cam);
+  })();
+})();
+</script>
+</body>
+</html>
