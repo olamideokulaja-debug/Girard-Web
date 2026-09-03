@@ -815,14 +815,22 @@ function Landing({ onStart, onSignIn }) {
             <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>A comprehensive suite of real estate solutions.</h2>
             <p style={{ color: "var(--muted)", fontSize: 15.5, marginTop: 14, lineHeight: 1.65, maxWidth: 620, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>Tailored to investors, homeowners, institutions and development partners seeking reliability and excellence, delivered to premium architectural and engineering standards.</p>
           </div>
-          <div className="svc-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
-            {SERVICES.map(sv => <div key={sv.t} className="lift card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: 26 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", marginBottom: 16 }}><sv.icon size={22} /></div>
-              <div className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)", marginBottom: 8 }}>{sv.t}</div>
-              <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, textAlign: "justify", hyphens: "auto", WebkitHyphens: "auto", MozHyphens: "auto" }}>{sv.d}</p>
+          {/* A ledger rather than a grid of identical cards: six mandates read as
+              a list of work, and the rules do the separating instead of borders
+              on all four sides. */}
+          <div className="svc-led" style={{ borderTop: "1px solid var(--cream-line)" }}>
+            {SERVICES.map((sv, i2) => <div key={sv.t} className="svc-row" style={{ display: "grid", gridTemplateColumns: "58px 1.05fr 1fr", gap: 30, alignItems: "start", padding: "30px 0", borderBottom: "1px solid var(--cream-line)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 2 }}>
+                <span className="serif" style={{ fontSize: 14, color: "var(--gold-2)" }}>{String(i2 + 1).padStart(2, "0")}</span>
+              </div>
+              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                <span style={{ width: 38, height: 38, borderRadius: 9, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center", flexShrink: 0 }}><sv.icon size={18} /></span>
+                <div className="serif" style={{ fontSize: "clamp(19px,2.2vw,26px)", fontWeight: 600, color: "var(--ink)", lineHeight: 1.2 }}>{sv.t}</div>
+              </div>
+              <p style={{ color: "var(--muted)", fontSize: 14.5, lineHeight: 1.75, margin: 0 }}>{sv.d}</p>
             </div>)}
           </div>
-          <style>{`@media(max-width:960px){.svc-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:620px){.svc-grid{grid-template-columns:1fr!important}}`}</style>
+          <style>{`.svc-row:hover{background:rgba(198,161,91,.05)}@media(max-width:820px){.svc-row{grid-template-columns:34px 1fr!important;row-gap:10px!important}.svc-row > p{grid-column:2}}`}</style>
         </div>
       </section>)}
 
