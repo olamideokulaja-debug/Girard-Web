@@ -5655,14 +5655,14 @@ function LeadershipSection() {
       </div>
       <style>{`@media(max-width:900px){.team-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.team-grid{grid-template-columns:1fr!important}}`}</style>
 
-      <div style={{ marginTop: 64, maxWidth: 900 }}>
+      <div style={{ marginTop: 64 }}>
         <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 12 }}>The group</div>
         <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15, lineHeight: 1.7, marginBottom: 26, maxWidth: 620 }}>
           Girard is part of the Imadeforte group, which also holds interests in healthcare, technology and
           consulting. Its directors sit behind the business.
         </p>
         <div style={{ borderTop: "1px solid var(--navy-line)" }}>
-          {GROUP_BOARD.map(g => <div key={g.name} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, padding: "20px 0", borderBottom: "1px solid var(--navy-line)", alignItems: "baseline" }} className="grp-row">
+          {GROUP_BOARD.map(g => <div key={g.name} style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 30, padding: "22px 0", borderBottom: "1px solid var(--navy-line)", alignItems: "baseline" }} className="grp-row">
             <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "#fff" }}>{g.name}</div>
             <div style={{ fontSize: 11, letterSpacing: 1.4, color: "var(--gold)", textTransform: "uppercase" }}>{g.role}</div>
           </div>)}
