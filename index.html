@@ -15,6 +15,14 @@
     <meta name="apple-mobile-web-app-title" content="Girard" />
     <meta name="mobile-web-app-capable" content="yes" />
     <title>Girard Property Limited</title>
+    <!--
+      three.js for the homepage hero, loaded from a CDN rather than added to
+      package.json so the build is untouched. It is deliberately NOT deferred
+      as a module: the hero checks for window.THREE and simply renders the
+      plain navy section if this has not loaded, so a CDN failure costs the
+      animation and nothing else.
+    -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </head>
   <body>
     <div id="root"></div>
