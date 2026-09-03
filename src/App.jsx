@@ -603,7 +603,7 @@ function Landing({ onStart, onSignIn }) {
   return (
     <div>
       <style>{`
-        .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
+        .wrap{max-width:1440px;margin:0 auto;padding:0 40px}
         .eyebrow{font-size:12px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase}
         .btn-gold{background:var(--gold);color:#201601;border:none;padding:13px 24px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .18s,transform .06s;letter-spacing:.2px}
         .btn-gold:hover{background:var(--gold-2)}
@@ -719,7 +719,7 @@ function Landing({ onStart, onSignIn }) {
         <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", background: "radial-gradient(1000px 620px at 70% 50%, transparent 0%, rgba(10,26,56,.15) 58%, var(--navy) 100%)" }} />
 
         <div className="wrap" style={{ paddingTop: 96, paddingBottom: 104, position: "relative", zIndex: 2 }}>
-          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 54, alignItems: "center" }}>
+          <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1.02fr .98fr", gap: 40, alignItems: "center" }}>
             <div className="rise">
               <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 22 }}>Digital management &amp; cross-border swaps</div>
               <h1 className="serif hero-h">
@@ -1464,7 +1464,7 @@ function BrandMark({ dark }) {
 
 function EntryStyles() {
   return <style>{`
-    .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
+    .wrap{max-width:1440px;margin:0 auto;padding:0 40px}
     .eyebrow{font-size:12px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase}
     .btn-gold{background:var(--gold);color:#201601;border:none;padding:13px 24px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .18s;letter-spacing:.2px}
     .btn-gold:hover{background:var(--gold-2)}
