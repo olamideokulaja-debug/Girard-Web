@@ -407,12 +407,21 @@ const ADVANTAGES = [
 
 /* Leadership. Add your real team and the section appears automatically.
    Example: { name: "Full Name", role: "Managing Director", photo: "/img/team-1.jpg" } */
+/* Girard's own people, with the photographs supplied in September 2026.
+   The group directors are held separately below: they sit behind the business
+   but are not Girard's day-to-day team, and the page should not imply they are. */
 const TEAM = [
-  { name: "Dr. Olamide Okulaja", role: "Executive Chairman", photo: "/img/team-1.jpg", bio: "A respected healthcare executive and entrepreneur with over two decades across clinical practice, public health and healthcare management, and CEO of Genesys Health Information Systems. His expertise in systems reform, policy and strategic leadership guides Girard's mission of excellence and impact." },
-  { name: "Jennifer Kaja", role: "CEO / Managing Director", photo: "/img/team-2.jpg", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
-  { name: "Pedro Cabulo", role: "Chief Strategy & Partnerships Officer", photo: "/img/team-3.jpg", bio: "Leads corporate strategy and cultivates the partnerships that power Girard's growth and investment platforms." },
-  { name: "Olayinka O. Odunlami", role: "Finance, Operations & Management", photo: "/img/team-4.jpg", bio: "Drives financial discipline, operational excellence and management systems across the Girard portfolio." },
-  { name: "Engr. Tomi Adebayo", role: "Projects Director", photo: "/img/team-5.jpg", bio: "Oversees project delivery, engineering standards and construction quality across Girard developments." }
+  { name: "Dr. Olamide Okulaja", role: "Executive Chairman", photo: "/img/team-okulaja.jpg", bio: "A respected healthcare executive and entrepreneur with over two decades across clinical practice, public health and healthcare management, and CEO of Genesys Health Information Systems. His work in systems reform and strategic leadership sets Girard's direction." },
+  { name: "Jennifer Kaja", role: "Chief Executive Officer", photo: "/img/team-kaja.jpg", bio: "A distinguished Nigerian lawyer with first-class honours from the University of Wales and a decade of practice across corporate, commercial and real estate law. As Chief Legal Officer of Periwinkle Empire she oversaw landmark transactions, governance and compliance." },
+  { name: "Goodness Onyeneke", role: "Property Manager", photo: "/img/team-onyeneke.jpg", bio: "Runs the managed portfolio day to day: tenancies, inspections, maintenance and the standard every Girard property is held to once the keys have changed hands." }
+];
+
+/* Group leadership. Named and roled, deliberately without portraits, so the
+   different treatment does the explaining. */
+const GROUP_BOARD = [
+  { name: "Pedro Cabulo", role: "Chief Strategy & Partnerships Officer" },
+  { name: "Olayinka O. Odunlami", role: "Finance, Operations & Management" },
+  { name: "Engr. Tomi Adebayo", role: "Projects Director" }
 ];
 
 function Reveal({ children, style }) {
@@ -5645,6 +5654,21 @@ function LeadershipSection() {
         ))}
       </div>
       <style>{`@media(max-width:900px){.team-grid{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.team-grid{grid-template-columns:1fr!important}}`}</style>
+
+      <div style={{ marginTop: 64, maxWidth: 900 }}>
+        <div className="eyebrow" style={{ color: "var(--gold)", marginBottom: 12 }}>The group</div>
+        <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15, lineHeight: 1.7, marginBottom: 26, maxWidth: 620 }}>
+          Girard is part of the Imadeforte group, which also holds interests in healthcare, technology and
+          consulting. Its directors sit behind the business.
+        </p>
+        <div style={{ borderTop: "1px solid var(--navy-line)" }}>
+          {GROUP_BOARD.map(g => <div key={g.name} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, padding: "20px 0", borderBottom: "1px solid var(--navy-line)", alignItems: "baseline" }} className="grp-row">
+            <div className="serif" style={{ fontSize: 19, fontWeight: 600, color: "#fff" }}>{g.name}</div>
+            <div style={{ fontSize: 11, letterSpacing: 1.4, color: "var(--gold)", textTransform: "uppercase" }}>{g.role}</div>
+          </div>)}
+        </div>
+        <style>{`@media(max-width:700px){.grp-row{grid-template-columns:1fr!important;gap:6px!important}}`}</style>
+      </div>
     </div>
     {open && <LeaderModal member={open} onClose={() => setOpen(null)} />}
   </section>;
