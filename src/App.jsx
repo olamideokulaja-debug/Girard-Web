@@ -685,6 +685,7 @@ function Landing({ onStart, onSignIn }) {
               <div className="navdrop-menu">
                 <button className={"navdrop-item" + (tab === "services" ? " active" : "")} onClick={() => go("services")}>What we do</button>
                 <button className={"navdrop-item" + (tab === "tour" ? " active" : "")} onClick={() => go("tour")}>How it works</button>
+                <button className={"navdrop-item" + (tab === "swapinfo" ? " active" : "")} onClick={() => go("swapinfo")}>Property swap</button>
               </div>
             </div>
             <div className="navdrop">
@@ -713,6 +714,7 @@ function Landing({ onStart, onSignIn }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Services</div>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("services"); setMenu(false); }}>What we do</button>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("tour"); setMenu(false); }}>How it works</button>
+            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("swapinfo"); setMenu(false); }}>Property swap</button>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Listings</div>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("listings"); setMenu(false); }}>Browse our listings</button>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("returns"); setMenu(false); }}>Estimate your returns</button>
@@ -961,6 +963,7 @@ function Landing({ onStart, onSignIn }) {
       </section>)}
 
       {/* LEADERSHIP */}
+      {tab === "swapinfo" && <SwapInfoSection go={go} />}
       {tab === "leadership" && <LeadershipSection />}
 
       {(tab === "partners" || tab === "home") && <PartnersSection />}
@@ -5628,6 +5631,178 @@ function UnitModal({ unit, onClose, onSave }) {
    Leadership: grid shows photo + name only; click opens a detail view
    with photo and name on the left and the full bio on the right.
    =================================================================== */
+/* Property swap explained on the public site. It was previously only visible
+   once someone had signed in, which is the wrong way round for the product
+   that distinguishes Girard most. The model is draggable: turning the exchange
+   yourself is the point. */
+function SwapModel() {
+  const host = useRef(null);
+  useEffect(() => {
+    const el = host.current;
+    if (!el || !window.THREE) return;
+    const THREE = window.THREE;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let alive = true;
+    const sc = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(38, el.clientWidth / Math.max(1, el.clientHeight), 0.1, 120);
+    cam.position.set(0, 4.6, 13.5);
+    cam.lookAt(0, 1, 0);
+    const rn = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    rn.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    rn.setSize(el.clientWidth, el.clientHeight);
+    el.appendChild(rn.domElement);
+
+    sc.add(new THREE.AmbientLight(0x2b4a7a, 0.9));
+    const pl = new THREE.PointLight(0xF0D9A8, 2.4, 80);
+    pl.position.set(6, 13, 9);
+    sc.add(pl);
+
+    const block = (h, gold) => {
+      const g = new THREE.BoxGeometry(1.7, h, 1.7);
+      const grp = new THREE.Group();
+      const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+        color: gold ? 0x7d6230 : 0x0f1e3a, roughness: 0.34, metalness: 0.9 }));
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
+        new THREE.LineBasicMaterial({ color: 0xC6A15B, transparent: true, opacity: 0.9 }));
+      m.position.y = h / 2; e.position.y = h / 2;
+      grp.add(m); grp.add(e); sc.add(grp); return grp;
+    };
+    const a = block(3.6, true), b = block(2.4, false);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.9, 0.01, 8, 150),
+      new THREE.MeshBasicMaterial({ color: 0xC6A15B, transparent: true, opacity: 0.4 }));
+    ring.rotation.x = Math.PI / 2;
+    sc.add(ring);
+
+    let t = 0, drag = false, lastX = 0, spin = 0, vel = 0, raf = 0;
+    const down = (e) => { drag = true; lastX = e.clientX; };
+    const move = (e) => { if (!drag) return; vel = (e.clientX - lastX) * 0.011; spin += vel; lastX = e.clientX; };
+    const up = () => { drag = false; };
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    const onResize = () => {
+      if (!el.clientWidth) return;
+      cam.aspect = el.clientWidth / Math.max(1, el.clientHeight);
+      cam.updateProjectionMatrix();
+      rn.setSize(el.clientWidth, el.clientHeight);
+    };
+    window.addEventListener("resize", onResize);
+
+    const loop = () => {
+      if (!alive) return;
+      raf = requestAnimationFrame(loop);
+      if (!drag) { t += reduced ? 0 : 0.005; vel *= 0.95; spin += vel; }
+      const ang = t + spin;
+      a.position.set(Math.cos(ang) * 3.9, 0, Math.sin(ang) * 3.9);
+      b.position.set(Math.cos(ang + Math.PI) * 3.9, 0, Math.sin(ang + Math.PI) * 3.9);
+      a.rotation.y = -ang; b.rotation.y = -ang;
+      rn.render(sc, cam);
+    };
+    loop();
+    return () => {
+      alive = false; cancelAnimationFrame(raf);
+      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("resize", onResize);
+      rn.dispose();
+      if (rn.domElement.parentNode) rn.domElement.parentNode.removeChild(rn.domElement);
+    };
+  }, []);
+  return <div ref={host} style={{ width: "100%", aspectRatio: "1 / 1", cursor: "grab", touchAction: "pan-y" }} />;
+}
+
+const SWAP_STEPS = [
+  ["You list what you hold, and what you want", "Your property goes through the same verification as any Girard listing: title, ownership and condition. You then say what you are looking for, and whether you would put cash in or take cash out."],
+  ["Both properties are valued independently", "Girard values each side rather than accepting either owner's figure. Both are expressed in a common currency, so a Lagos property and a London one can be compared without arguing about the rate on the day."],
+  ["We match, and price the difference", "Few properties are worth exactly the same. The gap is settled in cash by whichever side receives the more valuable asset, agreed before anything is signed."],
+  ["The difference is held in escrow", "Neither owner hands money directly to the other. The balancing payment is held until both title transfers are ready, so nobody is exposed to the other side changing their mind."],
+  ["Both titles transfer together", "Girard guides the conveyance on each side so the two transfers complete as one event. If either side cannot complete, neither does, and the escrow returns."]
+];
+
+function SwapInfoSection({ go }) {
+  return <>
+    <section style={{ background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
+      <div className="wrap" style={{ padding: "84px 0 92px" }}>
+        <div className="swapinfo-grid" style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 54, alignItems: "center" }}>
+          <div>
+            <Rule />
+            <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 14px" }}>Property swap</div>
+            <h1 className="serif" style={{ fontSize: "clamp(36px,5.4vw,68px)", fontWeight: 600, lineHeight: 1.04, letterSpacing: -1 }}>
+              Trade a property instead of <span style={{ fontStyle: "italic", color: "var(--gold)" }}>selling</span> it.
+            </h1>
+            <p style={{ color: "rgba(255,255,255,.78)", fontSize: 16.5, lineHeight: 1.75, marginTop: 22, maxWidth: 540 }}>
+              Two owners, two properties, one exchange. No buyer to find, no chain to collapse, and one set of
+              fees instead of two.
+            </p>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 30 }}>
+              <button className="btn-gold" onClick={() => go("contact")}>Talk to us about a swap <ArrowUpRight size={16} /></button>
+            </div>
+            <p style={{ color: "rgba(255,255,255,.5)", fontSize: 12.5, marginTop: 18 }}>Drag the model to turn it.</p>
+          </div>
+          <div><SwapModel /></div>
+        </div>
+      </div>
+      <style>{`@media(max-width:900px){.swapinfo-grid{grid-template-columns:1fr!important;gap:32px!important}}`}</style>
+    </section>
+
+    <section style={{ background: "var(--ivory)", padding: "clamp(72px,9vw,120px) 0" }}>
+      <div className="wrap">
+        <h2 className="serif" style={{ fontSize: "clamp(28px,4vw,50px)", fontWeight: 600, lineHeight: 1.08, color: "var(--ink)", maxWidth: "24ch", letterSpacing: -.6 }}>
+          Selling to buy again means paying twice and waiting twice.
+        </h2>
+        <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.8, marginTop: 24, maxWidth: 640 }}>
+          An owner in Lekki who wants a house in Ikoyi normally has to find a buyer, complete, then find a seller
+          and complete again. Two sets of agents, two sets of legal fees, two title transfers, and months where a
+          collapse on either side undoes both. A swap replaces that with a single transaction that either happens
+          or does not.
+        </p>
+
+        <div style={{ borderTop: "1px solid var(--cream-line)", marginTop: 54 }}>
+          {SWAP_STEPS.map(([h, d], i) => <div key={h} className="swapstep" style={{ display: "grid", gridTemplateColumns: "54px .88fr 1.22fr", gap: 34, padding: "32px 0", borderBottom: "1px solid var(--cream-line)", alignItems: "start" }}>
+            <span className="serif" style={{ fontSize: 14, color: "var(--gold-2)", paddingTop: 6 }}>{String(i + 1).padStart(2, "0")}</span>
+            <div className="serif" style={{ fontSize: "clamp(19px,2.2vw,26px)", fontWeight: 600, color: "var(--ink)", lineHeight: 1.2 }}>{h}</div>
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: 14.5, lineHeight: 1.78 }}>{d}</p>
+          </div>)}
+        </div>
+        <style>{`@media(max-width:820px){.swapstep{grid-template-columns:34px 1fr!important;row-gap:10px!important}.swapstep > p{grid-column:2}}`}</style>
+      </div>
+    </section>
+
+    <section style={{ background: "var(--ivory-2)", padding: "clamp(64px,8vw,110px) 0" }}>
+      <div className="wrap">
+        <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 26 }}>Worth knowing</div>
+        <div className="swapwhen" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderTop: "1px solid var(--cream-line)" }}>
+          <div style={{ padding: "32px 34px 30px", borderRight: "1px solid var(--cream-line)", borderBottom: "1px solid var(--cream-line)" }}>
+            <h3 className="serif" style={{ margin: 0, fontSize: 23, fontWeight: 600, color: "var(--ink)" }}>When a swap makes sense</h3>
+            <ul style={{ margin: "16px 0 0", paddingLeft: 18 }}>
+              {["You are moving within Lagos and both properties are genuinely marketable",
+                "You hold abroad and want to hold at home, or the reverse",
+                "You want to change the shape of what you own rather than the amount",
+                "Speed matters more than squeezing the last percent out of a sale"].map(x =>
+                <li key={x} style={{ color: "var(--muted)", fontSize: 14.5, lineHeight: 1.7, marginBottom: 8 }}>{x}</li>)}
+            </ul>
+          </div>
+          <div style={{ padding: "32px 34px 30px", borderBottom: "1px solid var(--cream-line)" }}>
+            <h3 className="serif" style={{ margin: 0, fontSize: 23, fontWeight: 600, color: "var(--ink)" }}>When it does not</h3>
+            <ul style={{ margin: "16px 0 0", paddingLeft: 18 }}>
+              {["You need the cash rather than another property",
+                "Your title is unresolved, which a swap cannot fix any more than a sale would",
+                "The values are far apart and neither side can bridge the gap",
+                "You would accept a lower price for a faster ordinary sale"].map(x =>
+                <li key={x} style={{ color: "var(--muted)", fontSize: 14.5, lineHeight: 1.7, marginBottom: 8 }}>{x}</li>)}
+            </ul>
+            <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.7, marginTop: 14 }}>
+              If a swap is the wrong instrument we will say so. It is not always the answer.
+            </p>
+          </div>
+        </div>
+        <style>{`@media(max-width:820px){.swapwhen{grid-template-columns:1fr!important}.swapwhen > div:first-child{border-right:none!important}}`}</style>
+      </div>
+    </section>
+  </>;
+}
+
 function LeadershipSection() {
   const [open, setOpen] = useState(null);
   if (!TEAM.length) return null;
