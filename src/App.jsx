@@ -483,6 +483,76 @@ function CountUp({ to, dur = 1300, prefix = "", suffix = "" }) {
   return <span ref={ref}>{prefix}{n.toLocaleString()}{suffix}</span>;
 }
 const BGAL = ["/img/bourdillon_tower.jpg", "/img/bourdillon_lobby.jpg", "/img/bourdillon_living.jpg", "/img/bourdillon_bedroom.jpg", "/img/bourdillon_pool.jpg", "/img/bourdillon_entrance.jpg"];
+/* Developments as a destination of its own, rather than only a band on the
+   homepage. Everything stated here is drawn from the existing Bourdillon
+   figures: 40 units, 110m, 2,035 sq.m. Nothing invented. */
+const DEV_SPEC = [
+  ["Units", "40 bespoke residences"],
+  ["Height", "110 metres"],
+  ["Plot", "2,035 sq.m"],
+  ["Location", "Bourdillon Road, Ikoyi"],
+  ["Status", "In development"],
+  ["Tenure", "Clean title, verified"]
+];
+
+const DEV_FEATURES = [
+  ["Panoramic water views", "Floor-to-ceiling glazing oriented to the lagoon, with living space placed to take the light rather than the corridor."],
+  ["Rooftop infinity pool", "A rooftop level given to residents rather than plant, with the pool and terrace set against the Ikoyi skyline."],
+  ["Round-the-clock concierge", "Staffed reception and concierge, with the building's services run under Girard management from handover."],
+  ["Verified title", "Title, ownership and planning verified before any unit is offered, on the same standard as every Girard listing."]
+];
+
+function DevelopmentsSection({ go }) {
+  return <>
+    <section style={{ background: "var(--navy)", color: "#fff" }}>
+      <div className="feat-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+        <BourdillonGallery />
+        <div style={{ padding: "clamp(48px,6vw,84px) clamp(32px,4vw,60px)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <Rule />
+          <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>Our developments</div>
+          <h1 className="serif" style={{ fontSize: "clamp(34px,4.8vw,60px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: -.8 }}>
+            1 Bourdillon <span style={{ fontStyle: "italic", color: "var(--gold)" }}>Residences</span>
+          </h1>
+          <div style={{ color: "var(--gold-soft)", fontWeight: 600, marginTop: 10, letterSpacing: 1, fontSize: 12.5 }}>IKOYI, LAGOS</div>
+          <p style={{ color: "rgba(255,255,255,.78)", fontSize: 16, lineHeight: 1.78, marginTop: 20, maxWidth: 460 }}>
+            A refined expression of vertical luxury: forty bespoke residences with panoramic water views,
+            floor-to-ceiling glazing, a rooftop infinity pool and round-the-clock concierge.
+          </p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 28 }}>
+            <button className="btn-gold" onClick={() => go("contact")}>Enquire about our developments <ArrowUpRight size={16} /></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style={{ background: "var(--ivory)", padding: "clamp(64px,8vw,110px) 0" }}>
+      <div className="wrap">
+        <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 26 }}>The scheme</div>
+        <div className="dev-spec" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", borderTop: "1px solid var(--cream-line)" }}>
+          {DEV_SPEC.map(([k, v]) => <div key={k} style={{ padding: "26px 28px 24px", borderBottom: "1px solid var(--cream-line)", borderRight: "1px solid var(--cream-line)" }}>
+            <div style={{ fontSize: 10.5, letterSpacing: 2, color: "var(--gold-2)", textTransform: "uppercase" }}>{k}</div>
+            <div className="serif" style={{ fontSize: "clamp(19px,2.1vw,25px)", fontWeight: 600, color: "var(--ink)", marginTop: 10 }}>{v}</div>
+          </div>)}
+        </div>
+        <style>{`.dev-spec > div:nth-child(3n){border-right:none}@media(max-width:820px){.dev-spec{grid-template-columns:1fr 1fr!important}.dev-spec > div:nth-child(3n){border-right:1px solid var(--cream-line)}.dev-spec > div:nth-child(2n){border-right:none!important}}`}</style>
+
+        <div style={{ borderTop: "1px solid var(--cream-line)", marginTop: 56 }}>
+          {DEV_FEATURES.map(([h, d]) => <div key={h} className="dev-row" style={{ display: "grid", gridTemplateColumns: ".88fr 1.22fr", gap: 34, padding: "30px 0", borderBottom: "1px solid var(--cream-line)", alignItems: "start" }}>
+            <div className="serif" style={{ fontSize: "clamp(19px,2.2vw,26px)", fontWeight: 600, color: "var(--ink)", lineHeight: 1.2 }}>{h}</div>
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: 14.5, lineHeight: 1.78 }}>{d}</p>
+          </div>)}
+        </div>
+        <style>{`@media(max-width:820px){.dev-row{grid-template-columns:1fr!important;gap:10px!important}}`}</style>
+
+        <div style={{ marginTop: 54, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <button className="btn-gold" onClick={() => go("contact")}>Register your interest <ArrowUpRight size={16} /></button>
+          <span style={{ color: "var(--muted)", fontSize: 13.5 }}>Units are released in phases. Registering does not commit you to anything.</span>
+        </div>
+      </div>
+    </section>
+  </>;
+}
+
 function BourdillonGallery() {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -726,6 +796,7 @@ function Landing({ onStart, onSignIn }) {
               <button className="nav-link" onClick={() => go("listings")} style={["listings", "returns"].includes(tab) ? { color: "var(--gold)" } : undefined}>Listings &#9662;</button>
               <div className="navdrop-menu">
                 <button className={"navdrop-item" + (tab === "listings" ? " active" : "")} onClick={() => go("listings")}>Browse our listings</button>
+                <button className={"navdrop-item" + (tab === "bourdillon" ? " active" : "")} onClick={() => go("bourdillon")}>Our developments</button>
                 <button className={"navdrop-item" + (tab === "returns" ? " active" : "")} onClick={() => go("returns")}>Estimate your returns</button>
               </div>
             </div>
@@ -751,6 +822,7 @@ function Landing({ onStart, onSignIn }) {
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("swapinfo"); setMenu(false); }}>Property swap</button>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: .5, marginTop: 4 }}>Listings</div>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("listings"); setMenu(false); }}>Browse our listings</button>
+            <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("bourdillon"); setMenu(false); }}>Our developments</button>
             <button className="nav-link" style={{ textAlign: "left", paddingLeft: 12 }} onClick={() => { go("returns"); setMenu(false); }}>Estimate your returns</button>
             <button className="nav-link" style={{ textAlign: "left" }} onClick={() => { go("contact"); setMenu(false); }}>Contact</button>
             <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }} style={{ justifyContent: "center" }}>Get started</a>
@@ -913,7 +985,8 @@ function Landing({ onStart, onSignIn }) {
 
 
       {/* FEATURED DEVELOPMENT */}
-      {(tab === "bourdillon" || tab === "home") && (<section id="developments" style={{ background: "var(--navy)", color: "#fff", padding: "20px 0 4px" }}>
+      {tab === "bourdillon" && <DevelopmentsSection go={go} />}
+      {tab === "home" && (<section id="developments" style={{ background: "var(--navy)", color: "#fff", padding: "20px 0 4px" }}>
         <div className="feat-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
           <BourdillonGallery />
           <div style={{ padding: "72px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
