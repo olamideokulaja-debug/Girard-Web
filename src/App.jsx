@@ -821,7 +821,7 @@ function Landing({ onStart, onSignIn }) {
               a list of work, and the rules do the separating instead of borders
               on all four sides. */}
           <div className="svc-led" style={{ borderTop: "1px solid var(--cream-line)" }}>
-            {SERVICES.map((sv, i2) => <div key={sv.t} className="svc-row" style={{ display: "grid", gridTemplateColumns: "58px 1.05fr 1fr", gap: 30, alignItems: "start", padding: "30px 0", borderBottom: "1px solid var(--cream-line)" }}>
+            {SERVICES.map((sv, i2) => <div key={sv.t} className="svc-row" style={{ display: "grid", gridTemplateColumns: "54px .88fr 1.22fr", gap: 34, alignItems: "start", padding: "30px 0", borderBottom: "1px solid var(--cream-line)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 2 }}>
                 <span className="serif" style={{ fontSize: 14, color: "var(--gold-2)" }}>{String(i2 + 1).padStart(2, "0")}</span>
               </div>
