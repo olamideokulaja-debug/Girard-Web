@@ -22,7 +22,9 @@
       plain navy section if this has not loaded, so a CDN failure costs the
       animation and nothing else.
     -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- three.js is no longer loaded here. HeroTower and SwapModel fetch it
+         from cdnjs only when a scene mounts, so pages without a scene, the
+         signed-in portal and the static pages skip the 600KB entirely. -->
     <!-- Vercel Web Analytics, production host only so previews and local
          builds do not try to load it. Does nothing until Analytics is switched
          on for the project in the Vercel dashboard. -->

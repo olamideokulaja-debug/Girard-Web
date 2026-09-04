@@ -5,7 +5,7 @@
   --navy-line: #2A456E;
   --navy-deep: #06112A;
   --gold: #C6A15B;
-  --gold-2: #B8934A;
+  --gold-2: #7D6129;   /* text gold on light surfaces: about 5.1:1 on ivory, 6.3:1 on white; was #B8934A at 2.9:1 */
   --gold-soft: #E7D6AE;
   --ivory: #F5F0E6;
   --ivory-2: #FBF8F1;

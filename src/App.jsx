@@ -265,9 +265,22 @@ function loadScript(src) {
   });
   return _scriptOnce[src];
 }
-const THREE_EX = (typeof location !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(location.hostname))
+const IS_LOCAL = typeof location !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const THREE_EX = IS_LOCAL
   ? "/three-ex/"   // local build check: the render container cannot reach the CDN
   : "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/";
+// three.js itself is fetched only when a scene mounts, so the portal, the
+// static pages and every marketing tab without a scene never download 600KB.
+const THREE_SRC = IS_LOCAL ? "/three.min.js" : "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
+function withThree(host, start) {
+  let dead = false, cleanup = null;
+  (async () => {
+    if (!window.THREE) { try { await loadScript(THREE_SRC); } catch (e) { return; } }
+    if (dead || !host.current || !window.THREE) return;
+    cleanup = start();
+  })();
+  return () => { dead = true; if (cleanup) cleanup(); };
+}
 
 /* The four real towers, generated 4 Sept 2026 and Draco-compressed to under
    1MB each. h is the height they are scaled to in scene units, matching the
@@ -281,7 +294,7 @@ const HERO_MODELS = [
 
 function HeroTower() {
   const host = useRef(null);
-  useEffect(() => {
+  useEffect(() => withThree(host, () => {
     const el = host.current;
     if (!el || !window.THREE) return;               // no CDN, no canvas: fine
     const THREE = window.THREE;
@@ -514,7 +527,7 @@ function HeroTower() {
       renderer.dispose();
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     };
-  }, []);
+  }), []);
   return <div ref={host} className="herocanvas" aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0 }} />;
 }
 
@@ -663,7 +676,9 @@ const TEAM = [
   { name: "Goodness Onyeneke", role: "Property Manager", photo: "/img/team-onyeneke.jpg", bio: "Runs the managed portfolio day to day: tenancies, inspections, maintenance and the standard every Girard property is held to once the keys have changed hands." },
   { name: "Sandra Ndukwe", role: "Head of People & Culture", photo: "/img/team-ndukwe.jpg", bio: "A people and culture leader with over 10 years across fintech, legal, property and facility management, real estate, media and venture capital, in Nigeria and the United Kingdom. She joined BRB Capital as its first employee and built both the HR function and the business infrastructure around it from nothing, scaling the group past 200 people, and went on to lead HR for its property arm, Juban Realty. Chartered by the Chartered Institute of Personnel Management of Nigeria, she is reading for an MBA in Human Resources at the University of Lagos and holds a degree from the University of Port Harcourt." },
   { name: "Okediji Adebayo Alao", role: "Finance Manager", photo: "/img/team-adebayo.jpg", bio: "A chartered accountant who has built a finance department from nothing and run group reporting on top of it. At C-3V Holdings he rose from accountant to Head of Account, setting up the accounts function and carrying monthly group reporting, payables, payroll, bank reconciliation and PAYE remittance while the group's poultry operation grew 150% and its logistics fleet went from 1 truck to 4. Most recently Reporting Manager at Hartleys Supermarket and Stores, preparing monthly, quarterly and annual accounts, managing budgets and handling external audit. ACA and AAT of the Institute of Chartered Accountants of Nigeria, HND Accounting from Lagos State Polytechnic, with a postgraduate diploma in Economics." },
-  { name: "Emmanuella Ezeakor", role: "Client Services Officer", photo: "/img/team-ezeakor.jpg", bio: "Came to Girard from aviation, where she worked the counter and the ramp for Dornier Aviation: passenger check-in and travel documentation, special assistance for elderly and disabled passengers and unaccompanied minors, and the complaints that arrive when a flight does not go to plan. She also supported ground operations, dispatching flight plans, load sheets and weather briefings, and completed the Flight Dispatcher Programme at Lagos Aviation Academy. She holds a BSc in History and International Relations from Chukwuemeka Odumegwu Ojukwu University and is certified in data analysis." }
+  { name: "Emmanuella Ezeakor", role: "Client Services Officer", photo: "/img/team-ezeakor.jpg", bio: "Came to Girard from aviation, where she worked the counter and the ramp for Dornier Aviation: passenger check-in and travel documentation, special assistance for elderly and disabled passengers and unaccompanied minors, and the complaints that arrive when a flight does not go to plan. She also supported ground operations, dispatching flight plans, load sheets and weather briefings, and completed the Flight Dispatcher Programme at Lagos Aviation Academy. She holds a BSc in History and International Relations from Chukwuemeka Odumegwu Ojukwu University and is certified in data analysis." },
+  { name: "Erugo Emmanuel Chinonso", role: "Customer Experience Officer", photo: "/img/team-erugo.jpg", bio: "Spent 7 years as Regional Administrator and Executive Assistant at the Redeemed Christian Church of God's Region 19 headquarters, the point of contact between the executive and everyone who needed them: correspondence, scheduling, enquiries, events and the follow-up that makes an organisation feel answered. Before that he spent 6 years in hands-on computer and field engineering at BHF System Computers and Dataflex, so a technical problem on the platform does not need translating for him. He also runs administration for Imade Forte Holdings. He holds a BSc in Computer Science and Mathematics from the National Open University of Nigeria and completed Project Management Professional training in 2022." },
+  { name: "Ordor Chinomso Isdone", role: "Liaison Officer", photo: "/img/team-ordor.jpg", bio: "A salesman by trade who has spent most of his career in property. At Marios and Roseworth he acquired properties for sale and lease, valued them and analysed them as investments; at Bosch Nigeria Home Appliances he ran sales supervision and the customer follow-up that comes with it, from performance checks to scheduling engineers when something broke. As Liaison Officer he is the person between an owner, a tenant and Girard when the three need to agree on something. Trained in mechanical engineering and mechatronics in Scotland, at Langside College and Banff and Buchan College." }
 ];
 
 /* Group leadership. Named and roled, deliberately without portraits, so the
@@ -863,7 +878,7 @@ function WalkthroughVideo() {
     <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid var(--navy-line)", boxShadow: "0 34px 70px rgba(0,0,0,.46)" }}>
       <div style={{ height: 38, background: "var(--navy-3)", display: "flex", alignItems: "center", gap: 8, padding: "0 16px", borderBottom: "1px solid var(--navy-line)" }}>
         <span style={dot("#ff5f57")} /><span style={dot("#febc2e")} /><span style={dot("#28c840")} />
-        <span style={{ marginLeft: 14, fontSize: 12.5, color: "rgba(255,255,255,.45)" }}>girardpropertylimited.com</span>
+        <span aria-hidden="true" style={{ marginLeft: 14, fontSize: 12.5, color: "rgba(255,255,255,.62)" }}>girardpropertylimited.com</span>
       </div>
       <div style={{ display: "grid", background: "var(--navy-2)" }}>
         {steps.map((st, k) => <img key={k} src={st.img} alt={st.t} loading="lazy" style={{ gridArea: "1 / 1", width: "100%", display: "block", opacity: k === i ? 1 : 0, transition: "opacity .7s ease" }} />)}
@@ -874,14 +889,14 @@ function WalkthroughVideo() {
     </div>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 280 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}><span className="serif" style={{ fontSize: 30, fontWeight: 600, color: "rgba(198,161,91,.5)" }}>{s.n}</span><h3 className="serif" style={{ fontSize: 25, fontWeight: 600, margin: 0 }}>{s.t}</h3></div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}><span className="serif" style={{ fontSize: 30, fontWeight: 600, color: "rgba(198,161,91,.85)" }}>{s.n}</span><h3 className="serif" style={{ fontSize: 25, fontWeight: 600, margin: 0 }}>{s.t}</h3></div>
         <p style={{ color: "rgba(255,255,255,.75)", fontSize: 15.5, lineHeight: 1.65, margin: "10px 0 0", maxWidth: 560 }}>{s.d}</p>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <button onClick={() => setPlaying(x => !x)} aria-label={playing ? "Pause" : "Play"} style={{ width: 46, height: 46, borderRadius: 999, border: "none", background: "var(--gold)", color: "var(--ink)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>{playing ? <Pause size={18} fill="var(--navy)" /> : <Play size={18} fill="var(--navy)" />}</button>
         <button onClick={() => jump(i - 1)} aria-label="Previous" style={{ width: 42, height: 42, borderRadius: 999, border: "1px solid var(--navy-line)", background: "transparent", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}><ArrowLeft size={17} /></button>
         <button onClick={() => jump(i + 1)} aria-label="Next" style={{ width: 42, height: 42, borderRadius: 999, border: "1px solid var(--navy-line)", background: "transparent", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}><ArrowRight size={17} /></button>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,.5)", minWidth: 44, textAlign: "right" }}>{i + 1} / {steps.length}</span>
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,.75)", minWidth: 44, textAlign: "right" }}>{i + 1} / {steps.length}</span>
       </div>
     </div>
   </div>;
@@ -948,7 +963,7 @@ function Landing({ onStart, onSignIn }) {
         .wrap{max-width:none;margin:0 auto;padding:0 26px}
         .eyebrow{font-size:12px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase}
         .btn-gold{background:var(--gold);color:#201601;border:none;padding:13px 24px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .18s,transform .06s;letter-spacing:.2px}
-        .btn-gold:hover{background:var(--gold-2)}
+        .btn-gold:hover{background:#B8934A}
         .btn-gold:active{transform:translateY(1px)}
         .btn-line{background:transparent;padding:12px 22px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s;letter-spacing:.2px}
         .btn-line.on-navy{border:1px solid rgba(255,255,255,.28);color:#fff}
@@ -976,6 +991,7 @@ function Landing({ onStart, onSignIn }) {
         .team-card{background:var(--white);border:1px solid var(--cream-line);border-radius:10px;overflow:hidden}
         @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         .rise{animation:rise .8s ease both}
+        .modnum::before{content:attr(data-n)}
         .hero-h{font-size:clamp(46px,6.6vw,86px);line-height:1.02;font-weight:600;letter-spacing:-1px}
         .sec-h{font-size:clamp(32px,4.4vw,52px);line-height:1.08;font-weight:600;letter-spacing:-.5px}
         @media(max-width:1120px){
@@ -1028,6 +1044,9 @@ function Landing({ onStart, onSignIn }) {
 
         <style>{`
           .nav-link{padding:9px 14px;border-radius:6px}
+          /* Keyboard users could not see where they were: buttons and links
+             had no visible focus. One rule, everywhere, only for keyboard. */
+          a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px}
           .nav-link:hover{color:#fff;background:rgba(255,255,255,.06)}
           @media(max-width:1180px){
             .mainnav{display:none!important}
@@ -1150,6 +1169,7 @@ function Landing({ onStart, onSignIn }) {
           <style>{`@media(max-width:820px){.vm-grid{grid-template-columns:1fr!important}.val-grid{grid-template-columns:1fr 1fr!important}.glance-grid{grid-template-columns:1fr!important}}`}</style>
         </div>
       </section>)}
+      {(tab === "excellence" || tab === "about") && <ReviewsBlock />}
 
       {/* SERVICES DEEP-DIVE (real copy) */}
       {tab === "services" && (<section id="services" style={{ background: "var(--ivory)", padding: "88px 0" }}>
@@ -1281,7 +1301,7 @@ function Landing({ onStart, onSignIn }) {
           <div className="mod-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28 }}>
             {MODULES.map(m => (
               <div key={m.n} style={{ border: "1px solid var(--navy-line)", borderRadius: 8, padding: 34, background: "var(--navy)", position: "relative", overflow: "hidden" }}>
-                <div className="serif" style={{ position: "absolute", top: 18, right: 26, fontSize: 60, color: "rgba(198,161,91,.16)", fontWeight: 600 }}>{m.n}</div>
+                <div className="serif modnum" aria-hidden="true" data-n={m.n} style={{ position: "absolute", top: 18, right: 26, fontSize: 60, color: "rgba(198,161,91,.16)", fontWeight: 600 }} />
                 <div style={{ width: 52, height: 52, borderRadius: 8, background: "var(--gold)", color: "var(--ink)", display: "grid", placeItems: "center", marginBottom: 22 }}><m.icon size={24} /></div>
                 <h3 className="serif" style={{ fontSize: 27, fontWeight: 600, marginBottom: 12 }}>{m.name}</h3>
                 <p style={{ color: "rgba(255,255,255,.72)", fontSize: 15, lineHeight: 1.68, marginBottom: 22 }}>{m.copy}</p>
@@ -1861,7 +1881,7 @@ function EntryStyles() {
     .wrap{max-width:none;margin:0 auto;padding:0 26px}
     .eyebrow{font-size:12px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase}
     .btn-gold{background:var(--gold);color:#201601;border:none;padding:13px 24px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .18s;letter-spacing:.2px}
-    .btn-gold:hover{background:var(--gold-2)}
+    .btn-gold:hover{background:#B8934A}
     .btn-gold:disabled{cursor:default}
     .btn-line{background:transparent;padding:12px 22px;border-radius:2px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s}
     .btn-line.on-navy{border:1px solid rgba(255,255,255,.28);color:#fff}
@@ -3710,7 +3730,7 @@ function WorkspaceSoon({ identity }) {
 const NAV = {
   owner: [["dash", "Dashboard", LayoutDashboard], ["props", "Properties", Building2], ["saved", "Saved", Heart], ["add", "Add property", Plus], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swap", "Swap marketplace", Repeat], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["branding", "Branding", Sparkles], ["plans", "Plans & pricing", Tag], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   tenant: [["thome", "My tenancy", LayoutDashboard], ["trent", "Pay rent", CreditCard], ["saved", "Saved", Heart], ["trepairs", "Repairs", Wrench], ["tdocs", "Lease & documents", FileText], ["tmsg", "Message Girard", MessageSquare], ["find", "Find a home", Search], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
-  admin: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
+  admin: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["adminreq", "Admin requests", UserCog], ["payouts", "Payout approvals", BadgeCheck], ["financials", "Financials", Banknote], ["signups", "Sign-ups", UserPlus], ["props", "Verify listings", ShieldCheck], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["reviews", "Reviews", CheckCircle2], ["sales", "Development sales", Building2], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["swpipe", "Swap oversight", ShieldCheck], ["vetting", "Vetting & payouts", BadgeCheck], ["payments", "Payments", CreditCard], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["askai", "Ask " + AI_NAME, Sparkles], ["audit", "Activity log", ScrollText], ["inbox", "Tenant messages", MessageSquare], ["moderation", "Flagged reports", AlertTriangle], ["deletions", "Deletion requests", UserCog], ["feed", "Live feed", Bell], ["reports", "Reports", LineChart], ["users", "Users", UserCog], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   agent: [["feed", "Live feed", Bell], ["crm", "Pipeline / CRM", LayoutGrid], ["saved", "Saved", Heart], ["sales", "Development sales", Building2], ["wallet", "Earnings", Wallet], ["reports", "Analytics", LineChart], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   manager: [["dash", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["agents", "Agent oversight", Users], ["props", "Properties", Building2], ["apps", "Applications", Users], ["enquiries", "Enquiries", Mail], ["rent", "Rent & invoices", CreditCard], ["reminders", "Rent reminders", BellRing], ["maint", "Jobs & repairs", Wrench], ["inbox", "Tenant messages", MessageSquare], ["docs", "Leases & documents", FileText], ["moderation", "Flagged reports", AlertTriangle], ["map", "Map view", MapPin], ["support", "Support services", ConciergeBell], ["askai", "Ask " + AI_NAME, Sparkles], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]],
   investor: [["work", "Dashboard", LayoutDashboard], ["progress", "Progress reports", LineChart], ["saved", "Saved", Heart], ["swap", "Swap marketplace", Repeat], ["intel", "Market intelligence", LineChart], ["support", "Support services", ConciergeBell], ["plans", "Plans & pricing", Tag], ["feed", "Live feed", Bell], ["ai", "AI documents", Sparkles], ["docs", "Leases & documents", FileText], ["alerts", "Saved searches", Bell], ["map", "Map view", MapPin], ["security", "Security", Lock], ["privacy", "Data & privacy", ShieldCheck]]
@@ -3874,6 +3894,8 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
     if (view === "signups") return <SignupsScreen />;
     if (view === "reminders") return <RentRemindersScreen toast={toast} />;
     if (view === "enquiries") return <EnquiriesScreen toast={toast} />;
+    if (view === "reviews") return <ReviewsScreen identity={identity} toast={toast} />;
+    if (view === "deletions") return <DeletionsScreen identity={identity} toast={toast} />;
     if (view === "sales") return <SalesBoard toast={toast} />;
     if (view === "wallet") return <AgentWallet toast={toast} identity={identity} />;
     if (view === "vetting") return <VettingScreen toast={toast} />;
@@ -5465,6 +5487,173 @@ function PayoutApprovalsScreen({ identity, toast }) {
       </PmCard>)}</div>}
   </div>;
 }
+/* ===================================================================
+   Reviews. Real ones only: a public form writes a pending row through
+   api/review.js, a staff member approves or rejects it here, and only
+   approved rows ever reach the page. The public block shows an honest empty
+   state until the first approval, rather than seeded praise.
+   =================================================================== */
+function ReviewsScreen({ identity, toast }) {
+  const [rows, setRows] = useState(null);
+  const [filt, setFilt] = useState("pending");
+  const load = async () => { if (!supabase) { setRows([]); return; } const { data } = await supabase.from("reviews").select("*").order("created_at", { ascending: false }); setRows(data || []); };
+  useEffect(() => { load(); }, []);
+  const moderate = async (id, status) => {
+    if (!supabase) return;
+    const { error } = await supabase.from("reviews").update({ status, moderated_at: new Date().toISOString(), moderated_by: identity.email }).eq("id", id);
+    if (error) { toast("Could not update: " + error.message, "error"); return; }
+    try { auditLog("Review " + status, "#" + id, "reviews"); } catch (e) {}
+    toast(status === "approved" ? "Approved. It is now on the site." : "Rejected.");
+    load();
+  };
+  const shown = (rows || []).filter(r => filt === "all" ? true : r.status === filt);
+  const counts = { pending: (rows || []).filter(r => r.status === "pending").length, approved: (rows || []).filter(r => r.status === "approved").length };
+  return <div>
+    <H2 title="Reviews" sub="Nothing appears on the site until it is approved here" />
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      <PmStat icon={Clock} label="Awaiting moderation" value={String(counts.pending)} tone={counts.pending ? "#DC2626" : "var(--muted)"} />
+      <PmStat icon={CheckCircle2} label="Live on the site" value={String(counts.approved)} tone="#1F9D57" />
+    </div>
+    <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>{["pending", "approved", "rejected", "all"].map(k => <button key={k} onClick={() => setFilt(k)} className={"rpill" + (filt === k ? " on" : "")} style={{ color: filt === k ? undefined : "var(--ink)", textTransform: "capitalize" }}>{k}</button>)}</div>
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      {rows === null ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading…</div> : shown.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>{filt === "pending" ? "Nothing waiting. Reviews arrive from the About page." : "Nothing in this view."}</div> : shown.map((r, i) => <div key={r.id} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+          <div style={{ fontWeight: 700, color: "var(--ink)" }}>{r.name}</div>
+          <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{r.role}{r.area ? " · " + r.area : ""}{r.email ? " · " + r.email : ""}</div>
+          <Stars n={r.rating} />
+          <div style={{ marginLeft: "auto", fontSize: 12, color: r.status === "approved" ? "#1F9D57" : r.status === "rejected" ? "#DC2626" : "var(--gold-2)", fontWeight: 700, textTransform: "uppercase", letterSpacing: .5 }}>{r.status}</div>
+        </div>
+        <p style={{ margin: "8px 0 12px", color: "var(--ink)", fontSize: 14.5, lineHeight: 1.65, whiteSpace: "pre-line" }}>{r.body}</p>
+        <div style={{ display: "flex", gap: 8 }}>
+          {r.status !== "approved" && <PmBtn size="sm" onClick={() => moderate(r.id, "approved")}>Approve</PmBtn>}
+          {r.status !== "rejected" && <PmBtn size="sm" kind="line" onClick={() => moderate(r.id, "rejected")}>Reject</PmBtn>}
+        </div>
+      </div>)}
+    </PmCard>
+  </div>;
+}
+
+function ReviewsBlock() {
+  const [rows, setRows] = useState(null);
+  const [f, setF] = useState({ name: "", role: "Tenant", area: "", rating: 5, body: "", email: "", website: "" });
+  const [busy, setBusy] = useState(false); const [note, setNote] = useState(null);
+  const [cfToken, setCfToken] = useState(""); const tsHost = useRef(null); const tsId = useRef(null);
+  useEffect(() => {
+    let dead = false;
+    // Never leave the block on "Loading" if the database is slow or unreachable.
+    const t = setTimeout(() => { if (!dead) setRows(r => r == null ? [] : r); }, 6000);
+    (async () => {
+      if (!supabase) { setRows([]); return; }
+      try { const { data } = await supabase.from("reviews").select("id,name,role,area,rating,body,created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(12); if (!dead) setRows(data || []); }
+      catch (e) { if (!dead) setRows([]); }
+    })();
+    return () => { dead = true; clearTimeout(t); };
+  }, []);
+  useEffect(() => {
+    let gone = false;
+    loadScript("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit").then(() => {
+      if (gone || !window.turnstile || !tsHost.current) return;
+      try { tsId.current = window.turnstile.render(tsHost.current, { sitekey: TURNSTILE_SITE, theme: "light", callback: (t) => setCfToken(t), "expired-callback": () => setCfToken(""), "error-callback": () => setCfToken("") }); } catch (e) {}
+    }).catch(() => {});
+    return () => { gone = true; try { if (tsId.current != null && window.turnstile) window.turnstile.remove(tsId.current); } catch (e) {} };
+  }, []);
+  const set = (k) => (e) => setF(x => ({ ...x, [k]: e.target.value }));
+  const inp = { width: "100%", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", color: "var(--ink)", fontSize: 14, marginBottom: 10, fontFamily: "inherit" };
+  const lab = { fontSize: 11.5, fontWeight: 700, letterSpacing: .6, textTransform: "uppercase", color: "var(--gold-2)", marginBottom: 6, display: "block" };
+  const submit = async () => {
+    if (!f.name.trim() || f.body.trim().length < 20) { setNote({ text: "A name and at least a sentence, please.", bad: true }); return; }
+    setBusy(true); setNote(null);
+    try {
+      const r = await fetch("/api/review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, cfToken }) });
+      const d = await r.json();
+      try { if (tsId.current != null && window.turnstile) { window.turnstile.reset(tsId.current); setCfToken(""); } } catch (e) {}
+      if (d && d.ok) { setF(x => ({ ...x, name: "", body: "", email: "" })); setNote({ text: "Thank you. A member of staff reads every review before it is published, so it will not appear immediately.", bad: false }); }
+      else setNote({ text: (d && d.error) || "That did not send.", bad: true });
+    } catch (e) { setNote({ text: "That did not send. Please try again.", bad: true }); }
+    setBusy(false);
+  };
+  return <section style={{ background: "var(--ivory)", padding: "clamp(56px,7vw,88px) 0", borderTop: "1px solid var(--cream-line)" }}>
+    <div className="wrap">
+      <div className="rev-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr .9fr", gap: 48, alignItems: "start" }}>
+        <div>
+          <Rule light />
+          <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>What clients say</div>
+          <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Reviews, in the words of the people who wrote them.</h2>
+          <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.7, marginTop: 14, maxWidth: 560 }}>Every review here was written by a landlord, tenant or buyer who dealt with Girard, and read by a member of staff before it was published. None is written by us and none is paid for.</p>
+          <div style={{ marginTop: 28 }}>
+            {rows === null ? <div style={{ color: "var(--muted)", fontSize: 14 }}>Loading…</div>
+              : rows.length === 0 ? <div style={{ padding: "22px 24px", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 12, color: "var(--muted)", fontSize: 14.5, lineHeight: 1.65 }}>No reviews yet. Girard is a young company with a short list of properties, and this space fills as real tenancies complete. If you have dealt with us, you can be the first.</div>
+              : rows.map(r => <div key={r.id} style={{ padding: "18px 0", borderTop: "1px solid var(--cream-line)" }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}><span style={{ fontWeight: 700, color: "var(--ink)" }}>{r.name}</span><span style={{ fontSize: 12.5, color: "var(--muted)" }}>{r.role}{r.area ? ", " + r.area : ""}</span><Stars n={r.rating} /></div>
+                <p style={{ margin: "8px 0 0", color: "var(--ink)", fontSize: 15, lineHeight: 1.7 }}>{r.body}</p>
+              </div>)}
+          </div>
+        </div>
+        <div style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: "clamp(20px,2.6vw,28px)" }}>
+          <h3 className="serif" style={{ fontSize: 22, fontWeight: 600, color: "var(--ink)", margin: "0 0 6px" }}>Leave a review</h3>
+          <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, margin: "0 0 16px" }}>For people who have dealt with Girard. Reviews are read before they are published.</p>
+          <label style={lab}>Your name</label><input style={inp} value={f.name} onChange={set("name")} placeholder="As you would like it shown" />
+          <div className="lead-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div><label style={lab}>You are a</label><select style={inp} value={f.role} onChange={set("role")} aria-label="You are a">{["Tenant", "Landlord", "Buyer", "Other"].map(o => <option key={o}>{o}</option>)}</select></div>
+            <div><label style={lab}>Area</label><input style={inp} value={f.area} onChange={set("area")} placeholder="e.g. Lekki Phase 1" /></div>
+          </div>
+          <label style={lab}>Rating</label>
+          <div style={{ marginBottom: 12 }}><Stars n={f.rating} size={24} onPick={(n) => setF(x => ({ ...x, rating: n }))} /></div>
+          <label style={lab}>Your review</label><textarea style={{ ...inp, minHeight: 96, resize: "vertical" }} value={f.body} onChange={set("body")} placeholder="What happened, in your words." />
+          <label style={lab}>Email, not shown, so we can check the review is real</label><input style={inp} value={f.email} onChange={set("email")} placeholder="you@example.com" inputMode="email" />
+          <input tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} style={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }} aria-hidden="true" />
+          <div ref={tsHost} style={{ marginBottom: 12 }} />
+          <button className="btn-gold" onClick={submit} disabled={busy} style={{ opacity: busy ? .6 : 1 }}>{busy ? "Sending" : "Send review"} <ArrowUpRight size={15} /></button>
+          {note && <div style={{ marginTop: 12, padding: "11px 13px", borderRadius: 8, fontSize: 13.5, lineHeight: 1.5, background: note.bad ? "rgba(180,40,40,.08)" : "rgba(30,120,60,.08)", color: note.bad ? "#8a1f1f" : "#1f5c34", border: "1px solid " + (note.bad ? "rgba(180,40,40,.25)" : "rgba(30,120,60,.25)") }}>{note.text}</div>}
+        </div>
+      </div>
+      <style>{`@media(max-width:900px){.rev-grid{grid-template-columns:1fr!important;gap:28px!important}}`}</style>
+    </div>
+  </section>;
+}
+
+/* Account deletion requests. The app promises deletion within 30 days; this
+   is the screen that keeps the promise. Completion runs server-side through
+   api/account-delete.js with the caller's session verified. */
+function DeletionsScreen({ identity, toast }) {
+  const [rows, setRows] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const load = async () => { if (!supabase) { setRows([]); return; } const { data, error } = await supabase.from("account_deletions").select("*").order("requested_at", { ascending: false }); setRows(error ? [] : (data || [])); };
+  useEffect(() => { load(); }, []);
+  const complete = async (r) => {
+    if (!window.confirm("Delete the account for " + r.email + "? Sign-in and profile are removed. Financial records are kept as the law requires. This cannot be undone.")) return;
+    setBusy(r.id);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data && data.session && data.session.access_token;
+      const res = await fetch("/api/account-delete", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ id: r.id }) });
+      const d = await res.json();
+      if (d && d.ok) { toast("Deleted. " + (d.note || (d.deletedAuth ? "Sign-in and profile removed." : "")), "success"); try { auditLog("Account deleted", r.email, "account_deletions"); } catch (e) {} }
+      else toast("Failed: " + ((d && d.error) || "unknown"), "error");
+    } catch (e) { toast("Failed: " + String(e.message || e), "error"); }
+    setBusy(null); load();
+  };
+  const days = (r) => Math.floor((Date.now() - new Date(r.requested_at).getTime()) / 86400000);
+  const open = (rows || []).filter(r => !r.completed_at);
+  return <div>
+    <H2 title="Account deletion requests" sub="The app promises deletion within 30 days of the request" />
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      <PmStat icon={AlertTriangle} label="Open" value={String(open.length)} tone={open.some(r => days(r) > 25) ? "#DC2626" : open.length ? "var(--gold-2)" : "var(--muted)"} />
+      <PmStat icon={CheckCircle2} label="Completed" value={String((rows || []).filter(r => r.completed_at).length)} tone="#1F9D57" />
+    </div>
+    <PmCard pad={0} style={{ overflow: "hidden" }}>
+      {rows === null ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading…</div> : rows.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>No deletion requests.</div> : rows.map((r, i) => <div key={r.id} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontWeight: 700, color: "var(--ink)" }}>{r.email}</div>
+          <div style={{ fontSize: 12.5, color: r.completed_at ? "var(--muted)" : days(r) > 25 ? "#DC2626" : "var(--muted)" }}>{r.completed_at ? "Completed " + new Date(r.completed_at).toLocaleDateString() + (r.note ? " · " + r.note : "") : "Requested " + days(r) + " day" + (days(r) === 1 ? "" : "s") + " ago · " + Math.max(0, 30 - days(r)) + " days left on the promise"}</div>
+        </div>
+        {!r.completed_at && <PmBtn size="sm" onClick={() => complete(r)} disabled={busy === r.id}>{busy === r.id ? "Deleting…" : "Complete deletion"}</PmBtn>}
+      </div>)}
+    </PmCard>
+    <div style={{ marginTop: 14, fontSize: 12.5, color: "var(--muted)", lineHeight: 1.6 }}>Completing a request removes the person's sign-in, profile and device tokens. Invoices, payments and signed agreements are kept for the period the law requires, and are held against the email address rather than the account.</div>
+  </div>;
+}
+
 function AdminRequestsScreen({ identity, toast }) {
   const [rows, setRows] = useState([]); const [busy, setBusy] = useState(true);
   const load = async () => {
@@ -6044,7 +6233,7 @@ function UnitModal({ unit, onClose, onSave }) {
    yourself is the point. */
 function SwapModel() {
   const host = useRef(null);
-  useEffect(() => {
+  useEffect(() => withThree(host, () => {
     const el = host.current;
     if (!el || !window.THREE) return;
     const THREE = window.THREE;
@@ -6218,8 +6407,8 @@ function SwapModel() {
       rn.dispose();
       if (rn.domElement.parentNode) rn.domElement.parentNode.removeChild(rn.domElement);
     };
-  }, []);
-  return <div ref={host} style={{ width: "100%", aspectRatio: "1 / 1", cursor: "grab", touchAction: "pan-y" }} />;
+  }), []);
+  return <div ref={host} aria-hidden="true" style={{ width: "100%", aspectRatio: "1 / 1", cursor: "grab", touchAction: "pan-y" }} />;
 }
 
 const SWAP_STEPS = [
@@ -6297,14 +6486,14 @@ function LeadForm({ kind }) {
       <div><label style={lab}>Email</label><input style={inp} value={f.email} onChange={set("email")} placeholder="you@example.com" inputMode="email" autoComplete="email" /></div>
     </div>
     <label style={lab}>{wanted ? "Where would you like to live" : "Where is the property"}</label>
-    <select style={inp} value={f.area} onChange={set("area")}>
+    <select style={inp} value={f.area} onChange={set("area")} aria-label={wanted ? "Where would you like to live" : "Where is the property"}>
       <option value="">Choose an area</option>
       {LAGOS_AREAS.map(a => <option key={a} value={a}>{a}</option>)}
     </select>
     {wanted ? <>
       <div className="lead-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div><label style={lab}>Bedrooms</label>
-          <select style={inp} value={f.beds} onChange={set("beds")}><option value="">Any</option>{["Studio", "1", "2", "3", "4", "5+"].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+          <select style={inp} value={f.beds} onChange={set("beds")} aria-label="Bedrooms"><option value="">Any</option>{["Studio", "1", "2", "3", "4", "5+"].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
         <div><label style={lab}>Move by</label><input style={inp} value={f.moveBy} onChange={set("moveBy")} placeholder="e.g. November 2026" /></div>
       </div>
       <label style={lab}>Budget per year</label>
@@ -6312,9 +6501,9 @@ function LeadForm({ kind }) {
     </> : <>
       <div className="lead-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div><label style={lab}>Property type</label>
-          <select style={inp} value={f.ptype} onChange={set("ptype")}><option value="">Choose</option>{["Flat / apartment", "Terrace", "Semi-detached", "Detached house", "Serviced or short-let unit", "Commercial", "Land"].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+          <select style={inp} value={f.ptype} onChange={set("ptype")} aria-label="Property type"><option value="">Choose</option>{["Flat / apartment", "Terrace", "Semi-detached", "Detached house", "Serviced or short-let unit", "Commercial", "Land"].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
         <div><label style={lab}>Currently occupied</label>
-          <select style={inp} value={f.occupied} onChange={set("occupied")}><option value="">Choose</option><option>Vacant</option><option>Tenant in place</option><option>Owner occupied</option></select></div>
+          <select style={inp} value={f.occupied} onChange={set("occupied")} aria-label="Currently occupied"><option value="">Choose</option><option>Vacant</option><option>Tenant in place</option><option>Owner occupied</option></select></div>
       </div>
       <label style={lab}>Rent you expect per year</label>
       <input style={inp} value={f.rent} onChange={set("rent")} placeholder="e.g. ₦12,000,000, or leave blank for a valuation" inputMode="numeric" />
@@ -6329,7 +6518,7 @@ function LeadForm({ kind }) {
     <div ref={tsHost} style={{ marginBottom: 14, minHeight: 0 }} />
     <button className="btn-gold" onClick={submit} disabled={busy} style={{ opacity: busy ? .6 : 1 }}>{busy ? "Sending" : (wanted ? "Join the waiting list" : "Request a valuation")} <ArrowUpRight size={15} /></button>
     {note && <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 8, fontSize: 13.5, lineHeight: 1.5, background: note.bad ? "rgba(180,40,40,.08)" : "rgba(30,120,60,.08)", color: note.bad ? "#8a1f1f" : "#1f5c34", border: "1px solid " + (note.bad ? "rgba(180,40,40,.25)" : "rgba(30,120,60,.25)") }}>{note.text}</div>}
-    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 12, lineHeight: 1.5 }}>Or WhatsApp us directly on <a href={"https://wa.me/2347048173866?text=" + encodeURIComponent(wanted ? "Hello Girard, I would like to join the waiting list." : "Hello Girard, I have a property I would like to list.")} style={{ color: "var(--gold-2)" }}>+234 704 817 3866</a>. Your details are used to reply to you and for nothing else.</div>
+    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 12, lineHeight: 1.5 }}>Or WhatsApp us directly on <a href={"https://wa.me/2347048173866?text=" + encodeURIComponent(wanted ? "Hello Girard, I would like to join the waiting list." : "Hello Girard, I have a property I would like to list.")} style={{ color: "var(--gold-2)", textDecoration: "underline", textUnderlineOffset: 3 }}>+234 704 817 3866</a>. Your details are used to reply to you and for nothing else.</div>
   </div>;
 }
 
@@ -6486,7 +6675,7 @@ function WhatsAppFab({ tab }) {
   const label = { home: "home", listings: "listings", bourdillon: "Developments", services: "Services", swapinfo: "Property swap", leadership: "Our People", about: "About", contact: "Contact", list: "List with Girard", tour: "How it works", returns: "returns calculator" }[tab] || "website";
   const text = encodeURIComponent("Hello Girard. I am looking at the " + label + " page on your website and would like to talk.");
   return <a href={"https://wa.me/2347048173866?text=" + text} target="_blank" rel="noopener noreferrer" aria-label="Chat with Girard on WhatsApp" className="wa-fab"
-    style={{ position: "fixed", right: 20, bottom: consented ? 20 : 92, zIndex: 900, display: "flex", alignItems: "center", gap: 10, background: "#25D366", color: "#fff", borderRadius: 999, padding: "12px 16px 12px 12px", boxShadow: "0 10px 30px rgba(0,0,0,.28)", textDecoration: "none", fontWeight: 700, fontSize: 13.5, transition: "bottom .25s" }}>
+    style={{ position: "fixed", right: 20, bottom: consented ? 20 : 92, zIndex: 900, display: "flex", alignItems: "center", gap: 10, background: "#25D366", color: "#062B18", borderRadius: 999, padding: "12px 16px 12px 12px", boxShadow: "0 10px 30px rgba(0,0,0,.28)", textDecoration: "none", fontWeight: 700, fontSize: 13.5, transition: "bottom .25s" }}>
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3z"/></svg>
     <span className="wa-fab-text">WhatsApp us</span>
     <style>{`@media(max-width:560px){.wa-fab-text{display:none}.wa-fab{padding:12px!important}}`}</style>
