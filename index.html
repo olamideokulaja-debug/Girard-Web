@@ -23,6 +23,14 @@
       animation and nothing else.
     -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Vercel Web Analytics, production host only so previews and local
+         builds do not try to load it. Does nothing until Analytics is switched
+         on for the project in the Vercel dashboard. -->
+    <script>
+      if (/girardpropertylimited\.com$/.test(location.hostname)) {
+        var s = document.createElement("script"); s.defer = true; s.src = "/_vercel/insights/script.js"; document.head.appendChild(s);
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

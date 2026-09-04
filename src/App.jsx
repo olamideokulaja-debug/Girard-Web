@@ -786,6 +786,19 @@ function WalkthroughVideo() {
 function Landing({ onStart, onSignIn }) {
   const [tab, setTab] = useState("home");
   const go = (t) => { setTab(t); try { window.scrollTo({ top: 0 }); } catch (e) {} };
+  // /?go=list opens a marketing tab directly, so a WhatsApp message or an
+  // advert can land on the form rather than on the home page. waitlist is the
+  // same page scrolled to its second half.
+  useEffect(() => {
+    try {
+      const want = new URLSearchParams(window.location.search).get("go");
+      const ok = ["list", "waitlist", "services", "swapinfo", "leadership", "about", "contact", "bourdillon", "listings"];
+      if (want && ok.includes(want)) {
+        setTab(want === "waitlist" ? "list" : want);
+        if (want === "waitlist") setTimeout(() => { try { document.getElementById("waitlist").scrollIntoView({ block: "start" }); } catch (e) {} }, 400);
+      }
+    } catch (e) {}
+  }, []);
   const show = (id) => tab === id;
   const [region, setRegion] = useState("International");
   const [menu, setMenu] = useState(false);
@@ -905,7 +918,7 @@ function Landing({ onStart, onSignIn }) {
 
         {menu && <div className="mobilemenu" style={{ borderTop: "1px solid var(--navy-line)", padding: "10px 26px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
           {[["home", "Home"], ["listings", "Listings"], ["bourdillon", "Developments"], ["services", "Services"],
-            ["swapinfo", "Property swap"], ["leadership", "Our People"], ["about", "About"], ["tour", "How it works"], ["returns", "Estimate your returns"], ["contact", "Contact"]].map(([k, label]) =>
+            ["swapinfo", "Property swap"], ["list", "List a property"], ["leadership", "Our People"], ["about", "About"], ["tour", "How it works"], ["returns", "Estimate your returns"], ["contact", "Contact"]].map(([k, label]) =>
             <button key={k} className="nav-link" style={{ textAlign: "left", padding: "10px 0" }}
               onClick={() => { go(k); setMenu(false); }}>{label}</button>)}
         </div>}
@@ -964,7 +977,10 @@ function Landing({ onStart, onSignIn }) {
               </p>
               <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap" }}>
                 <a className="btn-gold" href="#" onClick={e => { e.preventDefault(); onStart(); }}>Get started <ArrowUpRight size={16} /></a>
-                <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); go("services"); }}>Explore services</a>
+                <a className="btn-line on-navy" href="#" onClick={e => { e.preventDefault(); go("list"); }}>List a property</a>
+              </div>
+              <div style={{ marginTop: 16, fontSize: 13.5, color: "rgba(255,255,255,.66)" }}>
+                Looking for a home? <a href="#" onClick={e => { e.preventDefault(); go("list"); setTimeout(() => { try { document.getElementById("waitlist").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (x) {} }, 80); }} style={{ color: "var(--gold)", textDecoration: "underline", textUnderlineOffset: 3 }}>Join the waiting list</a> and hear first when a verified property arrives.
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 28, color: "rgba(255,255,255,.6)", fontSize: 13 }}>
                 <ShieldCheck size={16} color="var(--gold)" /> Governance-led and compliance-first, with human oversight at every critical step.
@@ -1218,6 +1234,7 @@ function Landing({ onStart, onSignIn }) {
 
       {/* LEADERSHIP */}
       {tab === "swapinfo" && <SwapInfoSection go={go} />}
+      {tab === "list" && <ListWithGirardSection go={go} />}
       {tab === "leadership" && <LeadershipSection />}
 
       {(tab === "partners" || tab === "home") && <PartnersSection />}
@@ -1237,6 +1254,8 @@ function Landing({ onStart, onSignIn }) {
           </div>
         </div>
       </section>)}
+
+      <WhatsAppFab tab={tab} />
 
       {/* FOOTER */}
       {/* LISTINGS */}
@@ -1279,6 +1298,8 @@ function Landing({ onStart, onSignIn }) {
               ]],
               ["Markets", [["Nigeria", null], ["United Kingdom", null], ["Middle East", null], ["International", null]]],
               ["Company", [
+                ["List a property", "list"],
+                ["Join the waiting list", "waitlist"],
                 ["About", "/about"],
                 ["Why Girard", "/why-girard"],
                 ["Our People", "/leadership"],
@@ -1292,6 +1313,7 @@ function Landing({ onStart, onSignIn }) {
                   const base = { fontSize: 13.5, marginBottom: 9, display: "block" };
                   if (!href) return <div key={label} style={base}>{label}</div>;
                   if (href === "signin") return <a key={label} href="#" onClick={e => { e.preventDefault(); onSignIn(); }} style={{ ...base, color: "rgba(255,255,255,.7)", textDecoration: "none" }}>{label}</a>;
+                  if (href === "list" || href === "waitlist") return <a key={label} href={"/?go=" + href} onClick={e => { e.preventDefault(); go("list"); if (href === "waitlist") setTimeout(() => { try { document.getElementById("waitlist").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (x) {} }, 80); }} style={{ ...base, color: "rgba(255,255,255,.7)", textDecoration: "none" }}>{label}</a>;
                   return <a key={label} href={href} style={{ ...base, color: "rgba(255,255,255,.7)", textDecoration: "none" }}>{label}</a>;
                 })}
               </div>
@@ -6040,6 +6062,152 @@ const SWAP_STEPS = [
   ["Both titles transfer together", "Girard guides the conveyance on each side so the two transfers complete as one event. If either side cannot complete, neither does, and the escrow returns."]
 ];
 
+/* ===================================================================
+   List with Girard. The site's first real demand-capture surface: a landlord
+   listing request and a tenant waiting list, both posting server-side to
+   /api/lead, which writes the enquiry with the service role and emails staff.
+   Nothing here touches an anon policy. The success message reports what
+   actually happened, because a form that says "sent" when nothing was sent is
+   how the Invite Tenant bug stayed hidden for a month.
+   =================================================================== */
+const LAGOS_AREAS = ["Ikoyi", "Victoria Island", "Lekki Phase 1", "Lekki (other)", "Ajah / Sangotedo", "Ikeja GRA", "Magodo", "Yaba", "Surulere", "Banana Island", "Oniru", "Other"];
+
+function LeadForm({ kind }) {
+  const wanted = kind === "wanted";
+  const [f, setF] = useState({ name: "", phone: "", email: "", area: "", ptype: "", rent: "", beds: "", budget: "", moveBy: "", letType: wanted ? "Long let" : "Long let", occupied: "", notes: "", website: "" });
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(null);
+  const set = (k) => (e) => setF(x => ({ ...x, [k]: e.target.value }));
+  const inp = { width: "100%", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "12px 14px", color: "var(--ink)", fontSize: 14, marginBottom: 12, fontFamily: "inherit" };
+  const lab = { fontSize: 11.5, fontWeight: 700, letterSpacing: .6, textTransform: "uppercase", color: "var(--gold-2)", marginBottom: 6, display: "block" };
+  const submit = async () => {
+    const name = f.name.trim(), email = f.email.trim(), phone = f.phone.trim();
+    if (!name || (!email && !phone)) { setNote({ text: "Please add your name and either an email address or a phone number.", bad: true }); return; }
+    setBusy(true); setNote(null);
+    try {
+      const r = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, kind }) });
+      const d = await r.json();
+      if (d && d.ok) {
+        setF(x => ({ ...x, name: "", phone: "", email: "", notes: "", rent: "", budget: "" }));
+        setNote({ text: (wanted ? "You are on the list. " : "Thank you. ") + "Reference " + d.id + ". " + (d.emailed ? "A person will reply within one working day." : "It is saved and will be picked up on the next check."), bad: false });
+      } else {
+        setNote({ text: (d && d.error) || "That did not send.", bad: true });
+      }
+    } catch (e) {
+      setNote({ text: "That did not send. WhatsApp us instead on +234 704 817 3866.", bad: true });
+    }
+    setBusy(false);
+  };
+  return <div>
+    <label style={lab}>Your name</label>
+    <input style={inp} value={f.name} onChange={set("name")} placeholder="Full name" autoComplete="name" />
+    <div className="lead-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div><label style={lab}>Phone</label><input style={inp} value={f.phone} onChange={set("phone")} placeholder="+234" inputMode="tel" autoComplete="tel" /></div>
+      <div><label style={lab}>Email</label><input style={inp} value={f.email} onChange={set("email")} placeholder="you@example.com" inputMode="email" autoComplete="email" /></div>
+    </div>
+    <label style={lab}>{wanted ? "Where would you like to live" : "Where is the property"}</label>
+    <select style={inp} value={f.area} onChange={set("area")}>
+      <option value="">Choose an area</option>
+      {LAGOS_AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+    </select>
+    {wanted ? <>
+      <div className="lead-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div><label style={lab}>Bedrooms</label>
+          <select style={inp} value={f.beds} onChange={set("beds")}><option value="">Any</option>{["Studio", "1", "2", "3", "4", "5+"].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+        <div><label style={lab}>Move by</label><input style={inp} value={f.moveBy} onChange={set("moveBy")} placeholder="e.g. November 2026" /></div>
+      </div>
+      <label style={lab}>Budget per year</label>
+      <input style={inp} value={f.budget} onChange={set("budget")} placeholder="e.g. ₦8,000,000" inputMode="numeric" />
+    </> : <>
+      <div className="lead-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div><label style={lab}>Property type</label>
+          <select style={inp} value={f.ptype} onChange={set("ptype")}><option value="">Choose</option>{["Flat / apartment", "Terrace", "Semi-detached", "Detached house", "Serviced or short-let unit", "Commercial", "Land"].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+        <div><label style={lab}>Currently occupied</label>
+          <select style={inp} value={f.occupied} onChange={set("occupied")}><option value="">Choose</option><option>Vacant</option><option>Tenant in place</option><option>Owner occupied</option></select></div>
+      </div>
+      <label style={lab}>Rent you expect per year</label>
+      <input style={inp} value={f.rent} onChange={set("rent")} placeholder="e.g. ₦12,000,000, or leave blank for a valuation" inputMode="numeric" />
+    </>}
+    <label style={lab}>Let type</label>
+    <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+      {["Long let", "Short let", wanted ? "Either" : "For sale"].map(t => <button key={t} type="button" onClick={() => setF(x => ({ ...x, letType: t }))} className={"rpill" + (f.letType === t ? " on" : "")} style={{ color: f.letType === t ? undefined : "var(--ink)" }}>{t}</button>)}
+    </div>
+    <label style={lab}>Anything else</label>
+    <textarea style={{ ...inp, minHeight: 84, resize: "vertical" }} value={f.notes} onChange={set("notes")} placeholder={wanted ? "Parking, generator, school run, a compound you already like." : "Service charge, parking, the state of the property, anything a manager should know."} />
+    <input tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} style={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }} aria-hidden="true" />
+    <button className="btn-gold" onClick={submit} disabled={busy} style={{ opacity: busy ? .6 : 1 }}>{busy ? "Sending" : (wanted ? "Join the waiting list" : "Request a valuation")} <ArrowUpRight size={15} /></button>
+    {note && <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 8, fontSize: 13.5, lineHeight: 1.5, background: note.bad ? "rgba(180,40,40,.08)" : "rgba(30,120,60,.08)", color: note.bad ? "#8a1f1f" : "#1f5c34", border: "1px solid " + (note.bad ? "rgba(180,40,40,.25)" : "rgba(30,120,60,.25)") }}>{note.text}</div>}
+    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 12, lineHeight: 1.5 }}>Or WhatsApp us directly on <a href={"https://wa.me/2347048173866?text=" + encodeURIComponent(wanted ? "Hello Girard, I would like to join the waiting list." : "Hello Girard, I have a property I would like to list.")} style={{ color: "var(--gold-2)" }}>+234 704 817 3866</a>. Your details are used to reply to you and for nothing else.</div>
+  </div>;
+}
+
+function ListWithGirardSection({ go }) {
+  return <>
+    <section style={{ background: "var(--navy)", color: "#fff", padding: "clamp(56px,7vw,88px) 0 clamp(40px,5vw,64px)" }}>
+      <div className="wrap">
+        <div style={{ maxWidth: 780 }}>
+          <Rule />
+          <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>List with Girard</div>
+          <h1 className="serif" style={{ fontSize: "clamp(32px,4.8vw,58px)", fontWeight: 600, lineHeight: 1.06, letterSpacing: -.6 }}>Your property, managed on the record. <span style={{ fontStyle: "italic", color: "var(--gold)" }}>5% out of the rent</span>, never on top of it.</h1>
+          <p style={{ color: "rgba(255,255,255,.76)", fontSize: 16.5, lineHeight: 1.7, marginTop: 20, maxWidth: 640 }}>
+            Tell us about the property and we will come back with a valuation, a view on the right let type, and what we would need to verify before it is published. If you are looking for a home instead, join the waiting list and we will match you when the right property is verified.
+          </p>
+        </div>
+        <div className="lead-figs" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0, marginTop: 40, borderTop: "1px solid var(--navy-line)", maxWidth: 780 }}>
+          {[["5%", "Taken out of rent as it is collected"], ["Verified", "Title, ownership and condition checked first"], ["Direct", "Rent paid to you through a licensed processor"]].map(([b, t]) =>
+            <div key={t} style={{ padding: "22px 20px 20px 0", borderBottom: "1px solid var(--navy-line)" }}>
+              <div className="serif" style={{ fontSize: "clamp(22px,2.4vw,32px)", fontWeight: 600, color: "var(--gold)", lineHeight: 1 }}>{b}</div>
+              <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55, color: "rgba(255,255,255,.66)" }}>{t}</div>
+            </div>)}
+        </div>
+      </div>
+    </section>
+    <section style={{ background: "var(--ivory)", padding: "clamp(48px,6vw,80px) 0" }}>
+      <div className="wrap">
+        <div className="lead-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
+          <div id="landlord" style={{ scrollMarginTop: 96, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: "clamp(22px,3vw,34px)", position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center" }}><Building2 size={19} /></span>
+              <h2 className="serif" style={{ fontSize: "clamp(22px,2.4vw,30px)", fontWeight: 600, color: "var(--ink)", margin: 0 }}>I have a property</h2>
+            </div>
+            <p style={{ color: "var(--muted)", fontSize: 14.5, lineHeight: 1.65, margin: "8px 0 22px" }}>A valuation and a management proposal, usually within 2 working days. No fee to list, no fee until rent is collected.</p>
+            <LeadForm kind="landlord" />
+          </div>
+          <div id="waitlist" style={{ scrollMarginTop: 96, background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: "clamp(22px,3vw,34px)", position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 10, background: "var(--navy)", color: "var(--gold)", display: "grid", placeItems: "center" }}><KeyRound size={19} /></span>
+              <h2 className="serif" style={{ fontSize: "clamp(22px,2.4vw,30px)", fontWeight: 600, color: "var(--ink)", margin: 0 }}>I am looking for a home</h2>
+            </div>
+            <p style={{ color: "var(--muted)", fontSize: 14.5, lineHeight: 1.65, margin: "8px 0 22px" }}>We publish only what we have verified, so the list is short. Tell us what you want and you hear first when it arrives.</p>
+            <LeadForm kind="wanted" />
+          </div>
+        </div>
+        <style>{`@media(max-width:900px){.lead-grid{grid-template-columns:1fr!important;gap:24px!important}.lead-figs{grid-template-columns:1fr!important}}@media(max-width:480px){.lead-2{grid-template-columns:1fr!important;gap:0!important}}`}</style>
+      </div>
+    </section>
+  </>;
+}
+
+/* A persistent WhatsApp entry on the public pages. The message carries the
+   page the visitor was on, so the conversation opens with context rather than
+   "hello". Sits above the consent banner while that is visible. */
+function WhatsAppFab({ tab }) {
+  const [consented, setConsented] = useState(() => { try { return localStorage.getItem("girard_consent") === "1"; } catch (e) { return true; } });
+  useEffect(() => {
+    const h = () => setConsented(true);
+    window.addEventListener("girard:consent", h);
+    return () => window.removeEventListener("girard:consent", h);
+  }, []);
+  const label = { home: "home", listings: "listings", bourdillon: "Developments", services: "Services", swapinfo: "Property swap", leadership: "Our People", about: "About", contact: "Contact", list: "List with Girard", tour: "How it works", returns: "returns calculator" }[tab] || "website";
+  const text = encodeURIComponent("Hello Girard. I am looking at the " + label + " page on your website and would like to talk.");
+  return <a href={"https://wa.me/2347048173866?text=" + text} target="_blank" rel="noopener noreferrer" aria-label="Chat with Girard on WhatsApp" className="wa-fab"
+    style={{ position: "fixed", right: 20, bottom: consented ? 20 : 92, zIndex: 900, display: "flex", alignItems: "center", gap: 10, background: "#25D366", color: "#fff", borderRadius: 999, padding: "12px 16px 12px 12px", boxShadow: "0 10px 30px rgba(0,0,0,.28)", textDecoration: "none", fontWeight: 700, fontSize: 13.5, transition: "bottom .25s" }}>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3z"/></svg>
+    <span className="wa-fab-text">WhatsApp us</span>
+    <style>{`@media(max-width:560px){.wa-fab-text{display:none}.wa-fab{padding:12px!important}}`}</style>
+  </a>;
+}
+
 function SwapInfoSection({ go }) {
   return <>
     <section style={{ background: "var(--navy)", color: "#fff", position: "relative", overflow: "hidden" }}>
@@ -8204,7 +8372,7 @@ function MapScreen({ st }) {
 function ConsentBanner() {
   const [show, setShow] = useState(() => { try { return localStorage.getItem("girard_consent") !== "1"; } catch (e) { return true; } });
   if (!show) return null;
-  const ok = () => { try { localStorage.setItem("girard_consent", "1"); } catch (e) {} setShow(false); };
+  const ok = () => { try { localStorage.setItem("girard_consent", "1"); } catch (e) {} setShow(false); try { window.dispatchEvent(new Event("girard:consent")); } catch (e) {} };
   return <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 9999, background: "rgba(10,26,56,.97)", backdropFilter: "blur(8px)", color: "#fff", borderTop: "1px solid var(--navy-line)", padding: "12px 20px", display: "flex", gap: 14, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
     <div style={{ flex: 1, minWidth: 220, fontSize: 12.5, color: "rgba(255,255,255,.85)", lineHeight: 1.5 }}>We use essential cookies and local storage to run Girard and remember your preferences, in line with the Nigeria Data Protection Act. See Data & privacy for details.</div>
     <button onClick={ok} style={{ background: "var(--gold)", color: "#201601", border: "none", borderRadius: 8, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Got it</button>

@@ -190,6 +190,28 @@ const ORG_JSONLD = {
 
 async function buildSections() {
   await emit(page({
+    path: "/list",
+    image: IMAGES.services,
+    title: "List your property with Girard | Managed on the record, 5% out of the rent",
+    eyebrow: "List with Girard",
+    h1: "Your property, managed on the record.",
+    description: "Girard manages Lagos property for a 5% fee taken out of the rent as it is collected, never added on top. Title, ownership and condition are verified before anything is published, and rent reaches you through a licensed processor.",
+    jsonld: ORG_JSONLD,
+    body: `
+<p>Tell us about the property and we will come back with a valuation, a view on the right let type, and what we would need to verify before it is published. There is no fee to list and no fee until rent is collected.</p>
+<h2>What listing with Girard means</h2>
+<dl>
+<dt>5%</dt><dd>Taken out of the rent as it is collected, never added on top of it.</dd>
+<dt>Verified first</dt><dd>Title, ownership and condition are checked before a property is published, which is why the list is short.</dd>
+<dt>Paid directly</dt><dd>Rent reaches you through a licensed payment processor, with the record kept on the platform.</dd>
+<dt>Tenants on the record</dt><dd>Agreements are signed with a recorded, attributed signature. Nothing happens over WhatsApp and paper files.</dd>
+</dl>
+<h2>Looking for a home instead</h2>
+<p>We publish only what we have verified, so the list is short. Join the waiting list with the area, budget and move date you have in mind and you hear first when a matching property is verified.</p>
+<p><a class="cta" href="/?go=list">Request a valuation</a><a class="cta line" href="/?go=waitlist">Join the waiting list</a></p>`
+  }));
+
+  await emit(page({
     path: "/about",
     image: IMAGES.about,
     title: "About Girard Property Limited | Lagos real estate development & asset management",
