@@ -30,6 +30,52 @@ export default async function handler(req, res) {
       body: JSON.stringify({ name, role, area, rating, body, email, status: "pending" })
     });
     if (!r.ok) return res.status(200).json({ ok: false, error: "Database " + r.status });
+    await alertStaff({ name, role, area, rating, body });
     return res.status(200).json({ ok: true });
   } catch (e) { return res.status(200).json({ ok: false, error: String((e && e.message) || e).slice(0, 200) }); }
+}
+
+// A review nobody knows about is a review that sits unpublished for weeks.
+// Three alerts, none of which can fail the submission: a row in the
+// notifications table (the bell in the admin portal), an email to the staff
+// inbox, and a push to every device registered to an admin.
+async function alertStaff({ name, role, area, rating, body }) {
+  const H = { apikey: SERVICE, Authorization: "Bearer " + SERVICE, "Content-Type": "application/json" };
+  const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
+  const title = "New review waiting for approval";
+  const line = name + " (" + role + (area ? ", " + area : "") + ") " + stars;
+  try {
+    await fetch(SUPABASE_URL + "/rest/v1/notifications", {
+      method: "POST", headers: { ...H, Prefer: "return=minimal" },
+      body: JSON.stringify({ id: "NT-" + Date.now() + "-" + Math.floor(Math.random() * 1000), title, body: line, kind: "info", audience: "admin" })
+    });
+  } catch (e) {}
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST", headers: { Authorization: "Bearer " + process.env.RESEND_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: process.env.MAIL_FROM || "Girard <no-reply@girardpropertylimited.com>",
+          to: [process.env.LEADS_TO || "info@girardpropertylimited.com"],
+          subject: "Review waiting for approval: " + name + " " + stars,
+          text: [line, "", body, "", "Nothing is published until a staff member approves it. Sign in to the admin portal and open Reviews to approve or reject it.", "https://www.girardpropertylimited.com/"].join("\n")
+        })
+      });
+    } catch (e) {}
+  }
+  try {
+    const adm = await (await fetch(SUPABASE_URL + "/rest/v1/profiles?role=eq.admin&select=email", { headers: H })).json();
+    const emails = new Set((Array.isArray(adm) ? adm : []).map(x => String(x.email || "").toLowerCase()).filter(Boolean));
+    const tokRes = await (await fetch(SUPABASE_URL + "/rest/v1/push_tokens?select=token,email", { headers: H })).json();
+    const tokens = [...new Set((Array.isArray(tokRes) ? tokRes : []).filter(t => {
+      const e = String(t.email || "").toLowerCase();
+      return emails.has(e) || e.endsWith("@girardpropertylimited.com");
+    }).map(t => t.token).filter(Boolean))];
+    if (tokens.length) {
+      await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(tokens.map(to => ({ to, title, body: line, sound: "default", data: { screen: "reviews" } })))
+      });
+    }
+  } catch (e) {}
 }

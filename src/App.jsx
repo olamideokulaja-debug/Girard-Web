@@ -3828,6 +3828,12 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
         if (enq) out.enquiries = enq.filter(e => String(e.status || "New").toLowerCase() === "new").length;
         const { data: apps } = await supabase.from("applications").select("id,status");
         if (apps) out.apps = apps.filter(a => String(a.status || "").toLowerCase() === "applied").length;
+        // Reviews waiting for moderation. RLS lets only staff read pending rows,
+        // so for everyone else this is an empty list and no badge shows.
+        const { data: rv } = await supabase.from("reviews").select("id").eq("status", "pending");
+        if (rv) out.reviews = rv.length;
+        const { data: dl } = await supabase.from("account_deletions").select("id,completed_at").is("completed_at", null);
+        if (dl) out.deletions = dl.length;
       } catch (e) {}
       if (!dead) setBadges(out);
     };
@@ -5203,6 +5209,8 @@ function RequestModal({ svc, onClose, onSubmit }) {
 /* Where each notification should take you. Matched on the wording we generate. */
 function notifTarget(n) {
   const t = String((n && (n.title || n.text)) || "").toLowerCase();
+  if (t.includes("review")) return "reviews";
+  if (t.includes("deletion")) return "deletions";
   if (t.includes("message")) return "inbox";
   if (t.includes("vendor") || t.includes("job") || t.includes("repair")) return "maint";
   if (t.includes("enquiry") || t.includes("enquiries")) return "enquiries";
