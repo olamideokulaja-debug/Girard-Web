@@ -6210,6 +6210,10 @@ const SWAP_STEPS = [
    actually happened, because a form that says "sent" when nothing was sent is
    how the Invite Tenant bug stayed hidden for a month.
    =================================================================== */
+// Cloudflare Turnstile site key. Public by design: it is what the widget shows
+// the browser. The secret lives only in Vercel as TURNSTILE_SECRET, and
+// api/lead.js verifies every token with it before saving anything.
+const TURNSTILE_SITE = "0x4AAAAAAEm_iGJLmsXMhDQ1";
 const LAGOS_AREAS = ["Ikoyi", "Victoria Island", "Lekki Phase 1", "Lekki (other)", "Ajah / Sangotedo", "Ikeja GRA", "Magodo", "Yaba", "Surulere", "Banana Island", "Oniru", "Other"];
 
 function LeadForm({ kind }) {
@@ -6217,6 +6221,24 @@ function LeadForm({ kind }) {
   const [f, setF] = useState({ name: "", phone: "", email: "", area: "", ptype: "", rent: "", beds: "", budget: "", moveBy: "", letType: wanted ? "Long let" : "Long let", occupied: "", notes: "", website: "" });
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
+  const [cfToken, setCfToken] = useState("");
+  const tsHost = useRef(null);
+  const tsId = useRef(null);
+  useEffect(() => {
+    let gone = false;
+    loadScript("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit").then(() => {
+      if (gone || !window.turnstile || !tsHost.current) return;
+      try {
+        tsId.current = window.turnstile.render(tsHost.current, {
+          sitekey: TURNSTILE_SITE, theme: "light", appearance: "always",
+          callback: (t) => setCfToken(t),
+          "expired-callback": () => setCfToken(""),
+          "error-callback": () => setCfToken("")
+        });
+      } catch (e) {}
+    }).catch(() => { /* widget absent; the server decides what to do with no token */ });
+    return () => { gone = true; try { if (tsId.current != null && window.turnstile) window.turnstile.remove(tsId.current); } catch (e) {} };
+  }, []);
   const set = (k) => (e) => setF(x => ({ ...x, [k]: e.target.value }));
   const inp = { width: "100%", background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "12px 14px", color: "var(--ink)", fontSize: 14, marginBottom: 12, fontFamily: "inherit" };
   const lab = { fontSize: 11.5, fontWeight: 700, letterSpacing: .6, textTransform: "uppercase", color: "var(--gold-2)", marginBottom: 6, display: "block" };
@@ -6225,8 +6247,9 @@ function LeadForm({ kind }) {
     if (!name || (!email && !phone)) { setNote({ text: "Please add your name and either an email address or a phone number.", bad: true }); return; }
     setBusy(true); setNote(null);
     try {
-      const r = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, kind }) });
+      const r = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, kind, cfToken }) });
       const d = await r.json();
+      try { if (tsId.current != null && window.turnstile) { window.turnstile.reset(tsId.current); setCfToken(""); } } catch (e) {}
       if (d && d.ok) {
         setF(x => ({ ...x, name: "", phone: "", email: "", notes: "", rent: "", budget: "" }));
         setNote({ text: (wanted ? "You are on the list. " : "Thank you. ") + "Reference " + d.id + ". " + (d.emailed ? "A person will reply within one working day." : "It is saved and will be picked up on the next check."), bad: false });
@@ -6275,6 +6298,7 @@ function LeadForm({ kind }) {
     <label style={lab}>Anything else</label>
     <textarea style={{ ...inp, minHeight: 84, resize: "vertical" }} value={f.notes} onChange={set("notes")} placeholder={wanted ? "Parking, generator, school run, a compound you already like." : "Service charge, parking, the state of the property, anything a manager should know."} />
     <input tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} style={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }} aria-hidden="true" />
+    <div ref={tsHost} style={{ marginBottom: 14, minHeight: 0 }} />
     <button className="btn-gold" onClick={submit} disabled={busy} style={{ opacity: busy ? .6 : 1 }}>{busy ? "Sending" : (wanted ? "Join the waiting list" : "Request a valuation")} <ArrowUpRight size={15} /></button>
     {note && <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 8, fontSize: 13.5, lineHeight: 1.5, background: note.bad ? "rgba(180,40,40,.08)" : "rgba(30,120,60,.08)", color: note.bad ? "#8a1f1f" : "#1f5c34", border: "1px solid " + (note.bad ? "rgba(180,40,40,.25)" : "rgba(30,120,60,.25)") }}>{note.text}</div>}
     <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 12, lineHeight: 1.5 }}>Or WhatsApp us directly on <a href={"https://wa.me/2347048173866?text=" + encodeURIComponent(wanted ? "Hello Girard, I would like to join the waiting list." : "Hello Girard, I have a property I would like to list.")} style={{ color: "var(--gold-2)" }}>+234 704 817 3866</a>. Your details are used to reply to you and for nothing else.</div>

@@ -40,7 +40,28 @@ export default async function handler(req, res) {
     date: new Date().toISOString().slice(0, 10), time: "", status: "New"
   };
 
-  const out = { ok: false, saved: false, emailed: false, error: null, id };
+  const out = { ok: false, saved: false, emailed: false, error: null, id, captcha: "not configured" };
+
+  // Turnstile. Enforced only once TURNSTILE_SECRET exists on the deployment,
+  // so the forms keep working before the key is added and go strict after.
+  const secret = process.env.TURNSTILE_SECRET;
+  if (secret) {
+    const tok = clean(b.cfToken, 2048);
+    if (!tok) return res.status(200).json({ ...out, error: "Please complete the verification box above, or WhatsApp us on +234 704 817 3866." });
+    try {
+      const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+      const vr = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ secret, response: tok, remoteip: ip })
+      });
+      const vj = await vr.json().catch(() => ({}));
+      if (!vj.success) return res.status(200).json({ ...out, captcha: "failed", error: "Verification did not pass. Please try again, or WhatsApp us on +234 704 817 3866." });
+      out.captcha = "verified";
+    } catch (e) {
+      return res.status(200).json({ ...out, captcha: "unavailable", error: "Verification could not be reached. Please try again in a moment, or WhatsApp us on +234 704 817 3866." });
+    }
+  }
 
   const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!SERVICE) {
