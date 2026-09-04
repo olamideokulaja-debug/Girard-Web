@@ -252,6 +252,33 @@ function reflect(THREE, group, opacity) {
   return m;
 }
 
+/* Loads a script once and resolves when it is ready. Used to pull the three.js
+   example loaders from jsDelivr only on desktop, so phones never download them. */
+const _scriptOnce = {};
+function loadScript(src) {
+  if (!_scriptOnce[src]) _scriptOnce[src] = new Promise((ok, no) => {
+    const el = document.createElement("script");
+    el.src = src; el.async = true;
+    el.onload = () => ok(true);
+    el.onerror = () => no(new Error("failed " + src));
+    document.head.appendChild(el);
+  });
+  return _scriptOnce[src];
+}
+const THREE_EX = (typeof location !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(location.hostname))
+  ? "/three-ex/"   // local build check: the render container cannot reach the CDN
+  : "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/";
+
+/* The four real towers, generated 4 Sept 2026 and Draco-compressed to under
+   1MB each. h is the height they are scaled to in scene units, matching the
+   procedural towers they replace, so the camera path did not have to change. */
+const HERO_MODELS = [
+  { file: "/models/tower-a.glb", h: 26, x: 0, z: 0, spire: 6 },
+  { file: "/models/tower-b.glb", h: 18, x: -12.5, z: 3.5, spire: 3.4 },
+  { file: "/models/tower-c.glb", h: 13, x: 12, z: 2.5, spire: 2.6 },
+  { file: "/models/tower-d.glb", h: 9, x: 4.5, z: 12.5, spire: 1.6 }
+];
+
 function HeroTower() {
   const host = useRef(null);
   useEffect(() => {
@@ -325,7 +352,80 @@ function HeroTower() {
     shaft(2.1, 13, 4.5, 1.0, 2.6);
     shaft(1.7, 9, 1.6, 4.4, 1.6);
 
-    city.add(reflect(THREE, core, 0.26));
+    let mirror = reflect(THREE, core, 0.26);
+    city.add(mirror);
+
+    // Real models, desktop only. The procedural towers stay on screen until
+    // every model has loaded, then the swap happens in one frame. Any failure
+    // (CDN, decoder, a missing file) leaves the procedural scene as it was.
+    const wantModels = window.innerWidth >= 1000 && !/\bnomodels\b/.test(window.location.search);
+    if (wantModels) (async () => {
+      try {
+        await loadScript(THREE_EX + "loaders/GLTFLoader.js");
+        await loadScript(THREE_EX + "loaders/DRACOLoader.js");
+        if (!alive || !THREE.GLTFLoader || !THREE.DRACOLoader) return;
+        const draco = new THREE.DRACOLoader();
+        draco.setDecoderPath(THREE_EX + "libs/draco/");
+        const loader = new THREE.GLTFLoader();
+        loader.setDRACOLoader(draco);
+        // A studio-style environment for the glTF materials to reflect: a warm
+        // key panel, a cool fill, a dark ground. No HDR file to download.
+        const pm = new THREE.PMREMGenerator(renderer);
+        const envScene = new THREE.Scene();
+        envScene.background = new THREE.Color(0x0B1C3B);
+        const panel = (c, i, x, y, z, w, hh) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, hh), new THREE.MeshBasicMaterial({ color: c })); m.position.set(x, y, z); m.lookAt(0, 0, 0); m.material.color.multiplyScalar(i); envScene.add(m); };
+        panel(0xFFE2B0, 3.0, 6, 8, 6, 10, 6);
+        panel(0x4A86D8, 1.2, -8, 5, -6, 12, 8);
+        panel(0x0A1A38, 0.4, 0, -6, 0, 30, 30);
+        const envTex = pm.fromScene(envScene, 0.04).texture;
+        pm.dispose();
+        const loaded = await Promise.all(HERO_MODELS.map(m => new Promise((ok, no) => loader.load(m.file, g => ok({ spec: m, scene: g.scene }), undefined, no))));
+        if (!alive) return;
+        const real = new THREE.Group();
+        loaded.forEach(({ spec, scene }) => {
+          const box = new THREE.Box3().setFromObject(scene);
+          const size = box.getSize(new THREE.Vector3());
+          const k = spec.h / Math.max(0.001, size.y);
+          scene.scale.setScalar(k);
+          box.setFromObject(scene);
+          const c = box.getCenter(new THREE.Vector3());
+          scene.position.set(spec.x - c.x, -box.min.y, spec.z - c.z);
+          scene.traverse(o => {
+            if (!o.isMesh || !o.material) return;
+            o.material.envMap = envTex;
+            o.material.envMapIntensity = 0.9;
+            o.material.roughness = Math.min(o.material.roughness, 0.5);
+            // The generated texture is lit for daylight. Tinting the colour
+            // map towards dusk navy is what makes it sit in a night scene.
+            o.material.color = new THREE.Color(0x6F7C9C);
+            // No lit-window channel in a generated model, so the building
+            // glows faintly from its own colour map instead of going black.
+            o.material.emissive = new THREE.Color(0xFFB36A);
+            o.material.emissiveMap = o.material.map || null;
+            o.material.emissiveIntensity = 0.32;
+            o.material.needsUpdate = true;
+          });
+          real.add(scene);
+          const crown = glowSprite(THREE, 7);
+          crown.position.set(spec.x, spec.h + 0.6, spec.z);
+          real.add(crown);
+          real.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(spec.x, spec.h, spec.z), new THREE.Vector3(spec.x, spec.h + spec.spire, spec.z)]),
+            new THREE.LineBasicMaterial({ color: GOLD })));
+          const b = glowSprite(THREE, 2.6, "rgba(255,244,214,1)");
+          b.position.set(spec.x, spec.h + spec.spire, spec.z);
+          real.add(b); beacons.push(b);
+        });
+        // One-frame swap: procedural out, models in, reflection rebuilt.
+        city.remove(core); city.remove(mirror);
+        city.add(real);
+        mirror = reflect(THREE, real, 0.22);
+        city.add(mirror);
+        camera.far = 400;
+        camera.updateProjectionMatrix();
+        modelsOn = true;
+      } catch (e) { /* procedural scene stays; nothing to do */ }
+    })();
 
     // The filler ring starts well outside the camera (which orbits at ~39 from
     // origin). At the old inner radius of 16 a filler swung right through the
@@ -379,12 +479,13 @@ function HeroTower() {
     };
     window.addEventListener("resize", onResize);
 
-    let t = 0, raf = 0;
+    let t = 0, raf = 0, modelsOn = false;
     const loop = () => {
       if (!alive) return;
       raf = requestAnimationFrame(loop);
       t += reduced ? 0 : 0.0022;
       city.rotation.y = t * 0.5;
+      const back = modelsOn ? 1.42 : 1;
       arc.rotation.z = Math.PI * 0.25 + t * 0.16;
       dust.rotation.y = -t * 0.2;
       for (let i = 0; i < beacons.length; i++) {
@@ -393,12 +494,14 @@ function HeroTower() {
       // A slow breath on top of the mouse parallax, so the scene is alive even
       // when nobody moves the pointer and on touch devices where nobody can.
       camera.position.set(
-        9 + px * 8 + Math.sin(t * 0.55) * 2.2,
-        15 + py * -4 + Math.sin(t * 0.4) * 1.1,
-        43 + Math.cos(t * 0.47) * 2.6);
+        (9 + px * 8 + Math.sin(t * 0.55) * 2.2) * back,
+        (15 + py * -4 + Math.sin(t * 0.4) * 1.1) * (modelsOn ? 1.15 : 1),
+        (43 + Math.cos(t * 0.47) * 2.6) * back);
       // Aimed a little above centre so the water line and the reflections sit
       // inside the frame rather than below it.
-      camera.lookAt(0, 11.5, 0);
+      // With the wider real models the cluster is aimed right of centre so the
+      // headline keeps clear air on the left.
+      camera.lookAt(modelsOn ? -11 : 0, 11.5, 0);
       renderer.render(scene, camera);
     };
     loop();
@@ -5972,8 +6075,45 @@ function SwapModel() {
     plate.position.y = -0.02;
     plate.renderOrder = 1;
     sc.add(plate);
-    const mirrorA = reflect(THREE, a, 0.3), mirrorB = reflect(THREE, b, 0.3);
+    let mirrorA = reflect(THREE, a, 0.3), mirrorB = reflect(THREE, b, 0.3);
     stage.add(mirrorA); stage.add(mirrorB);
+
+    // Real models on desktop: the two smaller towers from the hero set, one
+    // tinted brass and one navy so the pair still reads as two owners. The
+    // boxes stay until both have loaded; any failure leaves the boxes.
+    if (window.innerWidth >= 1000 && !/\bnomodels\b/.test(window.location.search)) (async () => {
+      try {
+        await loadScript(THREE_EX + "loaders/GLTFLoader.js");
+        await loadScript(THREE_EX + "loaders/DRACOLoader.js");
+        if (!alive || !THREE.GLTFLoader || !THREE.DRACOLoader) return;
+        const draco = new THREE.DRACOLoader(); draco.setDecoderPath(THREE_EX + "libs/draco/");
+        const loader = new THREE.GLTFLoader(); loader.setDRACOLoader(draco);
+        const pm = new THREE.PMREMGenerator(rn);
+        const envScene = new THREE.Scene(); envScene.background = new THREE.Color(0x0B1C3B);
+        const panel = (c, i, x, y, z, w, hh) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, hh), new THREE.MeshBasicMaterial({ color: c })); m.position.set(x, y, z); m.lookAt(0, 0, 0); m.material.color.multiplyScalar(i); envScene.add(m); };
+        panel(0xFFE2B0, 3.0, 6, 8, 6, 10, 6); panel(0x4A86D8, 1.2, -8, 5, -6, 12, 8); panel(0x0A1A38, 0.4, 0, -6, 0, 30, 30);
+        const envTex = pm.fromScene(envScene, 0.04).texture; pm.dispose();
+        const fit = (scene, h, tint) => {
+          const box = new THREE.Box3().setFromObject(scene); const size = box.getSize(new THREE.Vector3());
+          scene.scale.setScalar(h / Math.max(0.001, size.y)); box.setFromObject(scene);
+          const c = box.getCenter(new THREE.Vector3()); scene.position.set(-c.x, -box.min.y, -c.z);
+          scene.traverse(o => { if (!o.isMesh || !o.material) return; o.material.envMap = envTex; o.material.envMapIntensity = 1.0; o.material.roughness = Math.min(o.material.roughness, 0.5); o.material.color = new THREE.Color(tint); o.material.emissive = new THREE.Color(0xFFB36A); o.material.emissiveMap = o.material.map || null; o.material.emissiveIntensity = 0.3; o.material.needsUpdate = true; });
+          return scene;
+        };
+        const [ga, gb] = await Promise.all([
+          new Promise((ok, no) => loader.load("/models/tower-c.glb", g => ok(g.scene), undefined, no)),
+          new Promise((ok, no) => loader.load("/models/tower-d.glb", g => ok(g.scene), undefined, no))]);
+        if (!alive) return;
+        const swapIn = (grp, scene, h, tint) => {
+          [...grp.children].forEach(ch => { if (ch.isMesh || ch.isLineSegments) grp.remove(ch); });
+          grp.add(fit(scene, h, tint));
+        };
+        swapIn(a, ga, 3.6, 0xB89058); swapIn(b, gb, 2.4, 0x5C6C98);
+        stage.remove(mirrorA); stage.remove(mirrorB);
+        mirrorA = reflect(THREE, a, 0.28); mirrorB = reflect(THREE, b, 0.28);
+        stage.add(mirrorA); stage.add(mirrorB);
+      } catch (e) { /* boxes stay */ }
+    })();
 
     const ring = new THREE.Mesh(new THREE.TorusGeometry(R, 0.012, 8, 160),
       new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.45 }));
