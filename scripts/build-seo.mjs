@@ -15,7 +15,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, SERVICES, MODULES, ADVANTAGES, AUDIENCES, TEAM, AT_A_GLANCE, VALUES, IMAGES, DEVELOPMENT_GALLERY, WALKTHROUGH, CASE } from "./seo-content.mjs";
+import { SITE, SERVICES, MODULES, ADVANTAGES, AUDIENCES, TEAM, AT_A_GLANCE, VALUES, IMAGES, DEVELOPMENT_GALLERY, WALKTHROUGH, CASE, AREAS } from "./seo-content.mjs";
 
 const DIST = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 const urls = [];
@@ -189,6 +189,51 @@ const ORG_JSONLD = {
 };
 
 async function buildSections() {
+  await emit(page({
+    path: "/verified",
+    image: IMAGES.services,
+    title: "What verified means at Girard | Five checks before a property is published",
+    eyebrow: "What verified means",
+    h1: "Five checks, in order, before a property is published.",
+    description: "Girard publishes a property only after its title, the owner's identity and authority, and the property's condition have been checked, and keeps every enquiry, signature and payment on the record afterwards.",
+    jsonld: ORG_JSONLD,
+    body: `
+<p>The Lagos market is full of listings that were never real. The Girard list is short because every property on it has passed the checks below. If one fails, the property is not published.</p>
+<dl>
+<dt>1. Title</dt><dd>The title document itself, a Certificate of Occupancy, a registered deed of assignment or a governor's consent, matched to the name of the person listing.</dd>
+<dt>2. Ownership</dt><dd>The person listing must be the owner on the title or hold the owner's written authority. Where a listing comes through an agent, the owner is confirmed before anything is published.</dd>
+<dt>3. Identity</dt><dd>A government identity document for the owner, matched against the title and, for payout, against the bank account through a verification service. Rent goes to the verified owner's account and nowhere else.</dd>
+<dt>4. Condition</dt><dd>The property's condition is checked before publication and the description says what was found, including what is wrong with it.</dd>
+<dt>5. The record</dt><dd>Every enquiry, viewing, application, signature and payment on the property is kept on the platform. Owner and tenant see the same record.</dd>
+</dl>
+<h2>What it costs you</h2>
+<p>Time. A property takes days to verify, not minutes. That is the trade: a shorter list, every entry of which is real.</p>
+<p><a class="cta" href="/?go=list">List a property</a><a class="cta line" href="/?go=waitlist">Join the waiting list</a></p>`
+  }));
+
+  for (const a of AREAS) {
+    await emit(page({
+      path: "/area/" + a.slug,
+      image: IMAGES.services,
+      title: "Property management in " + a.name + ", Lagos | Girard Property Limited",
+      eyebrow: a.name,
+      h1: "Property managed on the record in " + a.name + ".",
+      description: "Girard manages and lets property in " + a.name + ", Lagos: title, ownership and condition verified before listing, rent paid to the owner through a licensed processor, and a 5% fee taken out of the rent rather than added on top.",
+      jsonld: { ...ORG_JSONLD, areaServed: [a.name + ", Lagos", "Lagos", "Nigeria"] },
+      body: `
+<p>${esc(a.intro)}</p>
+<h2>If you own property in ${esc(a.name)}</h2>
+<p>${esc(a.owner)}</p>
+<p><a class="cta" href="/?go=list">Request a valuation</a></p>
+<h2>If you are looking for a home in ${esc(a.name)}</h2>
+<p>${esc(a.tenant)}</p>
+<p><a class="cta line" href="/?go=waitlist">Join the waiting list</a></p>
+<h2>How Girard works, wherever the property is</h2>
+${cards(SERVICES.slice(0, 3), s => ({ h: s.title, p: s.body, href: "/service/" + s.slug }))}
+<p><a class="cta line" href="/verified">What verified means</a></p>`
+    }));
+  }
+
   await emit(page({
     path: "/list",
     image: IMAGES.services,

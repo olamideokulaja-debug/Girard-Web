@@ -895,7 +895,7 @@ function Landing({ onStart, onSignIn }) {
   useEffect(() => {
     try {
       const want = new URLSearchParams(window.location.search).get("go");
-      const ok = ["list", "waitlist", "services", "swapinfo", "leadership", "about", "contact", "bourdillon", "listings"];
+      const ok = ["list", "waitlist", "verified", "services", "swapinfo", "leadership", "about", "contact", "bourdillon", "listings"];
       if (want && ok.includes(want)) {
         setTab(want === "waitlist" ? "list" : want);
         if (want === "waitlist") setTimeout(() => { try { document.getElementById("waitlist").scrollIntoView({ block: "start" }); } catch (e) {} }, 400);
@@ -1021,7 +1021,7 @@ function Landing({ onStart, onSignIn }) {
 
         {menu && <div className="mobilemenu" style={{ borderTop: "1px solid var(--navy-line)", padding: "10px 26px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
           {[["home", "Home"], ["listings", "Listings"], ["bourdillon", "Developments"], ["services", "Services"],
-            ["swapinfo", "Property swap"], ["list", "List a property"], ["leadership", "Our People"], ["about", "About"], ["tour", "How it works"], ["returns", "Estimate your returns"], ["contact", "Contact"]].map(([k, label]) =>
+            ["swapinfo", "Property swap"], ["list", "List a property"], ["verified", "What verified means"], ["leadership", "Our People"], ["about", "About"], ["tour", "How it works"], ["returns", "Estimate your returns"], ["contact", "Contact"]].map(([k, label]) =>
             <button key={k} className="nav-link" style={{ textAlign: "left", padding: "10px 0" }}
               onClick={() => { go(k); setMenu(false); }}>{label}</button>)}
         </div>}
@@ -1176,6 +1176,7 @@ function Landing({ onStart, onSignIn }) {
             </div>)}
           </div>
           <style>{`.svc-row:hover{background:rgba(198,161,91,.05)}@media(max-width:820px){.svc-row{grid-template-columns:34px 1fr!important;row-gap:10px!important}.svc-row > p{grid-column:2}}`}</style>
+          <div style={{ marginTop: 54 }}><FeeCalculator /></div>
           {/* Illustrative photography for the service lines. Deliberately no
               address, price or availability on any of them: the promise that
               Girard publishes only real properties lives on the listings, and
@@ -1215,10 +1216,10 @@ function Landing({ onStart, onSignIn }) {
               signature. The work that used to happen over WhatsApp and in paper files happens here, on the record.
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0, marginTop: 54, borderTop: "1px solid var(--cream-line)" }} className="case-figs">
-              {[["Verified", "Every listing checked before it is published"],
-                ["5%", "Taken out of rent, never added on top"],
-                ["One place", "Apply, sign and pay without leaving the platform"]].map(([b, t]) =>
-                <div key={t} style={{ padding: "30px 22px 28px", borderBottom: "1px solid var(--cream-line)", borderRight: "1px solid var(--cream-line)" }}>
+              {[["Verified", "Every listing checked before it is published", "verified"],
+                ["5%", "Taken out of rent, never added on top", "services"],
+                ["One place", "Apply, sign and pay without leaving the platform", null]].map(([b, t, dest]) =>
+                <div key={t} onClick={dest ? () => go(dest) : undefined} role={dest ? "link" : undefined} tabIndex={dest ? 0 : undefined} onKeyDown={dest ? (e) => { if (e.key === "Enter") go(dest); } : undefined} style={{ padding: "30px 22px 28px", borderBottom: "1px solid var(--cream-line)", borderRight: "1px solid var(--cream-line)", cursor: dest ? "pointer" : "default" }}>
                   {/* Sized to hold "One place" on one line now that the figures
                       share the row with the photograph. */}
                   <div className="serif" style={{ fontSize: "clamp(22px,2.1vw,32px)", fontWeight: 600, color: "var(--gold-2)", lineHeight: 1, whiteSpace: "nowrap" }}>{b}</div>
@@ -1338,6 +1339,7 @@ function Landing({ onStart, onSignIn }) {
       {/* LEADERSHIP */}
       {tab === "swapinfo" && <SwapInfoSection go={go} />}
       {tab === "list" && <ListWithGirardSection go={go} />}
+      {tab === "verified" && <VerifiedSection go={go} />}
       {tab === "leadership" && <LeadershipSection />}
 
       {(tab === "partners" || tab === "home") && <PartnersSection />}
@@ -1403,6 +1405,7 @@ function Landing({ onStart, onSignIn }) {
               ["Company", [
                 ["List a property", "list"],
                 ["Join the waiting list", "waitlist"],
+                ["What verified means", "/verified"],
                 ["About", "/about"],
                 ["Why Girard", "/why-girard"],
                 ["Our People", "/leadership"],
@@ -5666,7 +5669,7 @@ function enqLoad() {
 }
 function enqSave(s) { try { localStorage.setItem(ENQ_KEY, JSON.stringify(s)); } catch (e) {} }
 function enqRecToRow(r) { return { id: r.id, type: r.type, prop_id: r.propId || null, prop_title: r.propTitle, area: r.area || null, name: r.name, phone: r.phone, email: r.email || null, message: r.message || null, date: r.date || null, time: r.time || null, status: r.status }; }
-function enqRowToRec(r) { return { id: r.id, type: r.type, propId: r.prop_id, propTitle: r.prop_title, area: r.area, name: r.name, phone: r.phone, email: r.email, message: r.message, date: r.date, time: r.time, status: r.status, createdAt: r.created_at }; }
+function enqRowToRec(r) { return { id: r.id, type: r.type, propId: r.prop_id, propTitle: r.prop_title, area: r.area, name: r.name, phone: r.phone, email: r.email, message: r.message, date: r.date, time: r.time, status: r.status, createdAt: r.created_at, contactedAt: r.contacted_at || null }; }
 function enqMirrorCrm(rec) {
   try { const crm = crmLoad(); crm.cards = [{ id: "C-EN" + rec.id, name: (rec.type === "Viewing" ? "Viewing · " : "Enquiry · ") + rec.name, kind: "Lead", market: "Nigeria", detail: rec.propTitle + (rec.type === "Viewing" ? " · " + rec.date + " " + rec.time : ""), stage: 0 }, ...crm.cards]; crmSave(crm); } catch (e) {}
 }
@@ -5680,8 +5683,11 @@ async function enqFetch() {
   if (supabase) { try { const { data, error } = await supabase.from("enquiries").select("*").order("created_at", { ascending: false }); if (!error && data) return data.map(enqRowToRec); } catch (e) {} }
   return enqLoad().items;
 }
-async function enqSetStatusRemote(id, status) {
-  if (supabase) { try { await supabase.from("enquiries").update({ status }).eq("id", id); return; } catch (e) {} }
+async function enqSetStatusRemote(id, status, stampContacted) {
+  // contacted_at is written once, the first time a lead leaves New. It is what
+  // the response-time figure on the Enquiries screen is measured from.
+  const patch = stampContacted ? { status, contacted_at: new Date().toISOString() } : { status };
+  if (supabase) { try { await supabase.from("enquiries").update(patch).eq("id", id); return; } catch (e) {} }
   const st = enqLoad(); enqSave({ items: st.items.map(x => x.id === id ? { ...x, status } : x) });
 }
 
@@ -5879,8 +5885,9 @@ function EnquiriesScreen({ toast }) {
   const setStatus = (id, status) => {
     const it = items.find(x => x.id === id);
     try { auditLog("Enquiry " + status.toLowerCase(), (it ? it.propTitle + " \u00b7 " + it.name : id), "enquiries"); } catch (e) {}
-    setItems(items.map(x => x.id === id ? { ...x, status } : x));
-    enqSetStatusRemote(id, status);
+    const stamp = !!(it && !it.contactedAt && it.status === "New" && status !== "New");
+    setItems(items.map(x => x.id === id ? { ...x, status, contactedAt: stamp ? new Date().toISOString() : x.contactedAt } : x));
+    enqSetStatusRemote(id, status, stamp);
     // A landlord who let the property elsewhere must take it off the market,
     // or it keeps drawing enquiries and rent for something unavailable.
     if (status === "Property already taken" && it && it.propId) {
@@ -5896,22 +5903,43 @@ function EnquiriesScreen({ toast }) {
     }
     toast("Marked " + status.toLowerCase());
   };
+  const [filt, setFilt] = useState("All");
   const newCount = items.filter(x => x.status === "New").length;
   const viewings = items.filter(x => x.type === "Viewing").length;
+  const inbound = items.filter(x => x.type === "Landlord" || x.type === "Wanted").length;
+  // Median hours from enquiry to first contact, last 30 days, leads only.
+  const resp = (() => {
+    const cut = Date.now() - 30 * 86400000;
+    const hrs = items.filter(x => x.contactedAt && x.createdAt && new Date(x.createdAt).getTime() > cut)
+      .map(x => (new Date(x.contactedAt).getTime() - new Date(x.createdAt).getTime()) / 3600000).filter(h => h >= 0).sort((a, b) => a - b);
+    if (!hrs.length) return null;
+    const m = hrs[Math.floor(hrs.length / 2)];
+    return m < 1 ? Math.round(m * 60) + " min" : m < 48 ? m.toFixed(1) + " h" : (m / 24).toFixed(1) + " days";
+  })();
+  const age = (x) => {
+    if (!x.createdAt) return "";
+    const h = (Date.now() - new Date(x.createdAt).getTime()) / 3600000;
+    return h < 1 ? Math.max(1, Math.round(h * 60)) + " min" : h < 48 ? Math.round(h) + " h" : Math.round(h / 24) + " d";
+  };
+  const shown = items.filter(x => filt === "All" ? true : filt === "Leads" ? (x.type === "Landlord" || x.type === "Wanted") : filt === "Unanswered" ? x.status === "New" : x.type === filt);
   return <div>
     <H2 title="Enquiries & viewings" sub={supabase ? "Live leads from your database" : "Leads captured from the public listings"} />
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-      <PmStat icon={Mail} label="New" value={String(newCount)} tone="#3B82F6" />
+      <PmStat icon={Mail} label="Unanswered" value={String(newCount)} tone={newCount ? "#DC2626" : "#3B82F6"} />
+      <PmStat icon={Building2} label="Landlord & waiting list" value={String(inbound)} tone="var(--gold-2)" />
       <PmStat icon={Calendar} label="Viewings" value={String(viewings)} tone="#8B5CF6" />
-      <PmStat icon={Users} label="Total leads" value={String(items.length)} tone="var(--muted)" />
+      <PmStat icon={Clock} label="Median first response, 30 d" value={resp || "no data yet"} tone={resp ? "#1F9D57" : "var(--muted)"} />
+    </div>
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+      {["All", "Unanswered", "Leads", "Landlord", "Wanted", "Viewing", "Enquiry"].map(k => <button key={k} onClick={() => setFilt(k)} className={"rpill" + (filt === k ? " on" : "")} style={{ color: filt === k ? undefined : "var(--ink)" }}>{k === "Wanted" ? "Waiting list" : k}</button>)}
     </div>
     <PmCard pad={0} style={{ overflow: "hidden" }}>
-      {loading ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading enquiries…</div> : items.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>No enquiries yet.</div> : items.filter(x => (bTick, !isBlocked(x.email || x.phone))).map((x, i) => <div key={x.id} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ width: 40, height: 40, borderRadius: 9, background: x.type === "Viewing" ? "rgba(139,92,246,.14)" : "rgba(59,130,246,.14)", color: x.type === "Viewing" ? "#8B5CF6" : "#3B82F6", display: "grid", placeItems: "center", flexShrink: 0 }}>{x.type === "Viewing" ? <Calendar size={18} /> : <Mail size={18} />}</div>
+      {loading ? <div style={{ padding: 20, color: "var(--muted)" }}>Loading enquiries…</div> : shown.length === 0 ? <div style={{ padding: 20, color: "var(--muted)" }}>{items.length ? "Nothing in this view." : "No enquiries yet."}</div> : shown.filter(x => (bTick, !isBlocked(x.email || x.phone))).map((x, i) => <div key={x.id} style={{ padding: 16, borderTop: i ? "1px solid var(--cream-line)" : "none", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", background: x.status === "New" && (x.type === "Landlord" || x.type === "Wanted") ? "rgba(198,161,91,.06)" : "transparent" }}>
+        <div style={{ width: 40, height: 40, borderRadius: 9, background: x.type === "Viewing" ? "rgba(139,92,246,.14)" : x.type === "Landlord" ? "rgba(198,161,91,.18)" : x.type === "Wanted" ? "rgba(31,157,87,.14)" : "rgba(59,130,246,.14)", color: x.type === "Viewing" ? "#8B5CF6" : x.type === "Landlord" ? "var(--gold-2)" : x.type === "Wanted" ? "#1F9D57" : "#3B82F6", display: "grid", placeItems: "center", flexShrink: 0 }}>{x.type === "Viewing" ? <Calendar size={18} /> : x.type === "Landlord" ? <Building2 size={18} /> : x.type === "Wanted" ? <KeyRound size={18} /> : <Mail size={18} />}</div>
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontWeight: 700, color: "var(--ink)" }}>{x.name} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 12.5 }}>· {x.type}</span></div>
+          <div style={{ fontWeight: 700, color: "var(--ink)" }}>{x.name} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 12.5 }}>· {x.type === "Wanted" ? "Waiting list" : x.type === "Landlord" ? "Landlord" : x.type}</span>{x.status === "New" && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: "#DC2626" }}>{age(x)} unanswered</span>}{x.status !== "New" && x.contactedAt && x.createdAt && <span style={{ marginLeft: 8, fontSize: 11, color: "var(--muted)" }}>answered in {(() => { const h = (new Date(x.contactedAt) - new Date(x.createdAt)) / 3600000; return h < 1 ? Math.max(1, Math.round(h * 60)) + " min" : h < 48 ? Math.round(h) + " h" : Math.round(h / 24) + " d"; })()}</span>}</div>
           <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{x.propTitle}{x.area ? " · " + x.area : ""}{x.type === "Viewing" && x.date ? " · " + x.date + " at " + x.time : ""}</div>
-          {x.message ? <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, fontStyle: "italic" }}>&ldquo;{x.message}&rdquo;</div> : null}
+          {x.message ? <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, fontStyle: (x.type === "Landlord" || x.type === "Wanted") ? "normal" : "italic", whiteSpace: "pre-line" }}>{(x.type === "Landlord" || x.type === "Wanted") ? x.message : "\u201c" + x.message + "\u201d"}</div> : null}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           <a href={waLink(x.phone, "Hello " + x.name + ", thank you for your interest in " + x.propTitle + " with Girard Property.")} target="_blank" rel="noreferrer" title="WhatsApp" style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 8, background: "rgba(37,211,102,.16)", color: "#1FA855" }}><MessageSquare size={16} /></a>
@@ -6305,6 +6333,98 @@ function LeadForm({ kind }) {
   </div>;
 }
 
+/* The 5% calculator. One number in, and what Girard takes and what the owner
+   keeps, next to whatever they are paying elsewhere. The comparison figure is
+   theirs to set: it defaults to 10% because that is a common Lagos management
+   quote, and the label says so rather than claiming it is the market. */
+function FeeCalculator({ dark, compact }) {
+  const [rent, setRent] = useState(12000000);
+  const [other, setOther] = useState(10);
+  const [type, setType] = useState("Long let");
+  const fmt = (n) => "₦" + Math.round(n).toLocaleString("en-NG");
+  const girard = rent * 0.05, keep = rent - girard, elsewhere = rent * other / 100, diff = elsewhere - girard;
+  const ink = dark ? "#fff" : "var(--ink)", mut = dark ? "rgba(255,255,255,.66)" : "var(--muted)", line = dark ? "var(--navy-line)" : "var(--cream-line)";
+  const box = { background: dark ? "rgba(255,255,255,.04)" : "var(--white)", border: "1px solid " + line, borderRadius: 14, padding: compact ? 22 : "clamp(22px,3vw,34px)" };
+  return <div style={box}>
+    <div className="calc-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 30, alignItems: "center" }}>
+      <div>
+        <div className="eyebrow" style={{ color: dark ? "var(--gold)" : "var(--gold-2)", marginBottom: 10 }}>What 5% means for you</div>
+        <h3 className="serif" style={{ fontSize: "clamp(22px,2.6vw,32px)", fontWeight: 600, color: ink, margin: "0 0 18px", lineHeight: 1.15 }}>Taken out of the rent, never added on top.</h3>
+        <label style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: .6, textTransform: "uppercase", color: mut, display: "block", marginBottom: 6 }}>Annual rent</label>
+        <input type="range" min={1000000} max={100000000} step={500000} value={rent} onChange={e => setRent(+e.target.value)} style={{ width: "100%", accentColor: "#C6A15B" }} aria-label="Annual rent" />
+        <div className="serif" style={{ fontSize: 26, fontWeight: 600, color: ink, margin: "6px 0 16px" }}>{fmt(rent)} <span style={{ fontSize: 13, color: mut, fontWeight: 500 }}>per year</span></div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          {["Long let", "Short let"].map(t => <button key={t} type="button" onClick={() => setType(t)} className={"rpill" + (type === t ? " on" : "")} style={{ color: type === t ? undefined : ink }}>{t}</button>)}
+        </div>
+        <label style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: .6, textTransform: "uppercase", color: mut, display: "block", marginBottom: 6 }}>What you pay elsewhere, adjust to your own quote</label>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <input type="range" min={5} max={20} step={0.5} value={other} onChange={e => setOther(+e.target.value)} style={{ flex: 1, accentColor: "#C6A15B" }} aria-label="Fee elsewhere" />
+          <span className="serif" style={{ fontSize: 20, fontWeight: 600, color: ink, minWidth: 54, textAlign: "right" }}>{other}%</span>
+        </div>
+      </div>
+      <div style={{ borderLeft: "1px solid " + line, paddingLeft: 30 }} className="calc-out">
+        {[["Girard keeps", fmt(girard), "5% of rent collected"], ["You keep", fmt(keep), "paid to your bank through a licensed processor"], ["At " + other + "% elsewhere you would keep", fmt(rent - elsewhere), diff > 0 ? fmt(diff) + " a year less than with Girard" : diff < 0 ? fmt(-diff) + " a year more than with Girard" : "the same"]].map(([k, v, n], i) =>
+          <div key={k} style={{ padding: "14px 0", borderTop: i ? "1px solid " + line : "none" }}>
+            <div style={{ fontSize: 12, color: mut }}>{k}</div>
+            <div className="serif" style={{ fontSize: i === 1 ? 32 : 22, fontWeight: 600, color: i === 1 ? (dark ? "var(--gold)" : "var(--gold-2)") : ink, lineHeight: 1.1, marginTop: 2 }}>{v}</div>
+            <div style={{ fontSize: 12, color: mut, marginTop: 3 }}>{n}</div>
+          </div>)}
+        <div style={{ fontSize: 11.5, color: mut, marginTop: 10, lineHeight: 1.5 }}>{type === "Short let" ? "Short lets: the 5% applies to booking revenue collected through the platform. Cleaning and turnover costs are separate and agreed up front." : "Excludes any legal or agreement fee a tenant pays on a new let, which is not a Girard charge."}</div>
+      </div>
+    </div>
+    <style>{`@media(max-width:820px){.calc-grid{grid-template-columns:1fr!important}.calc-out{border-left:none!important;padding-left:0!important;border-top:1px solid ${line};padding-top:8px}}`}</style>
+  </div>;
+}
+
+/* What "verified" means, stated as the checks that are actually run, in the
+   order they are run, and what a failure looks like. Linked from the hero
+   figure and the List page. No figure on this page is invented. */
+const VERIFY_STEPS = [
+  ["Title", "We see the title document itself, not a photograph of a photocopy: a Certificate of Occupancy, a registered deed of assignment or a governor's consent, matched to the name of the person listing. A property whose paper cannot be produced is not published."],
+  ["Ownership", "The person listing must be the owner on the title, or hold a written authority from the owner. Where a listing comes through an agent, the owner is confirmed before anything is published."],
+  ["Identity", "A government identity document for the owner, matched against the title and, for payout, against the bank account through a verification service. Rent goes to the verified owner's account and nowhere else."],
+  ["Condition", "The property's condition is checked before publication, and the description says what was found, including what is wrong with it. A listing that reads like an advertisement has not been through this step."],
+  ["The record", "Once published, every enquiry, viewing, application, signature and payment on that property is kept on the platform. The owner and the tenant see the same record."]
+];
+function VerifiedSection({ go }) {
+  return <>
+    <section style={{ background: "var(--navy)", color: "#fff", padding: "clamp(56px,7vw,88px) 0 clamp(40px,5vw,64px)" }}>
+      <div className="wrap">
+        <div style={{ maxWidth: 780 }}>
+          <Rule />
+          <div className="eyebrow" style={{ color: "var(--gold)", margin: "18px 0 12px" }}>What verified means</div>
+          <h1 className="serif" style={{ fontSize: "clamp(32px,4.8vw,58px)", fontWeight: 600, lineHeight: 1.06, letterSpacing: -.6 }}>Five checks, in order, before a property is <span style={{ fontStyle: "italic", color: "var(--gold)" }}>published</span>.</h1>
+          <p style={{ color: "rgba(255,255,255,.76)", fontSize: 16.5, lineHeight: 1.7, marginTop: 20, maxWidth: 640 }}>
+            The Lagos market is full of listings that were never real: properties that were let months ago, addresses that do not exist, agents who never met the owner. The Girard list is short because every property on it has passed the checks below. If one fails, the property is not published, and we say so to the person who listed it.
+          </p>
+        </div>
+      </div>
+    </section>
+    <section style={{ background: "var(--ivory)", padding: "clamp(48px,6vw,80px) 0" }}>
+      <div className="wrap">
+        <div style={{ maxWidth: 860, borderTop: "1px solid var(--cream-line)" }}>
+          {VERIFY_STEPS.map(([t, d], i) => <div key={t} className="vstep" style={{ display: "grid", gridTemplateColumns: "64px 1fr", gap: 24, padding: "28px 0", borderBottom: "1px solid var(--cream-line)" }}>
+            <div className="serif" style={{ fontSize: 30, color: "var(--gold-2)", fontWeight: 600, lineHeight: 1 }}>{String(i + 1).padStart(2, "0")}</div>
+            <div>
+              <h2 className="serif" style={{ fontSize: "clamp(20px,2.2vw,26px)", fontWeight: 600, color: "var(--ink)", margin: "0 0 8px" }}>{t}</h2>
+              <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.75, margin: 0 }}>{d}</p>
+            </div>
+          </div>)}
+        </div>
+        <div style={{ maxWidth: 860, marginTop: 34, padding: "22px 26px", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 14 }}>
+          <div className="eyebrow" style={{ color: "var(--gold-2)", marginBottom: 8 }}>What it costs you</div>
+          <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.7, margin: 0 }}>Time. A property takes days to verify, not minutes, and we will ask for documents an agent on WhatsApp never would. That is the trade: a shorter list, every entry of which is real.</p>
+          <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
+            <a className="btn-gold" href="/?go=list" onClick={e => { e.preventDefault(); go("list"); }}>List a property <ArrowUpRight size={15} /></a>
+            <a className="btn-line" href="/?go=waitlist" onClick={e => { e.preventDefault(); go("list"); setTimeout(() => { try { document.getElementById("waitlist").scrollIntoView({ behavior: "smooth" }); } catch (x) {} }, 80); }} style={{ color: "var(--ink)", borderColor: "var(--cream-line)" }}>Join the waiting list</a>
+          </div>
+        </div>
+        <style>{`@media(max-width:600px){.vstep{grid-template-columns:1fr!important;gap:6px!important}}`}</style>
+      </div>
+    </section>
+  </>;
+}
+
 function ListWithGirardSection({ go }) {
   return <>
     <section style={{ background: "var(--navy)", color: "#fff", padding: "clamp(56px,7vw,88px) 0 clamp(40px,5vw,64px)" }}>
@@ -6318,8 +6438,8 @@ function ListWithGirardSection({ go }) {
           </p>
         </div>
         <div className="lead-figs" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0, marginTop: 40, borderTop: "1px solid var(--navy-line)", maxWidth: 780 }}>
-          {[["5%", "Taken out of rent as it is collected"], ["Verified", "Title, ownership and condition checked first"], ["Direct", "Rent paid to you through a licensed processor"]].map(([b, t]) =>
-            <div key={t} style={{ padding: "22px 20px 20px 0", borderBottom: "1px solid var(--navy-line)" }}>
+          {[["5%", "Taken out of rent as it is collected", null], ["Verified", "Title, ownership and condition checked first", "verified"], ["Direct", "Rent paid to you through a licensed processor", null]].map(([b, t, dest]) =>
+            <div key={t} onClick={dest ? () => go(dest) : undefined} style={{ padding: "22px 20px 20px 0", borderBottom: "1px solid var(--navy-line)", cursor: dest ? "pointer" : "default" }}>
               <div className="serif" style={{ fontSize: "clamp(22px,2.4vw,32px)", fontWeight: 600, color: "var(--gold)", lineHeight: 1 }}>{b}</div>
               <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.55, color: "rgba(255,255,255,.66)" }}>{t}</div>
             </div>)}
@@ -6328,6 +6448,7 @@ function ListWithGirardSection({ go }) {
     </section>
     <section style={{ background: "var(--ivory)", padding: "clamp(48px,6vw,80px) 0" }}>
       <div className="wrap">
+        <div style={{ marginBottom: 40 }}><FeeCalculator /></div>
         <div className="lead-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
           <div id="landlord" style={{ scrollMarginTop: 96, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 14, padding: "clamp(22px,3vw,34px)", position: "relative" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>

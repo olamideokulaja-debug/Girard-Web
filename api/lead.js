@@ -102,6 +102,32 @@ export default async function handler(req, res) {
     out.error = "RESEND_API_KEY is not set on this deployment";
   }
 
+  // Staff push. Every device registered to an admin profile or a
+  // @girardpropertylimited.com address gets the lead the moment it lands.
+  // A lead answered in 10 minutes is worth 5 answered tomorrow.
+  out.pushed = 0;
+  if (SERVICE && out.saved) {
+    try {
+      const H = { apikey: SERVICE, Authorization: "Bearer " + SERVICE };
+      const adm = await (await fetch(SUPABASE_URL + "/rest/v1/profiles?role=eq.admin&select=email", { headers: H })).json();
+      const emails = new Set((Array.isArray(adm) ? adm : []).map(x => String(x.email || "").toLowerCase()).filter(Boolean));
+      const tokRes = await (await fetch(SUPABASE_URL + "/rest/v1/push_tokens?select=token,email", { headers: H })).json();
+      const tokens = (Array.isArray(tokRes) ? tokRes : []).filter(t => {
+        const e = String(t.email || "").toLowerCase();
+        return emails.has(e) || e.endsWith("@girardpropertylimited.com");
+      }).map(t => t.token).filter(Boolean);
+      if (tokens.length) {
+        const title = (kind === "Wanted" ? "Waiting list: " : "Landlord lead: ") + name;
+        const body = [area, phone || email].filter(Boolean).join(" \u00b7 ");
+        await fetch("https://exp.host/--/api/v2/push/send", {
+          method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify([...new Set(tokens)].map(to => ({ to, title, body, sound: "default", data: { screen: "enquiries", id } })))
+        });
+        out.pushed = new Set(tokens).size;
+      }
+    } catch (e) { /* a failed push never fails the lead */ }
+  }
+
   out.ok = out.saved || out.emailed;
   return res.status(200).json(out);
 }
