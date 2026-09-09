@@ -7,7 +7,7 @@ import {
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
   CreditCard, PenLine, Filter, LayoutDashboard, Bell, ScrollText, CalendarDays, Moon, Sun, Download, Trash2, Send, Loader2, MoreHorizontal,
   Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
-  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Info, Heart, Play, Pause, Image as ImageIcon
+  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Info, Heart, Play, Pause, Image as ImageIcon, Eye, EyeOff, ChevronLeft
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -1827,7 +1827,8 @@ async function authReset(email) {
   } catch (x) { return { ok: false, msg: "Could not send the reset email. Please try again shortly." }; }
 }
 function ResetPassword({ onDone }) {
-  const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false);
+  const [pw, setPw] = useState(""); const [pw2, setPw2] = useState("");
+  const [show, setShow] = useState(false); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false);
   const submit = async () => {
     setErr("");
     if (pw.length < 6) { setErr("Use at least 6 characters."); return; }
@@ -1845,8 +1846,9 @@ function ResetPassword({ onDone }) {
         <button className="btn-gold" onClick={onDone} style={{ width: "100%", justifyContent: "center" }}>Continue</button>
       </> : <>
         <p style={{ color: "rgba(255,255,255,.65)", fontSize: 14, marginBottom: 18 }}>Choose a new password for your Girard account.</p>
-        <input className="field" type="password" placeholder="New password" value={pw} onChange={e => setPw(e.target.value)} style={{ marginBottom: 12 }} />
-        <input className="field" type="password" placeholder="Confirm new password" value={pw2} onChange={e => setPw2(e.target.value)} style={{ marginBottom: 12 }} />
+        <div style={{ position: "relative", marginBottom: 12 }}><input className="field" type={show ? "text" : "password"} placeholder="New password" value={pw} onChange={e => setPw(e.target.value)} style={{ paddingLeft: 14, paddingRight: 44 }} /><button type="button" onClick={() => setShow(v => !v)} aria-label={show ? "Hide password" : "Show password"} style={{ position: "absolute", right: 8, top: 7, width: 32, height: 32, display: "grid", placeItems: "center", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,.62)" }}>{show ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>
+        <div style={{ position: "relative", marginBottom: 12 }}><input className="field" type={show ? "text" : "password"} placeholder="Confirm new password" value={pw2} onChange={e => setPw2(e.target.value)} style={{ paddingLeft: 14, paddingRight: 44, borderColor: pw2 && pw2 !== pw ? "#ff9a90" : undefined }} /></div>
+        {pw2 && pw2 !== pw && <div style={{ color: "#ff9a90", fontSize: 12.5, marginTop: -6, marginBottom: 12 }}>The two passwords do not match.</div>}
         {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{err}</div>}
         <button className="btn-gold" onClick={submit} disabled={busy} style={{ width: "100%", justifyContent: "center", opacity: busy ? .7 : 1 }}>{busy ? "Saving\u2026" : "Update password"}</button>
       </>}
@@ -1943,6 +1945,8 @@ function RolePage({ onPick, onSignIn, onBack }) {
 function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "signup";
@@ -1969,6 +1973,7 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
     if (isSignup && !agree) { setErr("Please accept the Terms of Use and Privacy Policy to continue."); return; }
     if (!email || !password) { setErr("Please enter your email and password."); return; }
     if (isSignup && password.length < 6) { setErr("Password must be at least 6 characters."); return; }
+    if (isSignup && password !== password2) { setErr("The two passwords do not match."); return; }
 
     if (isSignup && (role === "owner" || role === "agent") && !isApprovedAdmin(email) && (!acctName.trim() || acctNo.length < 10)) { setErr("Please add your settlement bank account (account name and 10-digit number)."); return; }
     setBusy(true);
@@ -2054,7 +2059,10 @@ function AuthPage({ mode, role, onAuthed, onBack, onToggle, onNeedRole }) {
           </> : <>
           {DEMO && <div style={{ background: "rgba(198,161,91,.12)", border: "1px solid rgba(198,161,91,.35)", borderRadius: 6, padding: "10px 12px", fontSize: 12.5, color: "var(--gold)", marginBottom: 18, lineHeight: 1.5 }}>Demo mode. Accounts are saved on this device only until Supabase is connected.</div>}
           <div style={{ position: "relative", marginBottom: 12 }}><Mail size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} /></div>
-          <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} /></div>
+          <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type={showPw ? "text" : "password"} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} style={{ paddingRight: 44 }} /><button type="button" onClick={() => setShowPw(v => !v)} aria-label={showPw ? "Hide password" : "Show password"} style={{ position: "absolute", right: 8, top: 7, width: 32, height: 32, display: "grid", placeItems: "center", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,.62)" }}>{showPw ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>
+          {isSignup && <div style={{ position: "relative", marginBottom: 12 }}><Lock size={16} color="var(--muted)" style={{ position: "absolute", left: 14, top: 15 }} /><input className="field" type={showPw ? "text" : "password"} placeholder="Confirm password" value={password2} onChange={e => setPassword2(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} style={{ paddingRight: 44, borderColor: password2 && password2 !== password ? "#ff9a90" : undefined }} /><button type="button" onClick={() => setShowPw(v => !v)} aria-label={showPw ? "Hide password" : "Show password"} style={{ position: "absolute", right: 8, top: 7, width: 32, height: 32, display: "grid", placeItems: "center", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,.62)" }}>{showPw ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>}
+          {isSignup && password2 && password2 !== password && <div style={{ color: "#ff9a90", fontSize: 12.5, marginTop: -6, marginBottom: 12 }}>The two passwords do not match.</div>}
+          {isSignup && password2 && password2 === password && password.length >= 6 && <div style={{ color: "#7CD9A0", fontSize: 12.5, marginTop: -6, marginBottom: 12, display: "flex", gap: 6, alignItems: "center" }}><CheckCircle2 size={13} /> Passwords match.</div>}
           {!isSignup && <div style={{ textAlign: "right", marginTop: -4, marginBottom: 12 }}><a href="#" onClick={async e => { e.preventDefault(); setErr(""); setResetMsg(""); setResetBusy(true); const r = await authReset(email); setResetBusy(false); if (r.ok) setResetMsg(r.msg); else setErr(r.msg); }} style={{ color: "var(--gold)", fontSize: 12.5, fontWeight: 600 }}>{resetBusy ? "Sending\u2026" : "Forgot password?"}</a></div>}
           {resetMsg && <div style={{ color: "#7CD9A0", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{resetMsg}</div>}
           {err && <div style={{ color: "#ff9a90", fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>{err}</div>}
@@ -2220,7 +2228,9 @@ export default function App() {
    fallback so every feature works without a key.
    =================================================================== */
 
-const PM_AREAS = ["Lekki", "Ikoyi", "Victoria Island", "Yaba", "Surulere", "Ikeja", "Magodo", "Ajah", "Gbagada", "Maryland"];
+// Every area an owner can list under. Lekki stays first because it is the
+// default selection; the rest run alphabetically so a long list stays findable.
+const PM_AREAS = ["Lekki", "Agege", "Ajah", "Alimosho", "Amuwo Odofin", "Anthony", "Apapa", "Badagry", "Banana Island", "Chevron", "Epe", "Festac", "Gbagada", "Ibeju-Lekki", "Ikeja", "Ikeja GRA", "Ikorodu", "Ikota", "Ikoyi", "Ilupeju", "Isolo", "Ketu", "Lekki Phase 1", "Magodo", "Maryland", "Mushin", "Ogba", "Ogudu", "Ojodu Berger", "Omole Phase 1", "Omole Phase 2", "Oniru", "Osapa London", "Oshodi", "Parkview Estate", "Sangotedo", "Surulere", "Victoria Island", "VGC", "Yaba"];
 // Girard lists across borders, so a country comes first and the second level
 // changes with it. Countries without a built-in list take free text.
 const COUNTRIES = ["Nigeria", "United Kingdom", "United States", "Canada", "United Arab Emirates", "Ghana", "Kenya", "South Africa", "Ireland", "Portugal", "Spain", "Turkey", "Other"];
@@ -2251,7 +2261,7 @@ function makeRef() {
   const n = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
   return "GP-" + y + "-" + n;
 }
-const PM_TYPES = ["Apartment", "Terraced Duplex", "Semi-Detached Duplex", "Detached Duplex", "Studio", "Penthouse", "Bungalow", "Land", "Commercial", "Office space", "Shop / Retail", "Warehouse", "Block of flats", "Hotel / Serviced"]
+const PM_TYPES = ["Apartment", "Condo", "Terraced Duplex", "Semi-Detached Duplex", "Detached Duplex", "Studio", "Penthouse", "Bungalow", "Land", "Commercial", "Office space", "Shop / Retail", "Warehouse", "Block of flats", "Hotel / Serviced"]
 const LISTING_INTENT = ["To let", "For sale"];
 // Land has no bedrooms and needs different documents from a house.
 const LAND_TYPES = ["Land", "Warehouse"];
@@ -2259,7 +2269,9 @@ const isLandLike = (t) => LAND_TYPES.indexOf(t) >= 0;
 const PM_AMEN = ["24hr Power", "Borehole", "Parking", "Security", "Fitted Kitchen", "Gym", "Pool", "BQ", "CCTV", "Elevator"];
 const PM_STREETS = ["Admiralty Way", "Bourdillon Rd", "Adeola Odeku St", "Herbert Macaulay Way", "Bode Thomas St", "Allen Ave"];
 function baseRent(area, beds) {
-  const b = { "Ikoyi": 9, "Victoria Island": 8, "Lekki": 6, "Magodo": 4.5, "Maryland": 4, "Ikeja": 4, "Gbagada": 3.5, "Yaba": 3, "Surulere": 2.8, "Ajah": 2.5 }[area] || 3;
+  // Heuristic bands, not market data. New areas sit on the nearest existing
+  // band so the recommendation stays in the same range it always was.
+  const b = { "Ikoyi": 9, "Banana Island": 9, "Parkview Estate": 9, "Victoria Island": 8, "Oniru": 8, "Lekki": 6, "Lekki Phase 1": 6, "Osapa London": 5, "Chevron": 5, "VGC": 5, "Ikota": 4.5, "Ikeja GRA": 5, "Magodo": 4.5, "Omole Phase 1": 4.5, "Omole Phase 2": 4.5, "Maryland": 4, "Ikeja": 4, "Anthony": 4, "Ilupeju": 4, "Ogudu": 4, "Gbagada": 3.5, "Ojodu Berger": 3.5, "Ogba": 3.5, "Yaba": 3, "Surulere": 2.8, "Sangotedo": 2.8, "Ajah": 2.5, "Festac": 2.5, "Amuwo Odofin": 2.5, "Apapa": 2.5, "Isolo": 2.2, "Ketu": 2.2, "Oshodi": 2, "Mushin": 1.8, "Agege": 1.8, "Alimosho": 1.8, "Ikorodu": 1.6, "Ibeju-Lekki": 1.8, "Epe": 1.4, "Badagry": 1.4 }[area] || 3;
   return Math.round((b + beds * 1.15) * 1000000);
 }
 const FAVP_KEY = "girard_fav_props_v1";
@@ -2543,7 +2555,10 @@ function pmSeed() {
 }
 const PURGED_KEY = "girard_purged_v1";
 // Once you clear sample data, the app must never seed it again.
-function isPurged() { try { return localStorage.getItem(PURGED_KEY) === "1"; } catch (e) { return false; } }
+// Sample data belongs to demo mode only. With a database configured the site
+// is live, so every browser is treated as purged from its very first visit:
+// no seeded listings can flash on the public page or survive a failed fetch.
+function isPurged() { if (!DEMO) return true; try { return localStorage.getItem(PURGED_KEY) === "1"; } catch (e) { return false; } }
 const PM_KEY = "girard_pm_v3";
 function pmLoad() { try { const r = localStorage.getItem(PM_KEY); if (r) return JSON.parse(r); } catch (e) {} const s = pmSeed(); try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} return s; }
 function pmSave(s) { try { localStorage.setItem(PM_KEY, JSON.stringify(s)); } catch (e) {} }
@@ -2738,11 +2753,22 @@ async function aiProxy(prompt, system, max_tokens) {
     return { ok: true, text };
   } catch (e) { return { ok: false, text: "" }; }
 }
-async function aiRent({ type, area, beds, amenities }) {
+async function aiRent({ type, area, beds, amenities, letType }) {
   const annual = baseRent(area, +beds || 0);
-  const proxy = await aiProxy(`In one sentence, explain why an annual rent near ₦${annual.toLocaleString()} is competitive for a ${beds}-bed ${type} in ${area}, Lagos with amenities ${(amenities || []).join(", ") || "standard"}. No preamble.`);
-  const rationale = proxy.ok ? proxy.text : `Based on comparable ${beds}-bed ${type.toLowerCase()} listings in ${area} and its amenity profile, this sits within the prevailing market band.`;
-  return { annual, monthly: Math.round(annual / 12), rationale, offline: !proxy.ok };
+  const nightlyMode = letType === "Short let" || letType === "Holiday stay / serviced";
+  // Nightly rates are derived from the same annual band: a short let in Lagos
+  // typically earns its annual-let equivalent in roughly 120 booked nights, a
+  // serviced or holiday stay in roughly 100 because it carries furnishing,
+  // power and housekeeping. Rounded to the nearest ₦500.
+  const nightly = nightlyMode ? Math.round(annual / (letType === "Short let" ? 120 : 100) / 500) * 500 : null;
+  const ask = nightlyMode
+    ? `In one sentence, explain why a nightly rate near ₦${nightly.toLocaleString()} is competitive for a ${beds}-bed ${type} offered as a ${letType.toLowerCase()} in ${area}, Lagos with amenities ${(amenities || []).join(", ") || "standard"}. No preamble.`
+    : `In one sentence, explain why an annual rent near ₦${annual.toLocaleString()} is competitive for a ${beds}-bed ${type} in ${area}, Lagos with amenities ${(amenities || []).join(", ") || "standard"}. No preamble.`;
+  const proxy = await aiProxy(ask);
+  const rationale = proxy.ok ? proxy.text : (nightlyMode
+    ? `Based on what comparable ${beds}-bed ${type.toLowerCase()} stays in ${area} charge per night and this property's amenity profile, this sits within the prevailing band. Expect occupancy, not the rate, to decide the monthly figure.`
+    : `Based on comparable ${beds}-bed ${type.toLowerCase()} listings in ${area} and its amenity profile, this sits within the prevailing market band.`);
+  return { annual, monthly: Math.round(annual / 12), nightly, nightlyMode, letType, monthlyAt60: nightly ? Math.round(nightly * 18) : null, rationale, offline: !proxy.ok };
 }
 async function aiLease({ tenant, prop }) {
   const proxy = await aiProxy(`Draft a concise residential tenancy agreement (about 160 words) under Nigerian tenancy law. Landlord: Girard Property Limited. Tenant: ${tenant}. Property: ${prop.title} at ${prop.address}. Annual rent: ₦${prop.rent.toLocaleString()}. Term: 12 months from 1 August 2026. Include parties, rent, term and three standard obligations. Plain text, no markdown.`);
@@ -2766,9 +2792,12 @@ function PmBtn({ children, kind = "gold", size = "md", icon: Icon, onClick, disa
   return <button onClick={onClick} disabled={disabled} style={{ ...kinds[kind], padding: pad, borderRadius: 6, fontWeight: 600, fontSize: size === "sm" ? 13 : 14, cursor: disabled ? "default" : "pointer", opacity: disabled ? .55 : 1, display: "inline-flex", alignItems: "center", gap: 7, ...style }}>{Icon && <Icon size={size === "sm" ? 15 : 16} />}{children}</button>;
 }
 function PmPill({ label }) {
-  const M = { Available: "#1F9D57", Verified: "var(--gold-2)", Leased: "#2F6FB0", "Pending Verification": "#E0A106", Applied: "#2F6FB0", Approved: "#1F9D57", Rejected: "#D0453B", "More Info Required": "#E0A106", Open: "#E0A106", Assigned: "#2F6FB0", Resolved: "#1F9D57", Paid: "#1F9D57", Pending: "#E0A106", Late: "#D0453B", Emergency: "#D0453B", Normal: "var(--muted)" };
+  // Amber statuses used to be drawn in #E0A106 on a pale tint, which read as
+  // faint (about 2:1). The text now uses a darker amber; the tint stays light.
+  const M = { Available: "#1F9D57", Verified: "var(--gold-2)", Leased: "#2F6FB0", "Pending Verification": "#9A5A00", Applied: "#2F6FB0", Approved: "#1F9D57", Rejected: "#D0453B", "More Info Required": "#9A5A00", Open: "#9A5A00", Assigned: "#2F6FB0", Resolved: "#1F9D57", Paid: "#1F9D57", Pending: "#9A5A00", Late: "#D0453B", Emergency: "#D0453B", Normal: "var(--muted)" };
   const c = M[label] || "var(--muted)";
-  return <span style={{ background: c + "22", color: c, fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>{label}</span>;
+  const tint = c === "#9A5A00" ? "#FBEFD2" : c + "22";
+  return <span style={{ background: tint, color: c, fontWeight: 700, fontSize: 11.5, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap", border: c === "#9A5A00" ? "1px solid #E7C97F" : "none" }}>{label}</span>;
 }
 function PmCard({ children, pad = 18, style }) { return <div className="card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 12, padding: pad, ...style }}>{children}</div>; }
 function PmField({ label, value, onChange, placeholder, type }) {
@@ -2777,7 +2806,7 @@ function PmField({ label, value, onChange, placeholder, type }) {
 }
 function PmSelect({ label, value, onChange, options }) {
   return <div>{label && <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>{label}</label>}
-    <select value={value} onChange={e => onChange(e.target.value)} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>{options.map(o => <option key={o} value={o}>{o}</option>)}</select></div>;
+    <select value={value} onChange={e => onChange(e.target.value)} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", color: "var(--ink)", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>{options.map(o => <option key={o} value={o}>{o === "" ? "Choose\u2026" : o}</option>)}</select></div>;
 }
 function PmStat({ icon: Icon, label, value, sub, tone }) {
   return <PmCard pad={16} style={{ flex: 1, minWidth: 150 }}>
@@ -2811,6 +2840,53 @@ function HouseArt({ hue = 200, status, h = 140, photo }) {
     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,31,60,0) 52%, rgba(10,31,60,.45))" }} />
     {status && <div style={{ position: "absolute", top: 10, left: 10 }}><PmPill label={status} /></div>}
   </div>;
+}
+
+/* Swipeable photo gallery. Scroll-snap does the swiping on phones and trackpads;
+   the arrows and thumbnails cover mouse users; tapping a photo opens it full
+   screen. Falls back to HouseArt when a property has no photos. */
+function PhotoGallery({ photos, tags = [], h = 220, status, fallback, compact = false }) {
+  const list = (photos || []).filter(Boolean);
+  const [i, setI] = useState(0);
+  const [full, setFull] = useState(false);
+  const strip = useRef(null);
+  useEffect(() => { setI(0); }, [list.length]);
+  useEffect(() => {
+    if (!full) return;
+    const k = (e) => { if (e.key === "Escape") setFull(false); if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  });
+  if (!list.length) return fallback || null;
+  const go = (d) => { const n = (i + d + list.length) % list.length; setI(n); const el = strip.current; if (el) el.scrollTo({ left: n * el.clientWidth, behavior: "smooth" }); };
+  const onScroll = () => { const el = strip.current; if (!el || !el.clientWidth) return; const n = Math.round(el.scrollLeft / el.clientWidth); if (n !== i) setI(n); };
+  const arrow = (side, d) => list.length > 1 && <button type="button" aria-label={d > 0 ? "Next photo" : "Previous photo"} onClick={e => { e.stopPropagation(); go(d); }} style={{ position: "absolute", top: "50%", [side]: 8, transform: "translateY(-50%)", width: compact ? 28 : 34, height: compact ? 28 : 34, borderRadius: 999, border: "none", background: "rgba(255,255,255,.9)", color: "var(--ink)", display: "grid", placeItems: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,.25)" }}>{d > 0 ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}</button>;
+  const counter = list.length > 1 && <div style={{ position: "absolute", right: 10, bottom: 10, background: "rgba(6,17,42,.72)", color: "#fff", fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999, display: "flex", alignItems: "center", gap: 5 }}><ImageIcon size={12} /> {i + 1} / {list.length}</div>;
+  return <>
+    <div style={{ position: "relative", height: h, borderRadius: 10, overflow: "hidden", background: "var(--navy-2)" }}>
+      <div ref={strip} onScroll={onScroll} style={{ display: "flex", height: "100%", overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+        {list.map((src, k) => <div key={k} onClick={() => setFull(true)} style={{ flex: "0 0 100%", height: "100%", scrollSnapAlign: "start", cursor: "zoom-in", position: "relative" }}>
+          <img src={src} alt={tags[k] || ("Photo " + (k + 1))} loading={k === 0 ? "eager" : "lazy"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          {tags[k] && !compact && <div style={{ position: "absolute", left: 10, bottom: 10, background: "rgba(255,255,255,.92)", color: "var(--ink)", fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999 }}>{tags[k]}</div>}
+        </div>)}
+      </div>
+      {status && <div style={{ position: "absolute", top: 10, left: 10 }}><PmPill label={status} /></div>}
+      {arrow("left", -1)}{arrow("right", 1)}{counter}
+    </div>
+    {!compact && list.length > 1 && <div style={{ display: "flex", gap: 6, marginTop: 8, overflowX: "auto", paddingBottom: 2 }}>
+      {list.map((src, k) => <button key={k} type="button" aria-label={"Photo " + (k + 1)} onClick={() => { setI(k); const el = strip.current; if (el) el.scrollTo({ left: k * el.clientWidth, behavior: "smooth" }); }} style={{ flex: "0 0 auto", width: 58, height: 44, padding: 0, borderRadius: 6, overflow: "hidden", border: "2px solid " + (k === i ? "var(--gold)" : "transparent"), cursor: "pointer", background: "none", opacity: k === i ? 1 : .7 }}><img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /></button>)}
+    </div>}
+    {full && createPortal(<div onClick={() => setFull(false)} style={{ position: "fixed", inset: 0, zIndex: 6000, background: "rgba(3,8,20,.94)", display: "grid", gridTemplateRows: "auto 1fr auto", padding: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#fff", fontSize: 13.5 }}><span>{(tags[i] ? tags[i] + " \u00b7 " : "") + (i + 1) + " of " + list.length}</span><button type="button" aria-label="Close" onClick={() => setFull(false)} style={{ background: "rgba(255,255,255,.12)", border: "none", color: "#fff", width: 36, height: 36, borderRadius: 999, display: "grid", placeItems: "center", cursor: "pointer" }}><X size={18} /></button></div>
+      <div style={{ position: "relative", minHeight: 0, display: "grid", placeItems: "center" }} onClick={e => e.stopPropagation()}>
+        <img src={list[i]} alt={tags[i] || ""} style={{ maxWidth: "100%", maxHeight: "calc(100vh - 150px)", objectFit: "contain", borderRadius: 6 }} />
+        {list.length > 1 && <button type="button" aria-label="Previous photo" onClick={() => go(-1)} style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 44, height: 44, borderRadius: 999, border: "none", background: "rgba(255,255,255,.9)", display: "grid", placeItems: "center", cursor: "pointer" }}><ChevronLeft size={22} /></button>}
+        {list.length > 1 && <button type="button" aria-label="Next photo" onClick={() => go(1)} style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: 44, height: 44, borderRadius: 999, border: "none", background: "rgba(255,255,255,.9)", display: "grid", placeItems: "center", cursor: "pointer" }}><ChevronRight size={22} /></button>}
+      </div>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", overflowX: "auto", paddingTop: 10 }} onClick={e => e.stopPropagation()}>
+        {list.map((src, k) => <button key={k} type="button" onClick={() => setI(k)} style={{ flex: "0 0 auto", width: 64, height: 48, padding: 0, borderRadius: 6, overflow: "hidden", border: "2px solid " + (k === i ? "var(--gold)" : "transparent"), cursor: "pointer", background: "none", opacity: k === i ? 1 : .6 }}><img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /></button>)}
+      </div>
+    </div>, document.body)}
+  </>;
 }
 
 /* ---------- mini charts (no dependencies) ---------- */
@@ -3055,7 +3131,8 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         </div></PmCard>)}
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || poolPhoto(sel.id)} />
+      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status={sel.status} h={260} fallback={<HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || poolPhoto(sel.id)} />} />
+      {(sel.condition || sel.name) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>{sel.name && sel.kind && <span style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 7 }}>{sel.kind}</span>}{sel.condition && <span style={{ background: sel.condition === "Completed" ? "#1F9D5722" : "#FBEFD2", color: sel.condition === "Completed" ? "#1F9D57" : "#9A5A00", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 7 }}>{sel.condition}</span>}</div>}
       <SaleCommissionCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} isAdmin={isAdmin} />
       {sel.ownerEmail && identity.email && sel.ownerEmail.toLowerCase() === identity.email.toLowerCase() && <FeatureCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} />}
       {isAdmin && sel.kyc && <PmCard style={{ marginTop: 14, borderLeft: "3px solid var(--gold)" }}>
@@ -3086,8 +3163,9 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
 
 /* ---------- ADD PROPERTY ---------- */
 function AddPropertyScreen({ st, setSt, toast, identity }) {
-  const [f, setF] = useState({ intent: "To let", type: PM_TYPES[0], area: PM_AREAS[0], country: "Nigeria", state: "Lagos", beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No", plotSize: "", titleKind: "Certificate of Occupancy", nightly: "", cleaning: "", deposit: "", minNights: "1" });
-  const PHOTO_CATS = ["Front view", "Rear view", "Living room", "Kitchen", "Bedroom", "Bathroom", "Other"];
+  const [f, setF] = useState({ intent: "To let", name: "", condition: "", type: PM_TYPES[0], area: PM_AREAS[0], country: "Nigeria", state: "Lagos", beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No", plotSize: "", titleKind: "Certificate of Occupancy", nightly: "", cleaning: "", deposit: "", minNights: "1" });
+  const PHOTO_CATS = ["Front elevation", "Living room", "Kitchen", "Bedroom 1", "Bathroom", "Bedroom 2", "Side elevation", "Rear elevation", "Top view", "Guest toilet", "Dining", "Balcony / view", "Compound / parking", "Other"];
+  const PHOTO_MIN = 5, PHOTO_MAX = 10;
   // Girard verifies a real person against a real property before it goes live.
   const [kyc, setKyc] = useState({ fullName: "", phone: "", altPhone: "", address: "", propAddress: "", nin: "", capacity: "Owner", titleType: "Certificate of Occupancy", titleRef: "" });
   const [photoTags, setPhotoTags] = useState([]);
@@ -3102,12 +3180,14 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
   const [photos, setPhotos] = useState([]);
   const [desc, setDesc] = useState(""); const [descBusy, setDescBusy] = useState(false);
   const genDesc = async () => { setDescBusy(true); const kind = f.beds === "0" ? "studio" : f.beds + "-bedroom " + f.type.toLowerCase(); const r = await aiProxy("Write an appealing 60 to 90 word rental listing description for a " + kind + " in " + f.area + ", Lagos. Amenities: " + (f.amenities.join(", ") || "standard finishes") + ". Warm, professional estate-agent tone. No markdown, no price, no headings.", "You are a Nigerian estate agent copywriter.", 400); setDescBusy(false); setDesc((r && r.ok && r.text) ? r.text.trim() : ("A well-appointed " + kind + " in " + f.area + ", offering " + (f.amenities.slice(0, 3).join(", ") || "comfortable, modern living") + ". Bright, well-finished and move-in ready, it sits close to amenities and transport, ideal for professionals and families seeking quality and convenience in a prime Lagos location.")); };
-  const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1200; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); const dataUrl = cv.toDataURL("image/jpeg", 0.78); const finish = (val) => setPhotos(prev => prev.length >= 5 ? prev : [...prev, val]); if (supabase && cv.toBlob) { cv.toBlob(async (blob) => { try { if (!blob) throw new Error("no blob"); const path = "listings/" + Date.now() + "-" + Math.random().toString(36).slice(2) + ".jpg"; const up = await supabase.storage.from("property-photos").upload(path, blob, { contentType: "image/jpeg", upsert: false }); if (up.error) throw up.error; const pub = supabase.storage.from("property-photos").getPublicUrl(path); finish((pub && pub.data && pub.data.publicUrl) || dataUrl); } catch (e) { finish(dataUrl); } }, "image/jpeg", 0.78); } else { finish(dataUrl); } }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
+  const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1200; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); const dataUrl = cv.toDataURL("image/jpeg", 0.78); const finish = (val) => setPhotos(prev => prev.length >= PHOTO_MAX ? prev : [...prev, val]); if (supabase && cv.toBlob) { cv.toBlob(async (blob) => { try { if (!blob) throw new Error("no blob"); const path = "listings/" + Date.now() + "-" + Math.random().toString(36).slice(2) + ".jpg"; const up = await supabase.storage.from("property-photos").upload(path, blob, { contentType: "image/jpeg", upsert: false }); if (up.error) throw up.error; const pub = supabase.storage.from("property-photos").getPublicUrl(path); finish((pub && pub.data && pub.data.publicUrl) || dataUrl); } catch (e) { finish(dataUrl); } }, "image/jpeg", 0.78); } else { finish(dataUrl); } }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
   const addDocs = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !(file.type.startsWith("image/") || file.type === "application/pdf")) return; const reader = new FileReader(); reader.onload = ev => { setDocs(prev => prev.length >= 5 ? prev : [...prev, { name: file.name, type: file.type, url: ev.target.result }]); }; reader.readAsDataURL(file); }); };
   const toggle = a => setF(x => ({ ...x, amenities: x.amenities.includes(a) ? x.amenities.filter(z => z !== a) : [...x.amenities, a] }));
-  const rec = async () => { setAi({ loading: true }); const r = await aiRent(f); setAi({ loading: false, ...r }); setPrice(String(r.annual)); };
+  const rec = async () => { setAi({ loading: true }); const r = await aiRent({ ...f, letType: f.intent === "To let" ? f.letType : "Long let" }); setAi({ loading: false, ...r }); setPrice(String(r.annual)); if (r.nightly && !f.nightly) setF(x => ({ ...x, nightly: String(r.nightly) })); };
   const submit = () => {
     const bank = bankFor(identity && identity.email) || {};
+    if (!f.condition) { toast("Choose the property status: completed or under construction", "danger"); return; }
+    if (photos.length < PHOTO_MIN) { toast("Add at least " + PHOTO_MIN + " photos (" + photos.length + " so far). Tenants skip listings they cannot see properly.", "danger"); return; }
     if (!uploadedByGirard && !bank.bankAcctNo) { toast("Register a settlement bank account on your profile (Data & privacy) first", "danger"); return; }
     if (!uploadedByGirard) {
       if (!kyc.fullName.trim() || kyc.phone.replace(/[^0-9]/g, "").length < 10) { toast("Add your full name and a phone number Girard can reach you on", "danger"); return; }
@@ -3119,7 +3199,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     }
     const id = "PR-" + (2000 + st.properties.length) + "-" + Date.now().toString().slice(-4);
     const ref = makeRef();
-    const p = { id, title: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, intent: f.intent, letType: f.intent === "For sale" ? null : f.letType, term: f.intent === "For sale" ? null : f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, ref, intent: f.intent, country: f.country, state: f.state, nightly: +f.nightly || 0, cleaning: +f.cleaning || 0, deposit: +f.deposit || 0, minNights: +f.minNights || 1, postedAt: new Date().toISOString(), plotSize: f.plotSize || "", titleKind: f.titleKind || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, titleDocs: docs, description: desc };
+    const p = { id, title: f.name.trim() || ((f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type), kind: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, name: f.name.trim() || null, condition: f.condition, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, intent: f.intent, letType: f.intent === "For sale" ? null : f.letType, term: f.intent === "For sale" ? null : f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, ref, intent: f.intent, country: f.country, state: f.state, nightly: +f.nightly || 0, cleaning: +f.cleaning || 0, deposit: +f.deposit || 0, minNights: +f.minNights || 1, postedAt: new Date().toISOString(), plotSize: f.plotSize || "", titleKind: f.titleKind || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, titleDocs: docs, description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -3128,7 +3208,9 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
       <PmCard><div style={{ display: "grid", gap: 14 }}>
         <PmSelect label="Are you letting this or selling it?" value={f.intent} onChange={v => setF({ ...f, intent: v })} options={LISTING_INTENT} />
+        <PmField label="Property name (optional)" value={f.name} onChange={v => setF({ ...f, name: v.slice(0, 60) })} placeholder="e.g. Marina Court, Flat 4B. Leave blank to use the type" />
         <PmSelect label="Property type" value={f.type} onChange={v => setF({ ...f, type: v, beds: isLandLike(v) ? "0" : f.beds })} options={PM_TYPES} />
+        <PmSelect label="Property status" value={f.condition} onChange={v => setF({ ...f, condition: v })} options={["", "Completed", "Under construction"]} />
         <PmSelect label="Area (Lagos)" value={f.area} onChange={v => setF({ ...f, area: v })} options={PM_AREAS} />
         {!isLandLike(f.type) && <PmSelect label="Bedrooms" value={f.beds} onChange={v => setF({ ...f, beds: v })} options={["0", "1", "2", "3", "4", "5"]} />}
         {f.intent === "For sale" && <div style={{ background: "rgba(208,69,59,.06)", border: "1px solid rgba(208,69,59,.28)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.6 }}><b>Girard does not handle sale money.</b> We introduce buyers and verify what we can. The purchase price is paid through the parties&rsquo; own solicitors, never through this platform. Girard charges its fee separately and takes no part in the transfer of title.</div>}
@@ -3186,9 +3268,11 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
       </div></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pricing</div>
         {!ai ? <div style={{ color: "var(--muted)", fontSize: 14, padding: "20px 0", textAlign: "center" }}>Enter details, then request an AI recommendation.</div>
-          : <><AiPanel loading={ai.loading} offline={ai.offline}><div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended annual</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.annual)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Monthly</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthly)}</div></div></div><div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5 }}>{ai.rationale}</div></AiPanel>
-            <div style={{ marginTop: 14 }}><PmField label="Your set rent (₦/yr)" value={grp(price)} onChange={v => setPrice(ungrp(v))} /></div>
-            {price && ai.annual && Math.abs(+price - ai.annual) / ai.annual > 0.15 && <div style={{ color: "#E0A106", fontSize: 12.5, marginTop: 6, display: "flex", gap: 6 }}><AlertTriangle size={14} /> Differs from the AI recommendation by more than 15%. This may affect time-to-let.</div>}
+          : <><AiPanel loading={ai.loading} offline={ai.offline}>{ai.nightlyMode
+              ? <div style={{ display: "flex", gap: 18, marginBottom: 8, flexWrap: "wrap" }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended per night ({ai.letType})</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.nightly)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>About per month at 18 booked nights</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthlyAt60)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Annual-let equivalent</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--muted)" }}>{money(ai.annual)}</div></div></div>
+              : <div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended annual</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.annual)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Monthly</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthly)}</div></div></div>}<div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5 }}>{ai.rationale}</div></AiPanel>
+            <div style={{ marginTop: 14 }}>{ai.nightlyMode ? <PmField label="Your nightly rate (₦)" value={grp(f.nightly)} onChange={v => setF({ ...f, nightly: ungrp(v) })} /> : <PmField label="Your set rent (₦/yr)" value={grp(price)} onChange={v => setPrice(ungrp(v))} />}</div>
+            {!ai.nightlyMode && price && ai.annual && Math.abs(+price - ai.annual) / ai.annual > 0.15 && <div style={{ color: "#E0A106", fontSize: 12.5, marginTop: 6, display: "flex", gap: 6 }}><AlertTriangle size={14} /> Differs from the AI recommendation by more than 15%. This may affect time-to-let.</div>}
             <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>Submit listing</PmBtn></>}
       </PmCard>
     </div>
@@ -3198,10 +3282,10 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
       <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={4} placeholder="Describe the property, or let AI draft it for you." style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)", resize: "vertical" }} />
     </PmCard>
     <PmCard style={{ marginTop: 16 }}>
-      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Photos <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 12.5 }}>({photos.length}/5)</span></div>
+      <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>Photos <span style={{ color: photos.length < PHOTO_MIN ? "#B45309" : "var(--muted)", fontWeight: photos.length < PHOTO_MIN ? 700 : 400, fontSize: 12.5 }}>({photos.length} of {PHOTO_MAX}{photos.length < PHOTO_MIN ? ", at least " + PHOTO_MIN + " needed" : ""})</span></div>
       <AiPanel>
         <div style={{ fontSize: 13, color: "var(--ink)", lineHeight: 1.6 }}>
-          <b>Photo guidance for your {f.beds === "0" ? "studio" : f.beds + "-bed " + f.type.toLowerCase()}:</b> add 3 to 5 landscape (horizontal) shots. Lead with a wide living-room or exterior photo, then the kitchen, main bedroom, bathroom and any view or amenity.
+          <b>Photo guidance for your {f.beds === "0" ? "studio" : f.beds + "-bed " + f.type.toLowerCase()}:</b> add 5 to 10 landscape (horizontal) shots. Lead with the front elevation, then the living room, kitchen, each bedroom and bathroom, the guest toilet, and the side, rear and top views if you have them. Label each one below so a tenant can walk through the property room by room.
           <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }} className="pm-grid3">
             {[["Type", "JPG or PNG, horizontal (landscape)"], ["Quality", "Sharp and bright, shoot in daylight, avoid flash"], ["Size", "At least 1600 x 1200 px, under 5 MB each"]].map(([k, v]) => <div key={k} style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold-2)", textTransform: "uppercase", letterSpacing: .4 }}>{k}</div><div style={{ fontSize: 12.5, color: "var(--ink)", marginTop: 3, lineHeight: 1.45 }}>{v}</div></div>)}
           </div>
@@ -3212,7 +3296,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => { addPhotos(e.target.files); e.target.value = ""; }} />
         <ImageIcon size={26} color="var(--gold-2)" />
         <div style={{ fontWeight: 600, color: "var(--ink)", marginTop: 8 }}>Click to upload or drag photos here</div>
-        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>Up to 5 images. We optimise them for the web automatically.</div>
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>At least {PHOTO_MIN}, up to {PHOTO_MAX} images. We optimise them for the web automatically.</div>
       </label>
       {photos.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10, marginTop: 14 }}>
         {photos.map((src, i) => <div key={i}>
@@ -3292,7 +3376,8 @@ function TenantFind({ st, setSt, identity, toast }) {
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || poolPhoto(sel.id)} />
+      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status="Available" h={260} fallback={<HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || poolPhoto(sel.id)} />} />
+      {sel.condition === "Under construction" && <div style={{ marginTop: 10, background: "#FBEFD2", border: "1px solid #E7C97F", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "#9A5A00", fontWeight: 600 }}>Under construction. Ask about the completion date before you commit.</div>}
       <div style={{ marginTop: 14 }}><FacilitatorWarning prop={sel} compact /></div>
       <BookingCard prop={sel} identity={identity} toast={toast} />
       {sel.featured && <div style={{ marginTop: 14 }}>
@@ -6017,7 +6102,7 @@ function PublicListings({ onSignIn }) {
       <div className="listing-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
         {avail.map(p => <div key={p.id} className="lift card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
           <div style={{ position: "relative", height: 180 }}>
-            <img src={p.img || poolPhoto(p.id)} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            {(p.photos || []).length > 1 ? <PhotoGallery photos={p.photos} h={180} compact /> : <img src={p.img || poolPhoto(p.id)} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
             {p.featured && <span style={{ position: "absolute", top: 12, left: 12, background: "var(--gold)", color: "#201601", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>Featured</span>}
             <span style={{ position: "absolute", top: 12, right: 12, background: p.letType === "Short let" ? "var(--navy)" : "rgba(255,255,255,.92)", color: p.letType === "Short let" ? "#fff" : "var(--ink)", fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>{p.letType === "Short let" ? "Short let" : (p.term || "Annual")}</span>
           </div>
