@@ -2769,8 +2769,18 @@ async function aiProxy(prompt, system, max_tokens) {
     return { ok: true, text };
   } catch (e) { return { ok: false, text: "" }; }
 }
-async function aiRent({ type, area, beds, amenities, letType }) {
+async function aiRent({ type, area, beds, amenities, letType, intent }) {
   const annual = baseRent(area, +beds || 0);
+  if (intent === "For sale") {
+    // Sale estimate from the same annual band: Lagos residential gross yields
+    // sit around 4% to 6%, so the band divided by that yield gives a price
+    // range. A heuristic, not a valuation, and the panel says so.
+    const price = Math.round(annual / 0.05 / 1000000) * 1000000;
+    const low = Math.round(annual / 0.06 / 1000000) * 1000000, high = Math.round(annual / 0.04 / 1000000) * 1000000;
+    const proxy = await aiProxy(`In one sentence, explain why an asking price near ₦${price.toLocaleString()} is competitive for a ${beds}-bed ${type} for sale in ${area}, Lagos with amenities ${(amenities || []).join(", ") || "standard"}. No preamble.`);
+    const rationale = proxy.ok ? proxy.text : `Based on what comparable ${beds}-bed ${type.toLowerCase()} sales in ${area} achieve and the rent the property could earn, this sits within the prevailing band. Title, finish and age move the final figure.`;
+    return { annual, saleMode: true, price, low, high, rationale, offline: !proxy.ok };
+  }
   const nightlyMode = letType === "Short let" || letType === "Holiday stay / serviced";
   // Nightly rates are derived from the same annual band: a short let in Lagos
   // typically earns its annual-let equivalent in roughly 120 booked nights, a
@@ -3191,7 +3201,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
       </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}>
-        <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--ink)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div>
+        <div><div style={{ color: "var(--muted)", fontSize: 12 }}>{isForSale(sel) ? "Asking price" : isShortLet(sel) ? "Per night" : "Annual rent"}</div><div className="serif" style={{ color: "var(--ink)", fontWeight: 600, fontSize: 22 }}>{money(priceOf(sel))}</div></div>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Type</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.type}</div></div>
       </div>
@@ -3223,7 +3233,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
   const addPhotos = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !file.type.startsWith("image/")) return; const reader = new FileReader(); reader.onload = ev => { const img = new Image(); img.onload = () => { const max = 1200; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h); const dataUrl = cv.toDataURL("image/jpeg", 0.78); const finish = (val) => setPhotos(prev => prev.length >= PHOTO_MAX ? prev : [...prev, val]); if (supabase && cv.toBlob) { cv.toBlob(async (blob) => { try { if (!blob) throw new Error("no blob"); const path = "listings/" + Date.now() + "-" + Math.random().toString(36).slice(2) + ".jpg"; const up = await supabase.storage.from("property-photos").upload(path, blob, { contentType: "image/jpeg", upsert: false }); if (up.error) throw up.error; const pub = supabase.storage.from("property-photos").getPublicUrl(path); finish((pub && pub.data && pub.data.publicUrl) || dataUrl); } catch (e) { finish(dataUrl); } }, "image/jpeg", 0.78); } else { finish(dataUrl); } }; img.src = ev.target.result; }; reader.readAsDataURL(file); }); };
   const addDocs = (files) => { Array.from(files).forEach(file => { if (!file || !file.type || !(file.type.startsWith("image/") || file.type === "application/pdf")) return; const reader = new FileReader(); reader.onload = ev => { setDocs(prev => prev.length >= 5 ? prev : [...prev, { name: file.name, type: file.type, url: ev.target.result }]); }; reader.readAsDataURL(file); }); };
   const toggle = a => setF(x => ({ ...x, amenities: x.amenities.includes(a) ? x.amenities.filter(z => z !== a) : [...x.amenities, a] }));
-  const rec = async () => { setAi({ loading: true }); const r = await aiRent({ ...f, letType: f.intent === "To let" ? f.letType : "Long let" }); setAi({ loading: false, ...r }); setPrice(String(r.annual)); if (r.nightly && !f.nightly) setF(x => ({ ...x, nightly: String(r.nightly) })); };
+  const rec = async () => { setAi({ loading: true }); const r = await aiRent({ ...f, letType: f.intent === "To let" ? f.letType : "Long let" }); setAi({ loading: false, ...r }); setPrice(String(r.saleMode ? r.price : r.annual)); if (r.nightly && !f.nightly) setF(x => ({ ...x, nightly: String(r.nightly) })); };
   const submit = () => {
     const bank = bankFor(identity && identity.email) || {};
     if (!f.condition) { toast("Choose the property status: completed or under construction", "danger"); return; }
@@ -3307,15 +3317,17 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         </>}
         {uploadedByGirard ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "9px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>Girard account: no administrative fee applies. Rent settles to Girard.</div> : (myBank && myBank.bankAcctNo ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}><b style={{ color: "var(--ink)" }}>Rent settlement:</b> {myBank.bankAcctName} · {myBank.bankName} ••••{String(myBank.bankAcctNo).slice(-4)}. A 5% administrative fee applies and is settled to Girard once, before closing. Rent {f.managed === "Yes" ? "is collected into Girard's managed account." : "settles directly to your registered account."}</div> : <div style={{ background: "rgba(208,69,59,.08)", border: "1px solid rgba(208,69,59,.25)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.55 }}>No settlement bank account is registered to your profile. Add one under <b>Data &amp; privacy</b> so rent can settle to you.</div>)}
         <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Amenities</label><div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{PM_AMEN.map(a => <button key={a} onClick={() => toggle(a)} style={{ border: "1px solid " + (f.amenities.includes(a) ? "var(--gold)" : "var(--cream-line)"), background: f.amenities.includes(a) ? "var(--gold-soft)" : "transparent", color: f.amenities.includes(a) ? "var(--gold-2)" : "var(--muted)", borderRadius: 7, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{a}</button>)}</div></div>
-        <PmBtn kind="navy" icon={Sparkles} onClick={rec}>Get AI rent recommendation</PmBtn>
+        <PmBtn kind="navy" icon={Sparkles} onClick={rec}>{f.intent === "For sale" ? "Get AI price recommendation" : "Get AI rent recommendation"}</PmBtn>
       </div></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Pricing</div>
         {!ai ? <div style={{ color: "var(--muted)", fontSize: 14, padding: "20px 0", textAlign: "center" }}>Enter details, then request an AI recommendation.</div>
-          : <><AiPanel loading={ai.loading} offline={ai.offline}>{ai.nightlyMode
+          : <><AiPanel loading={ai.loading} offline={ai.offline}>{ai.saleMode
+              ? <div style={{ display: "flex", gap: 18, marginBottom: 8, flexWrap: "wrap" }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended asking price</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.price)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Likely range</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--muted)" }}>{money(ai.low)} to {money(ai.high)}</div></div></div>
+              : ai.nightlyMode
               ? <div style={{ display: "flex", gap: 18, marginBottom: 8, flexWrap: "wrap" }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended per night ({ai.letType})</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.nightly)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>About per month at 18 booked nights</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthlyAt60)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Annual-let equivalent</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--muted)" }}>{money(ai.annual)}</div></div></div>
               : <div style={{ display: "flex", gap: 18, marginBottom: 8 }}><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Recommended annual</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.annual)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 11 }}>Monthly</div><div className="serif" style={{ fontWeight: 600, fontSize: 19, color: "var(--ink)" }}>{money(ai.monthly)}</div></div></div>}<div style={{ color: "var(--ink)", fontSize: 13, lineHeight: 1.5 }}>{ai.rationale}</div></AiPanel>
-            <div style={{ marginTop: 14 }}>{ai.nightlyMode ? <PmField label="Your nightly rate (₦)" value={grp(f.nightly)} onChange={v => setF({ ...f, nightly: ungrp(v) })} /> : <PmField label="Your set rent (₦/yr)" value={grp(price)} onChange={v => setPrice(ungrp(v))} />}</div>
-            {!ai.nightlyMode && price && ai.annual && Math.abs(+price - ai.annual) / ai.annual > 0.15 && <div style={{ color: "#E0A106", fontSize: 12.5, marginTop: 6, display: "flex", gap: 6 }}><AlertTriangle size={14} /> Differs from the AI recommendation by more than 15%. This may affect time-to-let.</div>}
+            <div style={{ marginTop: 14 }}>{ai.nightlyMode ? <PmField label="Your nightly rate (₦)" value={grp(f.nightly)} onChange={v => setF({ ...f, nightly: ungrp(v) })} /> : <PmField label={ai.saleMode ? "Your asking price (₦)" : "Your set rent (₦/yr)"} value={grp(price)} onChange={v => setPrice(ungrp(v))} />}</div>
+            {!ai.nightlyMode && !ai.saleMode && price && ai.annual && Math.abs(+price - ai.annual) / ai.annual > 0.15 && <div style={{ color: "#E0A106", fontSize: 12.5, marginTop: 6, display: "flex", gap: 6 }}><AlertTriangle size={14} /> Differs from the AI recommendation by more than 15%. This may affect time-to-let.</div>}
             <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>Submit listing</PmBtn></>}
       </PmCard>
     </div>
@@ -3428,9 +3440,9 @@ function TenantFind({ st, setSt, identity, toast }) {
         <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12 }}>{sel.blurb}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
       </div>}
-      <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Annual rent</div><div className="serif" style={{ color: "var(--ink)", fontWeight: 600, fontSize: 22 }}>{money(sel.rent)}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
+      <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>{isForSale(sel) ? "Asking price" : isShortLet(sel) ? "Per night" : "Annual rent"}</div><div className="serif" style={{ color: "var(--ink)", fontWeight: 600, fontSize: 22 }}>{money(priceOf(sel))}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{(sel.amenities || []).map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
-      <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn>
+      {isForSale(sel) ? <a href={waLink(null, "Hello Girard, I am interested in buying " + sel.title + (sel.area ? " in " + sel.area : "") + " (ref " + sel.id + ").")} target="_blank" rel="noreferrer" className="btn-gold" style={{ display: "inline-flex" }}>Enquire about buying <ArrowUpRight size={15} /></a> : <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn>}
     </PmModal>}
     {apply && <ApplyModal st={st} setSt={setSt} identity={identity} prop={apply} onClose={() => { setApply(null); setSel(null); }} toast={toast} />}
   </div>;
@@ -6150,11 +6162,12 @@ function PublicListings({ onSignIn }) {
           <div className="listing-frame" style={{ position: "relative", aspectRatio: "4 / 3", minHeight: 0, overflow: "hidden" }}>
             {(p.photos || []).length > 1 ? <PhotoGallery photos={p.photos} h="100%" compact /> : (p.img ? <img src={p.img} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <HouseArt hue={p.hue} h="100%" photo={null} />)}
             <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6, alignItems: "center" }}><AvailPill p={p} solid />{p.featured && <span style={{ background: "var(--gold)", color: "#201601", fontSize: 10.5, fontWeight: 800, padding: "4px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .3 }}>Featured</span>}</div>
-            <span style={{ position: "absolute", top: 12, right: 12, background: p.letType === "Short let" ? "var(--navy)" : "rgba(255,255,255,.92)", color: p.letType === "Short let" ? "#fff" : "var(--ink)", fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>{p.letType === "Short let" ? "Short let" : (p.term || "Annual")}</span>
+            <span style={{ position: "absolute", top: 12, right: 12, background: (p.letType === "Short let" || isForSale(p)) ? "var(--navy)" : "rgba(255,255,255,.92)", color: (p.letType === "Short let" || isForSale(p)) ? "#fff" : "var(--ink)", fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>{isForSale(p) ? "For sale" : p.letType === "Short let" ? "Short let" : "To let \u00b7 " + (p.term || "Annual")}</span>
           </div>
           <div style={{ padding: 18, display: "flex", flexDirection: "column", flex: 1 }}>
             <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{p.title}</div>
-            <div style={{ fontSize: 13, color: "var(--muted)", margin: "3px 0 14px" }}>{p.area}{p.beds ? " · " + p.beds + " bed" : ""}</div>
+            <div style={{ fontSize: 13, color: "var(--muted)", margin: "3px 0 10px" }}>{p.area}{p.beds ? " · " + p.beds + " bed" : ""}{p.type ? " · " + p.type : ""}</div>
+            {priceOf(p) > 0 && <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 14 }}><span className="serif" style={{ fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>{money(priceOf(p))}</span><span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>{isForSale(p) ? "asking price" : pricePeriod(p) === "/night" ? "per night" : "per year"}</span></div>}
             <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
               <button onClick={() => setLead({ mode: "viewing", property: p })} className="btn-gold" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>{availabilityOf(p) === "Available" ? "Book viewing" : "Register interest"}</button>
               <button onClick={() => setLead({ mode: "enquire", property: p })} className="btn-line on-ivory" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Enquire</button>
