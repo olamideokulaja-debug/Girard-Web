@@ -2274,6 +2274,7 @@ function availabilityOf(p) {
   if (p.condition === "Under construction") return "In development";
   return "Available";
 }
+const canApply = (p) => availabilityOf(p) === "Available" && !isForSale(p);
 const AVAIL_TONE = { "Available": "#1F9D57", "Occupied": "#2F6FB0", "In development": "#9A5A00", "Coming soon": "#7A4BB5", "Sold": "#D0453B" };
 function AvailPill({ p, solid }) {
   const a = availabilityOf(p); const c = AVAIL_TONE[a] || "var(--muted)";
@@ -3427,14 +3428,14 @@ function TenantFind({ st, setSt, identity, toast }) {
         <div style={{ padding: 14, cursor: "pointer" }} onClick={() => setSel(p)}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{[p.state, (p.country && p.country !== "Nigeria" ? p.country : null), (p.intent || "To let")].filter(Boolean).join(" \u00b7 ")}{p.postedAt ? " \u00b7 " + postedAgo(p.postedAt) : ""}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(priceOf(p))}{pricePeriod(p) && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>{pricePeriod(p)}</span>}</div><PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ color: "var(--ink)", fontWeight: 700 }}>{money(priceOf(p))}{pricePeriod(p) && <span style={{ color: "var(--muted)", fontWeight: 500, fontSize: 11 }}>{pricePeriod(p)}</span>}</div>{canApply(p) ? <PmBtn size="sm" onClick={() => setApply(p)}>Apply</PmBtn> : <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{isForSale(p) ? "For sale" : availabilityOf(p)}</span>}</div>
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
       <PhotoGallery photos={sel.photos} tags={sel.photoTags} status={availabilityOf(sel)} h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status={availabilityOf(sel)} h={190} photo={sel.img || null} />} />
       {sel.condition === "Under construction" && <div style={{ marginTop: 10, background: "#FBEFD2", border: "1px solid #E7C97F", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "#9A5A00", fontWeight: 600 }}>Under construction. Ask about the completion date before you commit.</div>}
       <div style={{ marginTop: 14 }}><FacilitatorWarning prop={sel} compact /></div>
-      <BookingCard prop={sel} identity={identity} toast={toast} />
+      {canApply(sel) ? <BookingCard prop={sel} identity={identity} toast={toast} /> : !isForSale(sel) && <div style={{ marginTop: 14, background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "var(--ink)", lineHeight: 1.6 }}><b>{availabilityOf(sel)}.</b> {availabilityOf(sel) === "Occupied" ? "This property is let at the moment, so applications are closed. Register your interest and Girard will tell you when it comes back to the market." : availabilityOf(sel) === "In development" ? "This property is still being built, so applications open when it is complete. Register your interest to be told first." : availabilityOf(sel) === "Coming soon" ? "This property is not yet open for applications. Register your interest to be told when it is." : "This property is no longer available."}</div>}
       {sel.featured && <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["Units", sel.units], ["Max height", sel.height], ["Plot", sel.plot]].map(([k, v]) => <div key={k} style={{ flex: 1, minWidth: 110, background: "var(--ivory)", borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 11, color: "var(--muted)" }}>{k}</div><div className="serif" style={{ fontWeight: 600, color: "var(--ink)", fontSize: 17 }}>{v}</div></div>)}</div>
         <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, marginBottom: 12 }}>{sel.blurb}</p>
@@ -3442,7 +3443,7 @@ function TenantFind({ st, setSt, identity, toast }) {
       </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>{isForSale(sel) ? "Asking price" : isShortLet(sel) ? "Per night" : "Annual rent"}</div><div className="serif" style={{ color: "var(--ink)", fontWeight: 600, fontSize: 22 }}>{money(priceOf(sel))}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{(sel.amenities || []).map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
-      {isForSale(sel) ? <a href={waLink(null, "Hello Girard, I am interested in buying " + sel.title + (sel.area ? " in " + sel.area : "") + " (ref " + sel.id + ").")} target="_blank" rel="noreferrer" className="btn-gold" style={{ display: "inline-flex" }}>Enquire about buying <ArrowUpRight size={15} /></a> : <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn>}
+      {isForSale(sel) ? <a href={waLink(null, "Hello Girard, I am interested in buying " + sel.title + (sel.area ? " in " + sel.area : "") + " (ref " + sel.id + ").")} target="_blank" rel="noreferrer" className="btn-gold" style={{ display: "inline-flex" }}>Enquire about buying <ArrowUpRight size={15} /></a> : canApply(sel) ? <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn> : <a href={waLink(null, "Hello Girard, please register my interest in " + sel.title + (sel.area ? " in " + sel.area : "") + " (ref " + sel.id + ") for when it becomes available.")} target="_blank" rel="noreferrer" className="btn-line on-ivory" style={{ display: "inline-flex" }}>Register interest <ArrowUpRight size={15} /></a>}
     </PmModal>}
     {apply && <ApplyModal st={st} setSt={setSt} identity={identity} prop={apply} onClose={() => { setApply(null); setSel(null); }} toast={toast} />}
   </div>;
@@ -3490,6 +3491,9 @@ function ApplyModal({ st, setSt, identity, prop, onClose, toast }) {
     setDocs(prev => { const c = { ...prev }; delete c[label]; return c; });
   };
   const submit = () => {
+    // Belt and braces: the buttons are hidden on an unavailable listing, but
+    // nothing should get through here either.
+    if (!canApply(prop)) { if (toast) toast("This property is " + availabilityOf(prop).toLowerCase() + " and not open for applications.", "danger"); onClose(); return; }
     setStep(2);
     const inc = +String(f.income).replace(/\D/g, "") || 0;
     const ratio = inc ? prop.rent / inc : 9;
