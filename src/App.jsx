@@ -3060,8 +3060,14 @@ function TestTenancyCard({ st, setSt, identity, toast }) {
   </PmCard>;
 }
 function OwnerDash({ st, identity }) {
-  const leased = st.properties.filter(p => p.status === "Leased").length;
-  const occ = st.properties.length ? Math.round(leased / st.properties.length * 100) : 0;
+  // Occupancy follows the availability label the owner sets (Occupied), as
+  // well as leases signed on the platform, so a house let outside Girard
+  // still counts as occupied on its owner's dashboard.
+  const props = st.properties;
+  const leased = props.filter(p => p.status === "Leased" || availabilityOf(p) === "Occupied").length;
+  const platformLeased = props.filter(p => p.status === "Leased").length;
+  const occupiable = props.filter(p => !["In development", "Coming soon", "Sold"].includes(availabilityOf(p))).length;
+  const occ = occupiable ? Math.round(leased / occupiable * 100) : 0;
   // Real money: rent actually collected, by month, from paid invoices.
   const paidInv = (st.invoices || []).filter(i => i.status === "Paid");
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -3079,7 +3085,13 @@ function OwnerDash({ st, identity }) {
   // Monthly income = annual rent on let properties, divided over the year.
   const monthlyIncome = Math.round(st.properties.filter(p => p.status === "Leased").reduce((t, p) => t + (p.rent || 0), 0) / 12);
   const byArea = PM_AREAS.slice(0, 7).map(a => ({ m: a, v: Math.round(st.properties.filter(p => p.area === a).reduce((s, p) => s + p.rent, 0) / 1e6) }));
-  const occData = [{ name: "Leased", v: leased, c: "#10B981" }, { name: "Available", v: st.properties.length - leased, c: "#F59E0B" }];
+  const occData = [
+    { name: "Occupied", v: leased, c: "#10B981" },
+    { name: "Available", v: props.filter(p => availabilityOf(p) === "Available" && p.status !== "Leased").length, c: "#F59E0B" },
+    { name: "In development", v: props.filter(p => availabilityOf(p) === "In development").length, c: "#9A5A00" },
+    { name: "Coming soon", v: props.filter(p => availabilityOf(p) === "Coming soon").length, c: "#7A4BB5" },
+    { name: "Sold", v: props.filter(p => availabilityOf(p) === "Sold").length, c: "#D0453B" }
+  ].filter(d => d.v > 0);
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
   /* Added for the Property Manager dashboard: outstanding rent, overdue leases
      and open inspections. All derived from real rows — an empty platform shows
@@ -3104,9 +3116,9 @@ function OwnerDash({ st, identity }) {
     <H2 title={"Good day, " + identity.firstName} sub="Girard-managed portfolio at a glance" right={<span style={{ color: "var(--muted)", fontSize: 13 }}>{today}</span>} />
     {identity.role === "admin" && <RevenueSummary />}
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
-      <CStat icon={Wallet} label="Monthly income" value={moneyC(monthlyIncome)} sub={leased ? "Rent on " + leased + " let " + (leased === 1 ? "property" : "properties") : "No properties let yet"} c="#3B82F6" bg="#EAF2FE" />
+      <CStat icon={Wallet} label="Monthly income" value={moneyC(monthlyIncome)} sub={platformLeased ? "Rent on " + platformLeased + " " + (platformLeased === 1 ? "lease" : "leases") + " through Girard" : "No rent collected through Girard yet"} c="#3B82F6" bg="#EAF2FE" />
       <CStat icon={Building2} label="Properties" value={String(st.properties.length)} sub="Under management" c="#8B5CF6" bg="#F1ECFE" />
-      <CStat icon={Home} label="Occupancy" value={occ + "%"} sub={leased + " leased"} c="#10B981" bg="#E7F7F0" />
+      <CStat icon={Home} label="Occupancy" value={occ + "%"} sub={leased + " occupied of " + occupiable + " lettable"} c="#10B981" bg="#E7F7F0" />
       <CStat icon={Wrench} label="Open tickets" value={String((st.tickets || []).filter(t => t.status !== "Resolved").length)} sub={((st.tickets || []).filter(t => t.status !== "Resolved" && t.priority === "Emergency").length || 0) + " emergency"} c="#F59E0B" bg="#FEF4E3" />
     </div>
     {(identity.role === "admin" || identity.role === "manager") && <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 16 }} className="dash-kpi">
@@ -5007,7 +5019,7 @@ function AgentAnalytics({ identity, go }) {
   // showing someone else's book.
   const mine = (pm.properties || []).filter(p => (p.ownerEmail || "").toLowerCase() === me);
   const listed = mine.length;
-  const let_ = mine.filter(p => p.status === "Leased").length;
+  const let_ = mine.filter(p => p.status === "Leased" || availabilityOf(p) === "Occupied").length;
   const items = (enq.items || []);
   const viewings = items.filter(e => e.type === "Viewing").length;
   const enquiries = items.length;
@@ -5059,7 +5071,7 @@ function ReportsScreen({ identity, toast }) {
   const pm = pmLoad(); const sw = swLoad(); const crm = crmLoad();
   const [pays, setPays] = useState([]); const [jobs, setJobs] = useState([]);
   useEffect(() => { let on = true; paymentsFetch().then(x => { if (on) setPays(x); }); jobsFetch().then(x => { if (on) setJobs(x); }); return () => { on = false; }; }, []);
-  const leased = pm.properties.filter(p => p.status === "Leased").length;
+  const leased = pm.properties.filter(p => p.status === "Leased" || availabilityOf(p) === "Occupied").length;
   const rentRoll = pm.properties.reduce((s, p) => s + (p.rent || 0), 0);
   const MN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const income = (() => {
@@ -8576,7 +8588,7 @@ function MessagesInbox({ identity, toast }) {
 /* ---------- Ask AI (portfolio assistant) ---------- */
 function AskAI({ st, identity, toast }) {
   const [q, setQ] = useState(""); const [msgs, setMsgs] = useState([]); const [loading, setLoading] = useState(false);
-  const summary = () => { const props = st.properties || []; const leased = props.filter(p => p.status === "Leased").length; const vacant = props.filter(p => !isSpokenFor(p)).length; const rentTotal = props.reduce((s, p) => s + (p.rent || 0), 0); const apps = (st.applications || []); const byArea = {}; props.forEach(p => { byArea[p.area] = (byArea[p.area] || 0) + 1; }); return "Portfolio data (all money in Naira):\n- Properties: " + props.length + " (" + leased + " leased, " + vacant + " available)\n- Annual rent roll: " + rentTotal + "\n- Applications: " + apps.length + "\n- By area: " + Object.entries(byArea).map(([a, n]) => a + ": " + n).join(", ") + "\n- List: " + props.slice(0, 40).map(p => p.title + " (" + p.area + ", " + p.status + ", rent " + p.rent + ")").join("; "); };
+  const summary = () => { const props = st.properties || []; const leased = props.filter(p => p.status === "Leased" || availabilityOf(p) === "Occupied").length; const vacant = props.filter(p => !isSpokenFor(p) && availabilityOf(p) === "Available").length; const rentTotal = props.reduce((s, p) => s + (p.rent || 0), 0); const apps = (st.applications || []); const byArea = {}; props.forEach(p => { byArea[p.area] = (byArea[p.area] || 0) + 1; }); return "Portfolio data (all money in Naira):\n- Properties: " + props.length + " (" + leased + " leased, " + vacant + " available)\n- Annual rent roll: " + rentTotal + "\n- Applications: " + apps.length + "\n- By area: " + Object.entries(byArea).map(([a, n]) => a + ": " + n).join(", ") + "\n- List: " + props.slice(0, 40).map(p => p.title + " (" + p.area + ", " + p.status + ", rent " + p.rent + ")").join("; "); };
   const ask = async () => { if (!q.trim()) return; const question = q; setMsgs(m => [...m, { me: true, text: question }]); setQ(""); setLoading(true); const r = await aiProxy("Answer using ONLY this data. Be concise, use numbers. If not answerable from the data, say so.\n\n" + summary() + "\n\nQuestion: " + question, "You are Girard's precise real estate portfolio analyst. Short, direct answers.", 800); setLoading(false); setMsgs(m => [...m, { me: false, text: (r && r.ok && r.text) ? r.text : ("AI is not connected yet (add ANTHROPIC_API_KEY in Vercel). Quick facts: " + (st.properties || []).length + " properties, " + (st.properties || []).filter(p => p.status === "Leased").length + " leased.") }]); };
   const sugg = ["Which properties are vacant?", "What is my total rent roll?", "Which area has the most properties?", "How many applications do I have?"];
   return <div>
