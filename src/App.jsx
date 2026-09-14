@@ -4126,7 +4126,9 @@ function AppShell({ identity: identity0, onSignOut, onSwitchRole }) {
   useEffect(() => { onWriteFailure((what, message) => toast("Could not save the " + what + ". " + message, "danger")); }, []);
   const screen = () => {
     const P = { st, setSt, identity, toast, toAi: (data) => { setAiSeed(data); setView("ai"); } };
-    if (view === "dash") return <><OwnerDash st={st} identity={identity} />{isSuperAdmin(identity.email) && <><TestTenancyCard st={st} setSt={setSt} identity={identity} toast={toast} /><DemoDataCard st={st} setSt={setSt} toast={toast} /></>}</>;
+    // The split-test and data-reset tools were for the build phase. The site is
+    // live with real listings, so neither belongs on the dashboard any more.
+    if (view === "dash") return <OwnerDash st={st} identity={identity} />;
     if (view === "saved") return <SavedProperties {...P} go={setView} />;
     if (view === "props") return <PropertiesScreen {...P} />;
     if (view === "add") return <AddPropertyScreen {...P} />;
