@@ -2465,7 +2465,7 @@ function SavedProperties({ st, identity, go }) {
       : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
         {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", position: "relative" }}>
           <FavHeart on={true} onToggle={() => toggle(p.id)} />
-          <HouseArt hue={p.hue} status={p.status} photo={p.img || poolPhoto(p.id)} />
+          <HouseArt hue={p.hue} status={p.status} photo={p.img || null} />
           <div style={{ padding: 14 }}>
             <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{p.area}{p.beds ? " \u00b7 " + p.beds + " bed" : ""}</div>
@@ -2838,6 +2838,7 @@ function HouseArt({ hue = 200, status, h = 140, photo }) {
   return <div style={{ position: "relative", height: h, borderRadius: 10, overflow: "hidden", background: "linear-gradient(140deg, hsl(" + hue + ",42%,22%), hsl(" + (hue - 10) + ",50%,34%))" }}>
     {photo && ok ? <img src={photo} alt="" onError={() => setOk(false)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <svg viewBox="0 0 300 140" width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: .22 }}><g fill="none" stroke="var(--gold)" strokeWidth="1.4"><path d="M60 110 L60 64 L96 44 L132 64 L132 110 Z" /><path d="M150 110 L150 52 L188 30 L226 52 L226 110 Z" /><rect x="240" y="74" width="34" height="36" /></g></svg>}
     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,31,60,0) 52%, rgba(10,31,60,.45))" }} />
+    {!(photo && ok) && <div style={{ position: "absolute", right: 10, bottom: 10, background: "rgba(255,255,255,.9)", color: "var(--ink)", fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999, display: "flex", alignItems: "center", gap: 5 }}><ImageIcon size={12} /> Photos to follow</div>}
     {status && <div style={{ position: "absolute", top: 10, left: 10 }}><PmPill label={status} /></div>}
   </div>;
 }
@@ -3123,7 +3124,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", cursor: "pointer", position: "relative" }}>
         <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
-        <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} h={210} photo={p.img || poolPhoto(p.id)} /></div>
+        <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} h={210} photo={p.img || null} /></div>
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
@@ -3131,7 +3132,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         </div></PmCard>)}
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status={sel.status} h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || poolPhoto(sel.id)} />} />
+      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status={sel.status} h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || null} />} />
       {(sel.condition || sel.name) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>{sel.name && sel.kind && <span style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 7 }}>{sel.kind}</span>}{sel.condition && <span style={{ background: sel.condition === "Completed" ? "#1F9D5722" : "#FBEFD2", color: sel.condition === "Completed" ? "#1F9D57" : "#9A5A00", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 7 }}>{sel.condition}</span>}</div>}
       <SaleCommissionCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} isAdmin={isAdmin} />
       {sel.ownerEmail && identity.email && sel.ownerEmail.toLowerCase() === identity.email.toLowerCase() && <FeatureCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} />}
@@ -3368,7 +3369,7 @@ function TenantFind({ st, setSt, identity, toast }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", position: "relative" }}>
         <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
-        <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" h={210} photo={p.img || poolPhoto(p.id)} /></div>
+        <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" h={210} photo={p.img || null} /></div>
         <div style={{ padding: 14, cursor: "pointer" }} onClick={() => setSel(p)}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{[p.state, (p.country && p.country !== "Nigeria" ? p.country : null), (p.intent || "To let")].filter(Boolean).join(" \u00b7 ")}{p.postedAt ? " \u00b7 " + postedAgo(p.postedAt) : ""}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
@@ -3376,7 +3377,7 @@ function TenantFind({ st, setSt, identity, toast }) {
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status="Available" h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || poolPhoto(sel.id)} />} />
+      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status="Available" h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || null} />} />
       {sel.condition === "Under construction" && <div style={{ marginTop: 10, background: "#FBEFD2", border: "1px solid #E7C97F", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "#9A5A00", fontWeight: 600 }}>Under construction. Ask about the completion date before you commit.</div>}
       <div style={{ marginTop: 14 }}><FacilitatorWarning prop={sel} compact /></div>
       <BookingCard prop={sel} identity={identity} toast={toast} />
@@ -6102,7 +6103,7 @@ function PublicListings({ onSignIn }) {
       <div className="listing-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 24 }}>
         {avail.map(p => <div key={p.id} className="lift card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
           <div className="listing-frame" style={{ position: "relative", aspectRatio: "4 / 3", minHeight: 0, overflow: "hidden" }}>
-            {(p.photos || []).length > 1 ? <PhotoGallery photos={p.photos} h="100%" compact /> : <img src={p.img || poolPhoto(p.id)} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+            {(p.photos || []).length > 1 ? <PhotoGallery photos={p.photos} h="100%" compact /> : (p.img ? <img src={p.img} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <HouseArt hue={p.hue} h="100%" photo={null} />)}
             {p.featured && <span style={{ position: "absolute", top: 12, left: 12, background: "var(--gold)", color: "#201601", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>Featured</span>}
             <span style={{ position: "absolute", top: 12, right: 12, background: p.letType === "Short let" ? "var(--navy)" : "rgba(255,255,255,.92)", color: p.letType === "Short let" ? "#fff" : "var(--ink)", fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>{p.letType === "Short let" ? "Short let" : (p.term || "Annual")}</span>
           </div>
