@@ -3131,26 +3131,118 @@ function OwnerDash({ st, identity }) {
 }
 
 /* ---------- PROPERTIES ---------- */
-/* Title, availability and build status of an existing listing, editable by
-   its owner or by Girard staff without re-listing the property. */
-function ListingDetailsCard({ prop, onSave }) {
-  const [name, setName] = useState(prop.name || "");
-  const [availability, setAvailability] = useState(availabilityOf(prop));
-  const [condition, setCondition] = useState(prop.condition || "");
-  useEffect(() => { setName(prop.name || ""); setAvailability(availabilityOf(prop)); setCondition(prop.condition || ""); }, [prop.id]);
+/* Everything about an existing listing that its owner (or Girard staff) may
+   change without re-listing: title, availability, build status, price,
+   description, amenities and the photo set. Photos upload to the same bucket
+   the Add property form uses; the first photo is the cover. */
+const PHOTO_CATS_ALL = ["Front elevation", "Living room", "Kitchen", "Bedroom 1", "Bathroom", "Bedroom 2", "Side elevation", "Rear elevation", "Top view", "Guest toilet", "Dining", "Balcony / view", "Compound / parking", "Other"];
+function ListingDetailsCard({ prop, onSave, toast }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState(null);
+  const [busy, setBusy] = useState(0);
   const kind = prop.kind || ((prop.beds ? prop.beds + "-Bed " : "Studio ") + (prop.type || "Property"));
-  const dirty = (name.trim() || "") !== (prop.name || "") || availability !== availabilityOf(prop) || condition !== (prop.condition || "");
+  const fromProp = () => ({
+    name: prop.name || "", availability: availabilityOf(prop), condition: prop.condition || "",
+    price: String(isShortLet(prop) ? (prop.nightly || "") : (prop.rent || "")),
+    description: prop.description || "", amenities: prop.amenities || [],
+    photos: (prop.photos || []).slice(), photoTags: (prop.photoTags || []).slice()
+  });
+  useEffect(() => { setF(fromProp()); }, [prop.id]);
+  if (!f) return null;
+  const set = (k, v) => setF(x => ({ ...x, [k]: v }));
+  const tagAt = (i) => f.photoTags[i] || PHOTO_CATS_ALL[i] || "Other";
+  const addPhotos = (files) => {
+    Array.from(files).forEach(file => {
+      if (!file || !file.type || !file.type.startsWith("image/")) return;
+      setBusy(b => b + 1);
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 1600; let w = img.width, h = img.height; if (w > max) { h = Math.round(h * max / w); w = max; }
+          const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h);
+          const dataUrl = cv.toDataURL("image/jpeg", 0.8);
+          const finish = (val) => { setF(x => x.photos.length >= 10 ? x : { ...x, photos: [...x.photos, val], photoTags: [...x.photos.map((_, k) => x.photoTags[k] || PHOTO_CATS_ALL[k] || "Other"), PHOTO_CATS_ALL[x.photos.length] || "Other"] }); setBusy(b => b - 1); };
+          if (supabase && cv.toBlob) {
+            cv.toBlob(async (blob) => {
+              try {
+                if (!blob) throw new Error("no blob");
+                const path = "listings/" + Date.now() + "-" + Math.random().toString(36).slice(2) + ".jpg";
+                const up = await supabase.storage.from("property-photos").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+                if (up.error) throw up.error;
+                const pub = supabase.storage.from("property-photos").getPublicUrl(path);
+                finish((pub && pub.data && pub.data.publicUrl) || dataUrl);
+              } catch (e) { if (toast) toast("Photo could not be uploaded: " + String((e && e.message) || e).slice(0, 80), "danger"); setBusy(b => b - 1); }
+            }, "image/jpeg", 0.8);
+          } else finish(dataUrl);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+  const move = (i, d) => setF(x => { const j = i + d; if (j < 0 || j >= x.photos.length) return x; const ph = x.photos.slice(), tg = x.photos.map((_, k) => x.photoTags[k] || PHOTO_CATS_ALL[k] || "Other"); [ph[i], ph[j]] = [ph[j], ph[i]]; [tg[i], tg[j]] = [tg[j], tg[i]]; return { ...x, photos: ph, photoTags: tg }; });
+  const remove = (i) => setF(x => ({ ...x, photos: x.photos.filter((_, k) => k !== i), photoTags: x.photos.map((_, k) => x.photoTags[k] || PHOTO_CATS_ALL[k] || "Other").filter((_, k) => k !== i) }));
+  const retag = (i, v) => setF(x => { const tg = x.photos.map((_, k) => x.photoTags[k] || PHOTO_CATS_ALL[k] || "Other"); tg[i] = v; return { ...x, photoTags: tg }; });
+  const toggleAmen = (a) => set("amenities", f.amenities.includes(a) ? f.amenities.filter(z => z !== a) : [...f.amenities, a]);
+  const priceLabel = isForSale(prop) ? "Asking price (\u20a6)" : isShortLet(prop) ? "Price per night (\u20a6)" : "Annual rent (\u20a6)";
+  const save = () => {
+    if (busy) { if (toast) toast("Wait for the photos to finish uploading", "danger"); return; }
+    if (f.photos.length && f.photos.length < 5) { if (toast) toast("A listing needs at least 5 photos, or none while you gather them (" + f.photos.length + " so far)", "danger"); return; }
+    const price = +String(f.price).replace(/[^0-9]/g, "") || 0;
+    const patch = {
+      name: f.name.trim() || null, title: f.name.trim() || kind, kind, availability: f.availability, condition: f.condition,
+      description: f.description.trim(), amenities: f.amenities,
+      photos: f.photos, photoTags: f.photos.map((_, k) => f.photoTags[k] || PHOTO_CATS_ALL[k] || "Other"), img: f.photos[0] || null
+    };
+    if (isShortLet(prop)) patch.nightly = price; else if (price) patch.rent = price;
+    onSave(patch); setOpen(false);
+  };
+  const box = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: "var(--ink)", resize: "vertical" };
   return <PmCard style={{ marginTop: 14 }}>
-    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Listing details</div>
-    <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 10 }} className="pm-grid3">
-      <PmField label="Listing title (optional)" value={name} onChange={v => setName(v.slice(0, 60))} placeholder={"Leave blank to show \"" + kind + "\""} />
-      <PmSelect label="Availability" value={availability} onChange={setAvailability} options={AVAILABILITY} />
-      <PmSelect label="Property status" value={condition} onChange={setCondition} options={["", "Completed", "Under construction"]} />
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <div><div style={{ fontWeight: 700, color: "var(--ink)" }}>Edit listing</div><div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>Title, availability, price, description, amenities and photos. Changes go live as soon as you save.</div></div>
+      <PmBtn size="sm" kind={open ? "ghost" : "navy"} icon={PenLine} onClick={() => { if (open) setF(fromProp()); setOpen(o => !o); }}>{open ? "Cancel" : "Edit listing"}</PmBtn>
     </div>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-      <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>The availability label shows on the public listing and to tenants. It does not change who can apply or pay; leases and verification still run as before.</div>
-      <PmBtn size="sm" kind="gold" disabled={!dirty} onClick={() => onSave({ name: name.trim() || null, title: name.trim() || kind, kind, availability, condition })}>Save details</PmBtn>
-    </div>
+    {open && <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 10 }} className="pm-grid3">
+        <PmField label="Listing title (optional)" value={f.name} onChange={v => set("name", v.slice(0, 60))} placeholder={"Leave blank to show \"" + kind + "\""} />
+        <PmSelect label="Availability" value={f.availability} onChange={v => set("availability", v)} options={AVAILABILITY} />
+        <PmSelect label="Property status" value={f.condition} onChange={v => set("condition", v)} options={["", "Completed", "Under construction"]} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10 }} className="pm-grid2">
+        <PmField label={priceLabel} value={grp(f.price)} onChange={v => set("price", ungrp(v))} />
+        <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Amenities</label><div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{PM_AMEN.map(a => <button key={a} type="button" onClick={() => toggleAmen(a)} style={{ border: "1px solid " + (f.amenities.includes(a) ? "var(--gold)" : "var(--cream-line)"), background: f.amenities.includes(a) ? "var(--gold-soft)" : "var(--white)", color: "var(--ink)", borderRadius: 999, padding: "5px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{a}</button>)}</div></div>
+      </div>
+      <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Description</label><textarea value={f.description} onChange={e => set("description", e.target.value.slice(0, 1500))} rows={5} placeholder="Describe the property: layout, finish, what is nearby, what is included." style={box} /></div>
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}><label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Photos ({f.photos.length} of 10{f.photos.length && f.photos.length < 5 ? ", at least 5 needed" : ""})</label><span style={{ fontSize: 12, color: "var(--muted)" }}>The first photo is the cover. Use the arrows to reorder.</span></div>
+        {f.photos.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10, marginTop: 8 }}>
+          {f.photos.map((src, i) => <div key={src + i}>
+            <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3", background: "var(--ivory)" }}>
+              <img src={src} alt={tagAt(i)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              {i === 0 && <span style={{ position: "absolute", top: 6, left: 6, background: "var(--gold)", color: "#201601", fontSize: 9.5, fontWeight: 800, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase" }}>Cover</span>}
+              <div style={{ position: "absolute", bottom: 6, left: 6, right: 6, display: "flex", justifyContent: "space-between", gap: 4 }}>
+                <button type="button" aria-label="Move earlier" onClick={() => move(i, -1)} disabled={i === 0} style={{ background: "rgba(255,255,255,.92)", border: "none", borderRadius: 999, width: 26, height: 26, cursor: "pointer", display: "grid", placeItems: "center", opacity: i === 0 ? .4 : 1 }}><ChevronLeft size={14} /></button>
+                <button type="button" aria-label="Remove photo" onClick={() => remove(i)} style={{ background: "rgba(0,0,0,.6)", color: "#fff", border: "none", borderRadius: 999, width: 26, height: 26, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={13} /></button>
+                <button type="button" aria-label="Move later" onClick={() => move(i, 1)} disabled={i === f.photos.length - 1} style={{ background: "rgba(255,255,255,.92)", border: "none", borderRadius: 999, width: 26, height: 26, cursor: "pointer", display: "grid", placeItems: "center", opacity: i === f.photos.length - 1 ? .4 : 1 }}><ChevronRight size={14} /></button>
+              </div>
+            </div>
+            <select value={tagAt(i)} onChange={e => retag(i, e.target.value)} style={{ width: "100%", marginTop: 6, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 7, padding: "5px 7px", fontSize: 11.5, fontWeight: 600, color: "var(--ink)", fontFamily: "inherit", cursor: "pointer" }}>{PHOTO_CATS_ALL.map(c => <option key={c} value={c}>{c}</option>)}</select>
+          </div>)}
+        </div>}
+        {f.photos.length < 10 && <label onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); addPhotos(e.dataTransfer.files); }} style={{ display: "block", marginTop: 10, border: "2px dashed var(--cream-line)", borderRadius: 12, padding: "18px 16px", textAlign: "center", cursor: "pointer", background: "var(--ivory-2)" }}>
+          <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => { addPhotos(e.target.files); e.target.value = ""; }} />
+          <ImageIcon size={22} color="var(--gold-2)" />
+          <div style={{ fontWeight: 600, color: "var(--ink)", marginTop: 6 }}>{busy ? "Uploading " + busy + "\u2026" : "Click to add photos or drag them here"}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>JPG or PNG, landscape, at least 1600 x 1200. Up to 10 in total.</div>
+        </label>}
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <PmBtn size="sm" kind="ghost" onClick={() => { setF(fromProp()); setOpen(false); }}>Cancel</PmBtn>
+        <PmBtn size="sm" kind="gold" icon={CheckCircle2} disabled={!!busy} onClick={save}>Save changes</PmBtn>
+      </div>
+    </div>}
   </PmCard>;
 }
 function PropertiesScreen({ st, setSt, identity, toast }) {
@@ -3183,7 +3275,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
       <PhotoGallery photos={sel.photos} tags={sel.photoTags} status={sel.status === "Available" ? null : sel.status} h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status={sel.status === "Available" ? null : sel.status} h={190} photo={sel.img || null} />} />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}><AvailPill p={sel} />{sel.name && sel.kind && <span style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 7 }}>{sel.kind}</span>}{sel.condition && <span style={{ background: sel.condition === "Completed" ? "#1F9D5722" : "#FBEFD2", color: sel.condition === "Completed" ? "#1F9D57" : "#9A5A00", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 7 }}>{sel.condition}</span>}</div>
-      {(isAdmin || (sel.ownerEmail && identity.email && sel.ownerEmail.toLowerCase() === identity.email.toLowerCase())) && <ListingDetailsCard prop={sel} onSave={(patch) => { const next = { ...st, properties: st.properties.map(p => p.id === sel.id ? { ...p, ...patch } : p) }; setSt(next); setSel({ ...sel, ...patch }); toast("Listing details saved"); }} />}
+      {(isAdmin || (sel.ownerEmail && identity.email && sel.ownerEmail.toLowerCase() === identity.email.toLowerCase())) && <ListingDetailsCard prop={sel} toast={toast} onSave={(patch) => { const next = { ...st, properties: st.properties.map(p => p.id === sel.id ? { ...p, ...patch } : p) }; setSt(next); setSel({ ...sel, ...patch }); toast("Listing updated"); }} />}
       <SaleCommissionCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} isAdmin={isAdmin} />
       {sel.ownerEmail && identity.email && sel.ownerEmail.toLowerCase() === identity.email.toLowerCase() && <FeatureCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} />}
       {isAdmin && sel.kyc && <PmCard style={{ marginTop: 14, borderLeft: "3px solid var(--gold)" }}>
@@ -3206,6 +3298,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div>
         <div><div style={{ color: "var(--muted)", fontSize: 12 }}>Type</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.type}</div></div>
       </div>
+      {sel.description && <p style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.7, margin: "0 0 14px", whiteSpace: "pre-line" }}>{sel.description}</p>}
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{(sel.amenities || []).map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
       {isAdmin && sel.status === "Pending Verification" && <PmBtn kind="gold" icon={ShieldCheck} onClick={() => verify(sel.id)}>Verify and publish</PmBtn>}
     </PmModal>}
@@ -3442,6 +3535,7 @@ function TenantFind({ st, setSt, identity, toast }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>{sel.gallery.slice(1).map(src => <img key={src} src={src} alt="" style={{ width: "100%", height: 78, objectFit: "cover", borderRadius: 8 }} />)}</div>
       </div>}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, margin: "16px 0" }}><div><div style={{ color: "var(--muted)", fontSize: 12 }}>{isForSale(sel) ? "Asking price" : isShortLet(sel) ? "Per night" : "Annual rent"}</div><div className="serif" style={{ color: "var(--ink)", fontWeight: 600, fontSize: 22 }}>{money(priceOf(sel))}</div></div><div><div style={{ color: "var(--muted)", fontSize: 12 }}>Address</div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{sel.address}</div></div></div>
+      {sel.description && <p style={{ color: "var(--ink)", fontSize: 14, lineHeight: 1.7, margin: "0 0 14px", whiteSpace: "pre-line" }}>{sel.description}</p>}
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>{(sel.amenities || []).map(a => <span key={a} style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7 }}>{a}</span>)}</div>
       {isForSale(sel) ? <a href={waLink(null, "Hello Girard, I am interested in buying " + sel.title + (sel.area ? " in " + sel.area : "") + " (ref " + sel.id + ").")} target="_blank" rel="noreferrer" className="btn-gold" style={{ display: "inline-flex" }}>Enquire about buying <ArrowUpRight size={15} /></a> : canApply(sel) ? <PmBtn kind="gold" icon={PenLine} onClick={() => { setApply(sel); }}>Apply to rent</PmBtn> : <a href={waLink(null, "Hello Girard, please register my interest in " + sel.title + (sel.area ? " in " + sel.area : "") + " (ref " + sel.id + ") for when it becomes available.")} target="_blank" rel="noreferrer" className="btn-line on-ivory" style={{ display: "inline-flex" }}>Register interest <ArrowUpRight size={15} /></a>}
     </PmModal>}
