@@ -471,6 +471,7 @@ async function buildListings(live) {
       price: d.rent,
       forSale,
       letType: d.letType || "",
+      availability: ["Available", "Occupied", "In development", "Coming soon", "Sold"].includes(d.availability) ? d.availability : (row.status === "Leased" ? "Occupied" : d.condition === "Under construction" ? "In development" : "Available"),
       term: d.term || "",
       description: d.description || "",
       photos: Array.isArray(d.photos) ? d.photos.filter(p => typeof p === "string" && /^https?:\/\//.test(p)).slice(0, 6) : [],
@@ -480,7 +481,7 @@ async function buildListings(live) {
 
   for (const p of items) {
     const priceLabel = naira(p.price) + (p.forSale ? "" : p.letType === "Short let" ? " per night" : " per year");
-    const metaBits = [p.beds ? p.beds + " bed" : "", p.type, p.area, p.forSale ? "For sale" : "To let"].filter(Boolean);
+    const metaBits = [p.availability, p.beds ? p.beds + " bed" : "", p.type, p.area, p.forSale ? "For sale" : "To let"].filter(Boolean);
     await emit(page({
       path: "/property/" + p.slug,
       title: `${p.title}${p.area ? ", " + p.area : ""} | ${p.forSale ? "For sale" : "To let"} | Girard`,

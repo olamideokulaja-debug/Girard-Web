@@ -2263,6 +2263,22 @@ function makeRef() {
 }
 const PM_TYPES = ["Apartment", "Condo", "Terraced Duplex", "Semi-Detached Duplex", "Detached Duplex", "Studio", "Penthouse", "Bungalow", "Land", "Commercial", "Office space", "Shop / Retail", "Warehouse", "Block of flats", "Hotel / Serviced"]
 const LISTING_INTENT = ["To let", "For sale"];
+// What the public sees on a listing. Set by the owner or Girard; when unset it
+// is derived: a leased listing reads Occupied, one under construction reads
+// In development, anything else Available.
+const AVAILABILITY = ["Available", "Occupied", "In development", "Coming soon", "Sold"];
+function availabilityOf(p) {
+  if (!p) return "Available";
+  if (p.availability && AVAILABILITY.includes(p.availability)) return p.availability;
+  if (p.status === "Leased") return "Occupied";
+  if (p.condition === "Under construction") return "In development";
+  return "Available";
+}
+const AVAIL_TONE = { "Available": "#1F9D57", "Occupied": "#2F6FB0", "In development": "#9A5A00", "Coming soon": "#7A4BB5", "Sold": "#D0453B" };
+function AvailPill({ p, solid }) {
+  const a = availabilityOf(p); const c = AVAIL_TONE[a] || "var(--muted)";
+  return <span style={{ background: solid ? "rgba(255,255,255,.94)" : c + "22", color: c, fontWeight: 800, fontSize: 11, padding: "4px 10px", borderRadius: 999, whiteSpace: "nowrap", letterSpacing: .3, textTransform: "uppercase", boxShadow: solid ? "0 1px 4px rgba(0,0,0,.25)" : "none" }}>{a}</span>;
+}
 // Land has no bedrooms and needs different documents from a house.
 const LAND_TYPES = ["Land", "Warehouse"];
 const isLandLike = (t) => LAND_TYPES.indexOf(t) >= 0;
@@ -2794,7 +2810,7 @@ function PmBtn({ children, kind = "gold", size = "md", icon: Icon, onClick, disa
 function PmPill({ label }) {
   // Amber statuses used to be drawn in #E0A106 on a pale tint, which read as
   // faint (about 2:1). The text now uses a darker amber; the tint stays light.
-  const M = { Available: "#1F9D57", Verified: "var(--gold-2)", Leased: "#2F6FB0", "Pending Verification": "#9A5A00", Applied: "#2F6FB0", Approved: "#1F9D57", Rejected: "#D0453B", "More Info Required": "#9A5A00", Open: "#9A5A00", Assigned: "#2F6FB0", Resolved: "#1F9D57", Paid: "#1F9D57", Pending: "#9A5A00", Late: "#D0453B", Emergency: "#D0453B", Normal: "var(--muted)" };
+  const M = { Available: "#1F9D57", Occupied: "#2F6FB0", "In development": "#9A5A00", "Coming soon": "#7A4BB5", Sold: "#D0453B", Verified: "var(--gold-2)", Leased: "#2F6FB0", "Pending Verification": "#9A5A00", Applied: "#2F6FB0", Approved: "#1F9D57", Rejected: "#D0453B", "More Info Required": "#9A5A00", Open: "#9A5A00", Assigned: "#2F6FB0", Resolved: "#1F9D57", Paid: "#1F9D57", Pending: "#9A5A00", Late: "#D0453B", Emergency: "#D0453B", Normal: "var(--muted)" };
   const c = M[label] || "var(--muted)";
   const tint = c === "#9A5A00" ? "#FBEFD2" : c + "22";
   return <span style={{ background: tint, color: c, fontWeight: 700, fontSize: 11.5, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap", border: c === "#9A5A00" ? "1px solid #E7C97F" : "none" }}>{label}</span>;
@@ -3104,6 +3120,28 @@ function OwnerDash({ st, identity }) {
 }
 
 /* ---------- PROPERTIES ---------- */
+/* Title, availability and build status of an existing listing, editable by
+   its owner or by Girard staff without re-listing the property. */
+function ListingDetailsCard({ prop, onSave }) {
+  const [name, setName] = useState(prop.name || "");
+  const [availability, setAvailability] = useState(availabilityOf(prop));
+  const [condition, setCondition] = useState(prop.condition || "");
+  useEffect(() => { setName(prop.name || ""); setAvailability(availabilityOf(prop)); setCondition(prop.condition || ""); }, [prop.id]);
+  const kind = prop.kind || ((prop.beds ? prop.beds + "-Bed " : "Studio ") + (prop.type || "Property"));
+  const dirty = (name.trim() || "") !== (prop.name || "") || availability !== availabilityOf(prop) || condition !== (prop.condition || "");
+  return <PmCard style={{ marginTop: 14 }}>
+    <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>Listing details</div>
+    <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 10 }} className="pm-grid3">
+      <PmField label="Listing title (optional)" value={name} onChange={v => setName(v.slice(0, 60))} placeholder={"Leave blank to show \"" + kind + "\""} />
+      <PmSelect label="Availability" value={availability} onChange={setAvailability} options={AVAILABILITY} />
+      <PmSelect label="Property status" value={condition} onChange={setCondition} options={["", "Completed", "Under construction"]} />
+    </div>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+      <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>The availability label shows on the public listing and to tenants. It does not change who can apply or pay; leases and verification still run as before.</div>
+      <PmBtn size="sm" kind="gold" disabled={!dirty} onClick={() => onSave({ name: name.trim() || null, title: name.trim() || kind, kind, availability, condition })}>Save details</PmBtn>
+    </div>
+  </PmCard>;
+}
 function PropertiesScreen({ st, setSt, identity, toast }) {
   const isAdmin = identity.role === "admin";
   const [area, setArea] = useState("All");
@@ -3132,8 +3170,9 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
         </div></PmCard>)}
     </div>
     {sel && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status={sel.status} h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status={sel.status} h={190} photo={sel.img || null} />} />
-      {(sel.condition || sel.name) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>{sel.name && sel.kind && <span style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 7 }}>{sel.kind}</span>}{sel.condition && <span style={{ background: sel.condition === "Completed" ? "#1F9D5722" : "#FBEFD2", color: sel.condition === "Completed" ? "#1F9D57" : "#9A5A00", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 7 }}>{sel.condition}</span>}</div>}
+      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status={sel.status === "Available" ? null : sel.status} h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status={sel.status === "Available" ? null : sel.status} h={190} photo={sel.img || null} />} />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}><AvailPill p={sel} />{sel.name && sel.kind && <span style={{ background: "var(--ivory)", color: "var(--muted)", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 7 }}>{sel.kind}</span>}{sel.condition && <span style={{ background: sel.condition === "Completed" ? "#1F9D5722" : "#FBEFD2", color: sel.condition === "Completed" ? "#1F9D57" : "#9A5A00", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 7 }}>{sel.condition}</span>}</div>
+      {(isAdmin || (sel.ownerEmail && identity.email && sel.ownerEmail.toLowerCase() === identity.email.toLowerCase())) && <ListingDetailsCard prop={sel} onSave={(patch) => { const next = { ...st, properties: st.properties.map(p => p.id === sel.id ? { ...p, ...patch } : p) }; setSt(next); setSel({ ...sel, ...patch }); toast("Listing details saved"); }} />}
       <SaleCommissionCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} isAdmin={isAdmin} />
       {sel.ownerEmail && identity.email && sel.ownerEmail.toLowerCase() === identity.email.toLowerCase() && <FeatureCard prop={sel} st={st} setSt={setSt} identity={identity} toast={toast} />}
       {isAdmin && sel.kyc && <PmCard style={{ marginTop: 14, borderLeft: "3px solid var(--gold)" }}>
@@ -3164,7 +3203,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
 
 /* ---------- ADD PROPERTY ---------- */
 function AddPropertyScreen({ st, setSt, toast, identity }) {
-  const [f, setF] = useState({ intent: "To let", name: "", condition: "", type: PM_TYPES[0], area: PM_AREAS[0], country: "Nigeria", state: "Lagos", beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No", plotSize: "", titleKind: "Certificate of Occupancy", nightly: "", cleaning: "", deposit: "", minNights: "1" });
+  const [f, setF] = useState({ intent: "To let", name: "", condition: "", availability: "Available", type: PM_TYPES[0], area: PM_AREAS[0], country: "Nigeria", state: "Lagos", beds: "3", amenities: [], letType: "Long let", term: "1 year", managed: "No", plotSize: "", titleKind: "Certificate of Occupancy", nightly: "", cleaning: "", deposit: "", minNights: "1" });
   const PHOTO_CATS = ["Front elevation", "Living room", "Kitchen", "Bedroom 1", "Bathroom", "Bedroom 2", "Side elevation", "Rear elevation", "Top view", "Guest toilet", "Dining", "Balcony / view", "Compound / parking", "Other"];
   const PHOTO_MIN = 5, PHOTO_MAX = 10;
   // Girard verifies a real person against a real property before it goes live.
@@ -3200,7 +3239,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
     }
     const id = "PR-" + (2000 + st.properties.length) + "-" + Date.now().toString().slice(-4);
     const ref = makeRef();
-    const p = { id, title: f.name.trim() || ((f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type), kind: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, name: f.name.trim() || null, condition: f.condition, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, intent: f.intent, letType: f.intent === "For sale" ? null : f.letType, term: f.intent === "For sale" ? null : f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, ref, intent: f.intent, country: f.country, state: f.state, nightly: +f.nightly || 0, cleaning: +f.cleaning || 0, deposit: +f.deposit || 0, minNights: +f.minNights || 1, postedAt: new Date().toISOString(), plotSize: f.plotSize || "", titleKind: f.titleKind || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, titleDocs: docs, description: desc };
+    const p = { id, title: f.name.trim() || ((f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type), kind: (f.beds === "0" ? "Studio " : f.beds + "-Bed ") + f.type, name: f.name.trim() || null, condition: f.condition, availability: f.availability, area: f.area, type: f.type, beds: +f.beds, rent: +price || baseRent(f.area, +f.beds), status: "Pending Verification", verified: false, intent: f.intent, letType: f.intent === "For sale" ? null : f.letType, term: f.intent === "For sale" ? null : f.term, img: photos[0], photos, photoTags: photos.map((_, i) => tagAt(i)), amenities: f.amenities.length ? f.amenities : ["Parking", "Security"], address: "New listing, " + f.area, hue: 200 + st.properties.length % 30, girardManaged: f.managed === "Yes", uploadedByGirard, ref, intent: f.intent, country: f.country, state: f.state, nightly: +f.nightly || 0, cleaning: +f.cleaning || 0, deposit: +f.deposit || 0, minNights: +f.minNights || 1, postedAt: new Date().toISOString(), plotSize: f.plotSize || "", titleKind: f.titleKind || "", subaccount: bank.subaccount || "", split_code: bank.split_code || "", bvnVerified: !!bank.bvnVerified, ownerEmail: (identity && identity.email) || "", kyc: uploadedByGirard ? null : kyc, docs: docs.length, titleDocs: docs, description: desc };
     setSt({ ...st, properties: [p, ...st.properties] }); toast("Listing submitted, pending verification"); setDone(true);
   };
   if (done) return <div><H2 title="Add property" /><PmCard><div style={{ textAlign: "center", padding: 28 }}><div style={{ width: 56, height: 56, borderRadius: 999, background: "#E0A60622", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Clock size={26} color="#E0A106" /></div><div className="serif" style={{ fontWeight: 600, fontSize: 18, color: "var(--ink)" }}>Submitted for verification</div><div style={{ color: "var(--muted)", margin: "8px 0 16px" }}>An admin verifies ownership, then it earns a Verified badge and goes live.</div><PmBtn onClick={() => { setDone(false); setAi(null); setPrice(""); setPhotos([]); setDesc(""); }}>Add another</PmBtn></div></PmCard></div>;
@@ -3211,7 +3250,10 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         <PmSelect label="Are you letting this or selling it?" value={f.intent} onChange={v => setF({ ...f, intent: v })} options={LISTING_INTENT} />
         <PmField label="Property name (optional)" value={f.name} onChange={v => setF({ ...f, name: v.slice(0, 60) })} placeholder="e.g. Marina Court, Flat 4B. Leave blank to use the type" />
         <PmSelect label="Property type" value={f.type} onChange={v => setF({ ...f, type: v, beds: isLandLike(v) ? "0" : f.beds })} options={PM_TYPES} />
-        <PmSelect label="Property status" value={f.condition} onChange={v => setF({ ...f, condition: v })} options={["", "Completed", "Under construction"]} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
+          <PmSelect label="Property status" value={f.condition} onChange={v => setF({ ...f, condition: v })} options={["", "Completed", "Under construction"]} />
+          <PmSelect label="Availability (shown on the listing)" value={f.availability} onChange={v => setF({ ...f, availability: v })} options={AVAILABILITY} />
+        </div>
         <PmSelect label="Area (Lagos)" value={f.area} onChange={v => setF({ ...f, area: v })} options={PM_AREAS} />
         {!isLandLike(f.type) && <PmSelect label="Bedrooms" value={f.beds} onChange={v => setF({ ...f, beds: v })} options={["0", "1", "2", "3", "4", "5"]} />}
         {f.intent === "For sale" && <div style={{ background: "rgba(208,69,59,.06)", border: "1px solid rgba(208,69,59,.28)", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--ink)", lineHeight: 1.6 }}><b>Girard does not handle sale money.</b> We introduce buyers and verify what we can. The purchase price is paid through the parties&rsquo; own solicitors, never through this platform. Girard charges its fee separately and takes no part in the transfer of title.</div>}
@@ -3369,7 +3411,7 @@ function TenantFind({ st, setSt, identity, toast }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", position: "relative" }}>
         <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
-        <div style={{ cursor: "pointer" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} status="Available" h={210} photo={p.img || null} /></div>
+        <div style={{ cursor: "pointer", position: "relative" }} onClick={() => setSel(p)}><HouseArt hue={p.hue} h={210} photo={p.img || null} /><div style={{ position: "absolute", top: 10, left: 10 }}><AvailPill p={p} solid /></div></div>
         <div style={{ padding: 14, cursor: "pointer" }} onClick={() => setSel(p)}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.ref && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--gold-2)", letterSpacing: .3, whiteSpace: "nowrap", marginTop: 3 }}>{p.ref}</span>}</div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{[p.state, (p.country && p.country !== "Nigeria" ? p.country : null), (p.intent || "To let")].filter(Boolean).join(" \u00b7 ")}{p.postedAt ? " \u00b7 " + postedAgo(p.postedAt) : ""}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
@@ -3377,7 +3419,7 @@ function TenantFind({ st, setSt, identity, toast }) {
         </div></PmCard>)}
     </div>
     {sel && !apply && <PmModal title={sel.title} onClose={() => setSel(null)} wide>
-      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status="Available" h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status="Available" h={190} photo={sel.img || null} />} />
+      <PhotoGallery photos={sel.photos} tags={sel.photoTags} status={availabilityOf(sel)} h="min(62vh, 520px)" fallback={<HouseArt hue={sel.hue} status={availabilityOf(sel)} h={190} photo={sel.img || null} />} />
       {sel.condition === "Under construction" && <div style={{ marginTop: 10, background: "#FBEFD2", border: "1px solid #E7C97F", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "#9A5A00", fontWeight: 600 }}>Under construction. Ask about the completion date before you commit.</div>}
       <div style={{ marginTop: 14 }}><FacilitatorWarning prop={sel} compact /></div>
       <BookingCard prop={sel} identity={identity} toast={toast} />
@@ -6088,7 +6130,10 @@ function PublicListings({ onSignIn }) {
     (async () => { const shared = await sharedLoad(); if (!dead && shared && shared.properties) setAll(shared.properties); })();
     return () => { dead = true; };
   }, []);
-  const avail = all.filter(p => p.status === "Available" || p.featured).slice(0, 9);
+  // Every verified listing is shown, each with its availability label, so an
+  // occupied or in-development property can still be seen and enquired about.
+  const avail = all.filter(p => p.status === "Available" || p.status === "Leased" || p.featured)
+    .sort((a, b) => (availabilityOf(a) === "Available" ? 0 : 1) - (availabilityOf(b) === "Available" ? 0 : 1)).slice(0, 12);
   const [lead, setLead] = useState(null);
   return <section id="listings" style={{ background: "var(--ivory)", padding: "88px 0" }}>
     <div className="wrap">
@@ -6104,14 +6149,14 @@ function PublicListings({ onSignIn }) {
         {avail.map(p => <div key={p.id} className="lift card-soft" style={{ background: "var(--white)", border: "1px solid var(--cream-line)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
           <div className="listing-frame" style={{ position: "relative", aspectRatio: "4 / 3", minHeight: 0, overflow: "hidden" }}>
             {(p.photos || []).length > 1 ? <PhotoGallery photos={p.photos} h="100%" compact /> : (p.img ? <img src={p.img} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <HouseArt hue={p.hue} h="100%" photo={null} />)}
-            {p.featured && <span style={{ position: "absolute", top: 12, left: 12, background: "var(--gold)", color: "#201601", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>Featured</span>}
+            <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6, alignItems: "center" }}><AvailPill p={p} solid />{p.featured && <span style={{ background: "var(--gold)", color: "#201601", fontSize: 10.5, fontWeight: 800, padding: "4px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .3 }}>Featured</span>}</div>
             <span style={{ position: "absolute", top: 12, right: 12, background: p.letType === "Short let" ? "var(--navy)" : "rgba(255,255,255,.92)", color: p.letType === "Short let" ? "#fff" : "var(--ink)", fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase", letterSpacing: .5 }}>{p.letType === "Short let" ? "Short let" : (p.term || "Annual")}</span>
           </div>
           <div style={{ padding: 18, display: "flex", flexDirection: "column", flex: 1 }}>
             <div className="serif" style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>{p.title}</div>
             <div style={{ fontSize: 13, color: "var(--muted)", margin: "3px 0 14px" }}>{p.area}{p.beds ? " · " + p.beds + " bed" : ""}</div>
             <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
-              <button onClick={() => setLead({ mode: "viewing", property: p })} className="btn-gold" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Book viewing</button>
+              <button onClick={() => setLead({ mode: "viewing", property: p })} className="btn-gold" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>{availabilityOf(p) === "Available" ? "Book viewing" : "Register interest"}</button>
               <button onClick={() => setLead({ mode: "enquire", property: p })} className="btn-line on-ivory" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "10px 12px" }}>Enquire</button>
             </div>
             <div style={{ marginTop: 10, textAlign: "right" }}><ReportBlock targetType="listing" targetId={p.id} targetLabel={p.title + (p.area ? " \u00b7 " + p.area : "")} /></div>
