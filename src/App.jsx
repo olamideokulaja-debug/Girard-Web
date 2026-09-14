@@ -2481,7 +2481,7 @@ function SavedProperties({ st, identity, go }) {
       : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
         {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", position: "relative" }}>
           <FavHeart on={true} onToggle={() => toggle(p.id)} />
-          <HouseArt hue={p.hue} status={p.status} photo={p.img || null} />
+          <div style={{ position: "relative" }}><HouseArt hue={p.hue} status={p.status === "Available" ? null : p.status} photo={p.img || null} /><div style={{ position: "absolute", top: 10, left: 10 }}><AvailPill p={p} solid /></div></div>
           <div style={{ padding: 14 }}>
             <div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{p.area}{p.beds ? " \u00b7 " + p.beds + " bed" : ""}</div>
@@ -3162,7 +3162,7 @@ function PropertiesScreen({ st, setSt, identity, toast }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 16 }}>
       {list.map(p => <PmCard key={p.id} pad={0} style={{ overflow: "hidden", cursor: "pointer", position: "relative" }}>
         <FavHeart on={favs.includes(p.id)} onToggle={() => toggleFav(p.id)} />
-        <div onClick={() => setSel(p)}><HouseArt hue={p.hue} status={p.status} h={210} photo={p.img || null} /></div>
+        <div onClick={() => setSel(p)} style={{ position: "relative" }}><HouseArt hue={p.hue} status={p.status === "Available" ? null : p.status} h={210} photo={p.img || null} /><div style={{ position: "absolute", top: 10, left: p.status === "Available" ? 10 : "auto", right: p.status === "Available" ? "auto" : 10 }}><AvailPill p={p} solid /></div></div>
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}><div className="serif" style={{ fontWeight: 600, fontSize: 15, color: "var(--ink)" }}>{p.title}</div>{p.verified && <ShieldCheck size={15} color="var(--gold-2)" />}</div>
           <div style={{ color: "var(--muted)", fontSize: 12.5, margin: "4px 0 8px" }}>{p.area} · {p.beds || "Studio"} bed</div>
@@ -6140,7 +6140,7 @@ function PublicListings({ onSignIn }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 34 }}>
         <div style={{ maxWidth: 560 }}>
           <Rule light />
-          <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Available now</div>
+          <div className="eyebrow" style={{ color: "var(--gold-2)", margin: "16px 0 12px" }}>Our portfolio</div>
           <h2 className="serif sec-h" style={{ color: "var(--ink)" }}>Browse our listings.</h2>
         </div>
         <a className="btn-line on-ivory" href="#" onClick={e => { e.preventDefault(); onSignIn(); }}>Sign in for the full portfolio <ArrowRight size={16} /></a>
