@@ -2933,10 +2933,22 @@ function MiniArea({ data, w = 520, h = 180, color = "#B8934A", fill = "#C6A15B" 
 }
 function MiniBars({ data, w = 520, h = 180, colors }) {
   // Bars are capped at 150 wide and centred, so a chart with 2 or 3 areas does
-  // not turn into 2 or 3 slabs.
-  const n = Math.max(1, data.length), max = Math.max(1, ...data.map(d => d.v)) * 1.15, bw = Math.min(150, (w - 20) / n), x0 = 10 + ((w - 20) - bw * n) / 2;
+  // not turn into 2 or 3 slabs. Labels sit flat under the bars when there is
+  // room and only rotate when the bars are narrow; either way the bottom
+  // margin is sized so the label is never clipped by the SVG edge.
+  const n = Math.max(1, data.length), max = Math.max(1, ...data.map(d => d.v)) * 1.15;
+  const longest = Math.max(0, ...data.map(d => String(d.m).length));
+  const rot = longest * 6.2 > Math.min(150, (w - 20) / n) - 6;
+  // A rotated label hangs to the left of its bar, so the first bar needs a
+  // left margin roughly the label's width or the name runs off the edge.
+  const left = rot ? Math.min(140, 10 + longest * 5) : 10;
+  const bw = Math.min(150, (w - left - 10) / n), x0 = left + ((w - left - 10) - bw * n) / 2;
+  const bottom = rot ? Math.min(90, 16 + longest * 3.4) : 26;
+  const plotH = h - 18 - bottom;
   return <svg viewBox={"0 0 " + w + " " + h} width="100%" height={h}>
-    {data.map((d, i) => { const bh = (d.v / max) * (h - 40); return <g key={i}><title>{d.m + ": " + d.v}</title><rect className="chart-bar" style={{ animationDelay: (i * 0.05) + "s" }} x={x0 + i * bw + bw * .2} y={h - 24 - bh} width={bw * .6} height={bh} rx="4" fill={colors ? colors[i % colors.length] : "var(--navy)"} /><text x={x0 + i * bw + bw * .5} y={h - 28 - bh} fontSize="10" fill="var(--ink)" fontWeight="600" textAnchor="middle">{d.v}</text><text x={x0 + i * bw + bw * .5} y={h - 7} fontSize="9" fill="var(--muted)" textAnchor="end" transform={"rotate(-30 " + (x0 + i * bw + bw * .5) + " " + (h - 7) + ")"}>{d.m}</text></g>; })}
+    {data.map((d, i) => { const bh = (d.v / max) * plotH, cx = x0 + i * bw + bw * .5, ly = h - bottom + 14; return <g key={i}><title>{d.m + ": " + d.v}</title><rect className="chart-bar" style={{ animationDelay: (i * 0.05) + "s" }} x={x0 + i * bw + bw * .2} y={h - bottom - bh} width={bw * .6} height={bh} rx="4" fill={colors ? colors[i % colors.length] : "var(--navy)"} /><text x={cx} y={h - bottom - bh - 4} fontSize="10" fill="var(--ink)" fontWeight="600" textAnchor="middle">{d.v}</text>{rot
+      ? <text x={cx} y={ly} fontSize="10" fill="var(--muted)" textAnchor="end" transform={"rotate(-35 " + cx + " " + ly + ")"}>{d.m}</text>
+      : <text x={cx} y={ly} fontSize="10.5" fill="var(--muted)" textAnchor="middle">{d.m}</text>}</g>; })}
   </svg>;
 }
 function MiniDonut({ data, size = 170 }) {
