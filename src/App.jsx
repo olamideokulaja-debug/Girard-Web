@@ -7,7 +7,7 @@ import {
   Search, LayoutGrid, Plus, Upload, AlertTriangle, CheckCircle2, Clock,
   CreditCard, PenLine, Filter, LayoutDashboard, Bell, ScrollText, CalendarDays, Moon, Sun, Download, Trash2, Send, Loader2, MoreHorizontal,
   Handshake, ArrowRightLeft, MessageSquare, Scale, Gavel, ClipboardCheck, Banknote, Globe, Check,
-  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Info, Heart, Play, Pause, Image as ImageIcon, Eye, EyeOff, ChevronLeft
+  Truck, Sofa, ConciergeBell, Tag, Settings, BadgeCheck, UserCog, UserPlus, TrendingUp, BellRing, Phone, Calendar, Info, Heart, Play, Pause, Image as ImageIcon, Eye, EyeOff, ChevronLeft, Star
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -3196,6 +3196,9 @@ function ListingDetailsCard({ prop, onSave, toast }) {
   const move = (i, d) => setF(x => { const j = i + d; if (j < 0 || j >= x.photos.length) return x; const ph = x.photos.slice(), tg = x.photos.map((_, k) => x.photoTags[k] || PHOTO_CATS_ALL[k] || "Other"); [ph[i], ph[j]] = [ph[j], ph[i]]; [tg[i], tg[j]] = [tg[j], tg[i]]; return { ...x, photos: ph, photoTags: tg }; });
   const remove = (i) => setF(x => ({ ...x, photos: x.photos.filter((_, k) => k !== i), photoTags: x.photos.map((_, k) => x.photoTags[k] || PHOTO_CATS_ALL[k] || "Other").filter((_, k) => k !== i) }));
   const retag = (i, v) => setF(x => { const tg = x.photos.map((_, k) => x.photoTags[k] || PHOTO_CATS_ALL[k] || "Other"); tg[i] = v; return { ...x, photoTags: tg }; });
+  // The cover is always photos[0] (the public cards, the SEO pages and the
+  // native app all read it that way), so "make cover" is a move to the front.
+  const makeCover = (i) => setF(x => { if (i <= 0) return x; const ph = x.photos.slice(), tg = x.photos.map((_, k) => x.photoTags[k] || PHOTO_CATS_ALL[k] || "Other"); const [p] = ph.splice(i, 1), [t] = tg.splice(i, 1); ph.unshift(p); tg.unshift(t); return { ...x, photos: ph, photoTags: tg }; });
   const toggleAmen = (a) => set("amenities", f.amenities.includes(a) ? f.amenities.filter(z => z !== a) : [...f.amenities, a]);
   const priceLabel = isForSale(prop) ? "Asking price (\u20a6)" : isShortLet(prop) ? "Price per night (\u20a6)" : "Annual rent (\u20a6)";
   const save = () => {
@@ -3228,12 +3231,13 @@ function ListingDetailsCard({ prop, onSave, toast }) {
       </div>
       <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Description</label><textarea value={f.description} onChange={e => set("description", e.target.value.slice(0, 1500))} rows={5} placeholder="Describe the property: layout, finish, what is nearby, what is included." style={box} /></div>
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}><label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Photos ({f.photos.length} of 10{f.photos.length && f.photos.length < 5 ? ", at least 5 needed" : ""})</label><span style={{ fontSize: 12, color: "var(--muted)" }}>The first photo is the cover. Use the arrows to reorder.</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}><label style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Photos ({f.photos.length} of 10{f.photos.length && f.photos.length < 5 ? ", at least 5 needed" : ""})</label><span style={{ fontSize: 12, color: "var(--muted)" }}>The cover is the photo shown on the listing card. Tap the star on any photo to make it the cover, or use the arrows to reorder.</span></div>
         {f.photos.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10, marginTop: 8 }}>
           {f.photos.map((src, i) => <div key={src + i}>
             <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3", background: "var(--ivory)" }}>
               <img src={src} alt={tagAt(i)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              {i === 0 && <span style={{ position: "absolute", top: 6, left: 6, background: "var(--gold)", color: "#201601", fontSize: 9.5, fontWeight: 800, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase" }}>Cover</span>}
+              {i === 0 ? <span style={{ position: "absolute", top: 6, left: 6, background: "var(--gold)", color: "#201601", fontSize: 9.5, fontWeight: 800, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 3 }}><Star size={9} fill="#201601" /> Cover</span>
+                : <button type="button" title="Make this the cover photo" aria-label="Make this the cover photo" onClick={() => makeCover(i)} style={{ position: "absolute", top: 6, left: 6, background: "rgba(255,255,255,.92)", color: "var(--ink)", border: "none", borderRadius: 999, padding: "3px 8px 3px 6px", fontSize: 10, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, textTransform: "uppercase" }}><Star size={11} /> Make cover</button>}
               <div style={{ position: "absolute", bottom: 6, left: 6, right: 6, display: "flex", justifyContent: "space-between", gap: 4 }}>
                 <button type="button" aria-label="Move earlier" onClick={() => move(i, -1)} disabled={i === 0} style={{ background: "rgba(255,255,255,.92)", border: "none", borderRadius: 999, width: 26, height: 26, cursor: "pointer", display: "grid", placeItems: "center", opacity: i === 0 ? .4 : 1 }}><ChevronLeft size={14} /></button>
                 <button type="button" aria-label="Remove photo" onClick={() => remove(i)} style={{ background: "rgba(0,0,0,.6)", color: "#fff", border: "none", borderRadius: 999, width: 26, height: 26, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={13} /></button>
@@ -3452,7 +3456,7 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
           </div>
         </div>
       </AiPanel>
-      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12, lineHeight: 1.5 }}>Label each photo so buyers and tenants can review the property room by room. The first photo is the cover image.</div>
+      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 12, lineHeight: 1.5 }}>Label each photo so buyers and tenants can review the property room by room. The first photo is the cover image shown on the listing card; tap the star on any other photo to make it the cover.</div>
       <label onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); addPhotos(e.dataTransfer.files); }} style={{ display: "block", marginTop: 0, border: "2px dashed var(--cream-line)", borderRadius: 12, padding: "26px 20px", textAlign: "center", cursor: "pointer", background: "var(--ivory-2)" }}>
         <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => { addPhotos(e.target.files); e.target.value = ""; }} />
         <ImageIcon size={26} color="var(--gold-2)" />
@@ -3463,8 +3467,9 @@ function AddPropertyScreen({ st, setSt, toast, identity }) {
         {photos.map((src, i) => <div key={i}>
           <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "4 / 3", background: "var(--ivory)" }}>
             <img src={src} alt={tagAt(i)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            {i === 0 && <span style={{ position: "absolute", top: 6, left: 6, background: "var(--gold)", color: "#201601", fontSize: 9.5, fontWeight: 800, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase" }}>Cover</span>}
-            <button onClick={() => { setPhotos(prev => prev.filter((_, j) => j !== i)); setPhotoTags(prev => photos.map((_, k) => prev[k] || PHOTO_CATS[k] || "Other").filter((_, j) => j !== i)); }} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,.55)", color: "#fff", border: "none", borderRadius: 999, width: 24, height: 24, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={13} /></button>
+            {i === 0 ? <span style={{ position: "absolute", top: 6, left: 6, background: "var(--gold)", color: "#201601", fontSize: 9.5, fontWeight: 800, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 3 }}><Star size={9} fill="#201601" /> Cover</span>
+              : <button type="button" title="Make this the cover photo" aria-label="Make this the cover photo" onClick={() => { const tg = photos.map((_, k) => photoTags[k] || PHOTO_CATS[k] || "Other"); const ph = photos.slice(); const [p] = ph.splice(i, 1), [t] = tg.splice(i, 1); ph.unshift(p); tg.unshift(t); setPhotos(ph); setPhotoTags(tg); }} style={{ position: "absolute", top: 6, left: 6, background: "rgba(255,255,255,.92)", color: "var(--ink)", border: "none", borderRadius: 999, padding: "3px 8px 3px 6px", fontSize: 10, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, textTransform: "uppercase" }}><Star size={11} /> Make cover</button>}
+            <button onClick={() => { setPhotos(prev => prev.filter((_, j) => j !== i)); setPhotoTags(prev => photos.map((_, k) => prev[k] || PHOTO_CATS[k] || "Other").filter((_, j) => j !== i)); }} style={{ position: "absolute", bottom: 6, right: 6, background: "rgba(0,0,0,.55)", color: "#fff", border: "none", borderRadius: 999, width: 24, height: 24, cursor: "pointer", display: "grid", placeItems: "center" }}><X size={13} /></button>
           </div>
           <select value={tagAt(i)} onChange={e => setPhotoTags(prev => { const n = photos.map((_, k) => prev[k] || PHOTO_CATS[k] || "Other"); n[i] = e.target.value; return n; })} style={{ width: "100%", marginTop: 6, background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 7, padding: "5px 7px", fontSize: 11.5, fontWeight: 600, color: "var(--ink)", fontFamily: "inherit", cursor: "pointer" }}>{PHOTO_CATS.map(c => <option key={c} value={c}>{c}</option>)}</select>
         </div>)}
