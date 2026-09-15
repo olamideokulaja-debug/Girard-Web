@@ -3220,8 +3220,12 @@ function ListingDetailsCard({ prop, onSave, toast }) {
       <PmBtn size="sm" kind={open ? "ghost" : "navy"} icon={PenLine} onClick={() => { if (open) setF(fromProp()); setOpen(o => !o); }}>{open ? "Cancel" : "Edit listing"}</PmBtn>
     </div>
     {open && <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 10 }} className="pm-grid3">
-        <PmField label="Listing title (optional)" value={f.name} onChange={v => set("name", v.slice(0, 60))} placeholder={"Leave blank to show \"" + kind + "\""} />
+      <div>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Listing title</label>
+        <input type="text" value={f.name} onChange={e => set("name", e.target.value.slice(0, 60))} placeholder={"Leave blank to show \"" + kind + "\""} maxLength={60} style={{ width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 12px", color: "var(--ink)", fontSize: 15.5, fontWeight: 600, fontFamily: "inherit", outline: "none" }} />
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 5 }}>Shown on the listing card, the property page and the apps. {f.name.length} of 60 characters.</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="pm-grid2">
         <PmSelect label="Availability" value={f.availability} onChange={v => set("availability", v)} options={AVAILABILITY} />
         <PmSelect label="Property status" value={f.condition} onChange={v => set("condition", v)} options={["", "Completed", "Under construction"]} />
       </div>
