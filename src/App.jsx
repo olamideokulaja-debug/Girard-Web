@@ -308,6 +308,16 @@ function HeroTower() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(el.clientWidth, el.clientHeight);
     el.appendChild(renderer.domElement);
+    // On desktop the canvas stays invisible until the real towers are in the
+    // scene, so the first thing anyone sees is the finished render rather than
+    // the procedural stand-in followed by a swap. reveal() is called once the
+    // models are in, or once loading has failed and the stand-in is all there is.
+    const wantModels = window.innerWidth >= 1000 && !/\bnomodels\b/.test(window.location.search);
+    renderer.domElement.style.transition = "opacity .7s ease";
+    renderer.domElement.style.opacity = wantModels ? "0" : "1";
+    let revealed = !wantModels;
+    const reveal = (why) => { if (revealed) return; revealed = true; renderer.domElement.dataset.reveal = why || "models"; renderer.domElement.style.opacity = "1"; };
+    const revealGuard = wantModels ? setTimeout(() => reveal("timeout"), 20000) : 0;
 
     const GOLD = 0xC6A15B;
     const city = new THREE.Group();
@@ -371,12 +381,11 @@ function HeroTower() {
     // Real models, desktop only. The procedural towers stay on screen until
     // every model has loaded, then the swap happens in one frame. Any failure
     // (CDN, decoder, a missing file) leaves the procedural scene as it was.
-    const wantModels = window.innerWidth >= 1000 && !/\bnomodels\b/.test(window.location.search);
     if (wantModels) (async () => {
       try {
         await loadScript(THREE_EX + "loaders/GLTFLoader.js");
         await loadScript(THREE_EX + "loaders/DRACOLoader.js");
-        if (!alive || !THREE.GLTFLoader || !THREE.DRACOLoader) return;
+        if (!alive || !THREE.GLTFLoader || !THREE.DRACOLoader) { reveal(); return; }
         const draco = new THREE.DRACOLoader();
         draco.setDecoderPath(THREE_EX + "libs/draco/");
         const loader = new THREE.GLTFLoader();
@@ -437,7 +446,9 @@ function HeroTower() {
         camera.far = 400;
         camera.updateProjectionMatrix();
         modelsOn = true;
-      } catch (e) { /* procedural scene stays; nothing to do */ }
+        renderer.render(scene, camera);   // one finished frame before the fade-in
+        reveal();
+      } catch (e) { reveal("fallback"); /* procedural scene stays and is shown instead */ }
     })();
 
     // The filler ring starts well outside the camera (which orbits at ~39 from
@@ -522,6 +533,7 @@ function HeroTower() {
     return () => {
       alive = false;
       cancelAnimationFrame(raf);
+      clearTimeout(revealGuard);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
@@ -6518,6 +6530,13 @@ function SwapModel() {
     rn.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     rn.setSize(el.clientWidth, el.clientHeight);
     el.appendChild(rn.domElement);
+    // Same rule as the hero: no stand-in on screen before the real models.
+    const wantModels = window.innerWidth >= 1000 && !/\bnomodels\b/.test(window.location.search);
+    rn.domElement.style.transition = "opacity .7s ease";
+    rn.domElement.style.opacity = wantModels ? "0" : "1";
+    let revealed = !wantModels;
+    const reveal = () => { if (revealed) return; revealed = true; rn.domElement.style.opacity = "1"; };
+    const revealGuard = wantModels ? setTimeout(reveal, 20000) : 0;
 
     const GOLD = 0xC6A15B;
     sc.add(new THREE.AmbientLight(0x2b4a7a, 0.95));
@@ -6567,11 +6586,11 @@ function SwapModel() {
     // Real models on desktop: the two smaller towers from the hero set, one
     // tinted brass and one navy so the pair still reads as two owners. The
     // boxes stay until both have loaded; any failure leaves the boxes.
-    if (window.innerWidth >= 1000 && !/\bnomodels\b/.test(window.location.search)) (async () => {
+    if (wantModels) (async () => {
       try {
         await loadScript(THREE_EX + "loaders/GLTFLoader.js");
         await loadScript(THREE_EX + "loaders/DRACOLoader.js");
-        if (!alive || !THREE.GLTFLoader || !THREE.DRACOLoader) return;
+        if (!alive || !THREE.GLTFLoader || !THREE.DRACOLoader) { reveal(); return; }
         const draco = new THREE.DRACOLoader(); draco.setDecoderPath(THREE_EX + "libs/draco/");
         const loader = new THREE.GLTFLoader(); loader.setDRACOLoader(draco);
         const pm = new THREE.PMREMGenerator(rn);
@@ -6598,7 +6617,8 @@ function SwapModel() {
         stage.remove(mirrorA); stage.remove(mirrorB);
         mirrorA = reflect(THREE, a, 0.28); mirrorB = reflect(THREE, b, 0.28);
         stage.add(mirrorA); stage.add(mirrorB);
-      } catch (e) { /* boxes stay */ }
+        reveal();
+      } catch (e) { reveal(); /* boxes stay and are shown instead */ }
     })();
 
     const ring = new THREE.Mesh(new THREE.TorusGeometry(R, 0.012, 8, 160),
@@ -6668,7 +6688,7 @@ function SwapModel() {
     };
     loop();
     return () => {
-      alive = false; cancelAnimationFrame(raf);
+      alive = false; cancelAnimationFrame(raf); clearTimeout(revealGuard);
       el.removeEventListener("pointerdown", down);
       el.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
