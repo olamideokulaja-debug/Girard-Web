@@ -7807,14 +7807,6 @@ function SwapOversight({ toast }) {
    with editable final cost, client rating, and Girard's 25% admin charge.
    =================================================================== */
 const JOBS_KEY = "girard_jobs_v1";
-const JOB_PROPS = [
-  { id: "GP-1", title: "Ikoyi Project", girardOwned: true },
-  { id: "GP-2", title: "Girard Court, Lekki Phase 1", girardOwned: true },
-  { id: "GP-3", title: "Girard Residences, Victoria Island", girardOwned: true },
-  { id: "XP-1", title: "Client Duplex, Magodo", girardOwned: false },
-  { id: "XP-2", title: "Client Flat, Yaba", girardOwned: false },
-  { id: "XP-3", title: "Client Terrace, Ajah", girardOwned: false }
-];
 const JOB_EST = { "Plumbing": 45000, "Electrical": 60000, "HVAC / air-conditioning": 120000, "Cleaning": 35000, "Security": 80000, "Painting & finishing": 150000, "General maintenance": 50000 };
 function jobsLoad() {
   try { const r = localStorage.getItem(JOBS_KEY); if (r) return JSON.parse(r); } catch (e) {}
@@ -7912,21 +7904,37 @@ function JobsScreen({ identity, toast, properties }) {
   const [tab, setTab] = useState(isAdmin ? "all" : "request");
   const [completing, setCompleting] = useState(null);
   const [rating, setRating] = useState(null);
-  const [prop, setProp] = useState(JOB_PROPS[0].id);
+  // Only real listings with a tenant in place. A repair is requested against
+  // an occupied property, so the picker shows the owner's own occupied
+  // listings (every occupied listing for staff) rather than the old fixed list.
+  const me = String((identity && identity.email) || "").toLowerCase();
+  const occupied = (properties || []).filter(pr => pr.status === "Leased" || availabilityOf(pr) === "Occupied");
+  const pickable = (identity.role === "owner" ? occupied.filter(pr => String(pr.ownerEmail || "").toLowerCase() === me) : occupied)
+    .map(pr => ({ id: pr.id, title: pr.title || pr.name || pr.kind || pr.id, girardOwned: /@girardpropertylimited\.com$/i.test(String(pr.ownerEmail || "")) }));
+  const [prop, setProp] = useState("");
+  useEffect(() => { if (!pickable.find(x => x.id === prop)) setProp(pickable.length ? pickable[0].id : ""); }, [pickable.length, properties]);
   const [cat, setCat] = useState(VENDOR_CATS[0]);
   const [desc, setDesc] = useState("");
   const [vendors, setVendors] = useState(null);
   const [picked, setPicked] = useState(null);
   const [paidBy, setPaidBy] = useState("Landlord");
-  const propObj = JOB_PROPS.find(x => x.id === prop);
+  const propObj = pickable.find(x => x.id === prop) || null;
   const est = JOB_EST[cat] || 50000;
   const sel = { width: "100%", background: "var(--ivory-2)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", color: "var(--ink)", fontSize: 14, fontFamily: "inherit" };
-  const findVendors = async () => { const all = await partnerFetch(); const m = all.filter(v => v.kind === "Vendor" && v.status === "Approved" && v.category === cat); setVendors(m); setPicked(null); if (m.length === 0) toast("No vendor available for " + cat + " right now. Girard has been notified and will source one.", "danger"); };
+  const findVendors = async () => {
+    const all = await partnerFetch(); const m = all.filter(v => v.kind === "Vendor" && v.status === "Approved" && v.category === cat); setVendors(m); setPicked(null);
+    if (m.length === 0) {
+      // The message promises that Girard has been told, so tell Girard.
+      notify({ title: "No vendor available for " + cat, body: (propObj ? propObj.title + " \u00b7 " : "") + "requested by " + (me || "a member") + " \u00b7 no approved " + cat.toLowerCase() + " vendor on the platform", audience: "admin" });
+      toast("No vendor available for " + cat + " right now. Girard has been notified and will source one.", "danger");
+    }
+  };
   const submit = () => {
+    if (!propObj) { toast("Choose an occupied property first", "danger"); return; }
     if (!desc.trim()) { toast("Describe the issue", "danger"); return; }
     const j = { id: "JB-" + Date.now(), propTitle: propObj.title, ownerEmail: (identity && identity.email) || null, girardOwned: propObj.girardOwned, category: cat, desc, vendorName: picked ? picked.business : null, status: picked ? "Assigned" : "No vendor", estimate: est, finalCost: null, paidBy: propObj.girardOwned ? paidBy : "Client", rating: 0, ratedOk: null, review: "", createdAt: new Date().toISOString().slice(0, 10) };
     jobInsert(j); setJobs(js => [j, ...js]);
-    const ownerOf = (properties || []).find(pr => pr.title === propObj.title);
+    const ownerOf = (properties || []).find(pr => pr.id === propObj.id);
     const ownerAddr = ownerOf && ownerOf.ownerEmail ? String(ownerOf.ownerEmail).toLowerCase() : null;
     if (ownerAddr) notify({
       title: picked ? "Vendor assigned to your property" : "Your property needs a vendor",
@@ -7947,10 +7955,13 @@ function JobsScreen({ identity, toast, properties }) {
     {tab === "request" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="pm-grid2">
       <PmCard><div style={{ display: "grid", gap: 12 }}>
         <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Property</label>
-          <select value={prop} onChange={e => { setProp(e.target.value); const po = JOB_PROPS.find(x => x.id === e.target.value); if (!po.girardOwned) setPaidBy("Client"); }} style={sel}>
-            <optgroup label="Girard-owned / managed">{JOB_PROPS.filter(x => x.girardOwned).map(x => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>
-            <optgroup label="Other properties">{JOB_PROPS.filter(x => !x.girardOwned).map(x => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>
-          </select>
+          {pickable.length === 0
+            ? <div style={{ background: "var(--ivory)", border: "1px solid var(--cream-line)", borderRadius: 8, padding: "11px 13px", fontSize: 13.5, color: "var(--muted)", lineHeight: 1.5 }}>{identity.role === "owner" ? "None of your listings is marked Occupied yet. Repairs are requested against a property with a tenant in place: open the listing, choose Edit listing and set Availability to Occupied." : "No listing on the platform is marked Occupied yet."}</div>
+            : <select value={prop} onChange={e => { setProp(e.target.value); const po = pickable.find(x => x.id === e.target.value); if (po && !po.girardOwned) setPaidBy("Client"); }} style={sel}>
+              {pickable.some(x => x.girardOwned) && <optgroup label="Girard-owned / managed">{pickable.filter(x => x.girardOwned).map(x => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>}
+              {pickable.some(x => !x.girardOwned) && <optgroup label={pickable.some(x => x.girardOwned) ? "Other occupied properties" : "Occupied properties"}>{pickable.filter(x => !x.girardOwned).map(x => <option key={x.id} value={x.id}>{x.title}</option>)}</optgroup>}
+            </select>}
+          {pickable.length > 0 && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 5 }}>Only properties marked Occupied are listed.</div>}
         </div>
         <PmSelect label="Service category" value={cat} onChange={v => { setCat(v); setVendors(null); setPicked(null); }} options={VENDOR_CATS} />
         <div><label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Describe the issue</label><textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="e.g. Kitchen tap dripping, needs a new cartridge" style={{ ...sel, resize: "vertical" }} /></div>
@@ -7969,9 +7980,9 @@ function JobsScreen({ identity, toast, properties }) {
         <div style={{ marginTop: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Who pays for this service?</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{[["Landlord", "Landlord / owner"], ["Tenant", "Tenant"], ["Girard", "Covered by Girard"]].map(([v, l]) => <button key={v} onClick={() => setPaidBy(v)} style={{ flex: 1, minWidth: 120, padding: "9px", borderRadius: 8, border: "1px solid " + (paidBy === v ? "var(--gold)" : "var(--cream-line)"), background: paidBy === v ? "var(--gold-soft)" : "var(--white)", color: "var(--ink)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>{l}</button>)}</div>
-          {!propObj.girardOwned && paidBy === "Girard" && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>This is an external property. Confirm with the owner before Girard absorbs the cost.</div>}
+          {propObj && !propObj.girardOwned && paidBy === "Girard" && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>This is an external property. Confirm with the owner before Girard absorbs the cost.</div>}
         </div>
-        <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} onClick={submit}>{picked ? "Request job" : "Log job (no vendor yet)"}</PmBtn>
+        <PmBtn kind="gold" icon={CheckCircle2} style={{ marginTop: 16 }} disabled={!propObj} onClick={submit}>{picked ? "Request job" : "Log job (no vendor yet)"}</PmBtn>
       </PmCard>
     </div>}
 
