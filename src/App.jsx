@@ -2932,9 +2932,11 @@ function MiniArea({ data, w = 520, h = 180, color = "#B8934A", fill = "#C6A15B" 
   </svg>;
 }
 function MiniBars({ data, w = 520, h = 180, colors }) {
-  const max = Math.max(1, ...data.map(d => d.v)) * 1.15, bw = (w - 20) / Math.max(1, data.length);
+  // Bars are capped at 150 wide and centred, so a chart with 2 or 3 areas does
+  // not turn into 2 or 3 slabs.
+  const n = Math.max(1, data.length), max = Math.max(1, ...data.map(d => d.v)) * 1.15, bw = Math.min(150, (w - 20) / n), x0 = 10 + ((w - 20) - bw * n) / 2;
   return <svg viewBox={"0 0 " + w + " " + h} width="100%" height={h}>
-    {data.map((d, i) => { const bh = (d.v / max) * (h - 40); return <g key={i}><title>{d.m + ": " + d.v}</title><rect className="chart-bar" style={{ animationDelay: (i * 0.05) + "s" }} x={10 + i * bw + bw * .2} y={h - 24 - bh} width={bw * .6} height={bh} rx="4" fill={colors ? colors[i % colors.length] : "var(--navy)"} /><text x={10 + i * bw + bw * .5} y={h - 28 - bh} fontSize="10" fill="var(--ink)" fontWeight="600" textAnchor="middle">{d.v}</text><text x={10 + i * bw + bw * .5} y={h - 7} fontSize="9" fill="var(--muted)" textAnchor="end" transform={"rotate(-30 " + (10 + i * bw + bw * .5) + " " + (h - 7) + ")"}>{d.m}</text></g>; })}
+    {data.map((d, i) => { const bh = (d.v / max) * (h - 40); return <g key={i}><title>{d.m + ": " + d.v}</title><rect className="chart-bar" style={{ animationDelay: (i * 0.05) + "s" }} x={x0 + i * bw + bw * .2} y={h - 24 - bh} width={bw * .6} height={bh} rx="4" fill={colors ? colors[i % colors.length] : "var(--navy)"} /><text x={x0 + i * bw + bw * .5} y={h - 28 - bh} fontSize="10" fill="var(--ink)" fontWeight="600" textAnchor="middle">{d.v}</text><text x={x0 + i * bw + bw * .5} y={h - 7} fontSize="9" fill="var(--muted)" textAnchor="end" transform={"rotate(-30 " + (x0 + i * bw + bw * .5) + " " + (h - 7) + ")"}>{d.m}</text></g>; })}
   </svg>;
 }
 function MiniDonut({ data, size = 170 }) {
@@ -3084,7 +3086,12 @@ function OwnerDash({ st, identity }) {
   const hasIncome = income.some(x => x.v > 0);
   // Monthly income = annual rent on let properties, divided over the year.
   const monthlyIncome = Math.round(st.properties.filter(p => p.status === "Leased").reduce((t, p) => t + (p.rent || 0), 0) / 12);
-  const byArea = PM_AREAS.slice(0, 7).map(a => ({ m: a, v: Math.round(st.properties.filter(p => p.area === a).reduce((s, p) => s + p.rent, 0) / 1e6) }));
+  // Annual rent roll grouped by the areas the listings are actually in (the
+  // old version walked the first 7 names of the area list, so "Lekki Phase 1"
+  // never matched "Lekki" and the chart sat at zero). Sale listings are left
+  // out: an asking price is not rent.
+  const byArea = Object.entries(st.properties.filter(p => !isForSale(p)).reduce((o, p) => { const a = p.area || "Other"; o[a] = (o[a] || 0) + (p.rent || 0); return o; }, {}))
+    .sort((x, y) => y[1] - x[1]).slice(0, 7).map(([m, v]) => ({ m, v: Math.round(v / 1e5) / 10 }));
   const occData = [
     { name: "Occupied", v: leased, c: "#10B981" },
     { name: "Available", v: props.filter(p => availabilityOf(p) === "Available" && p.status !== "Leased").length, c: "#F59E0B" },
@@ -3135,7 +3142,7 @@ function OwnerDash({ st, identity }) {
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Occupancy</div><div style={{ display: "flex", alignItems: "center", gap: 14 }}><MiniDonut data={occData} size={150} /><Legend items={occData} /></div></PmCard>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }} className="pm-grid2">
-      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Rent by area (₦M)</div><MiniBars data={byArea} w={640} h={235} colors={CHART_COLORS} /></PmCard>
+      <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Rent by area (₦M, annual rent roll)</div><MiniBars data={byArea.length ? byArea : [{ m: "No lettings yet", v: 0 }]} w={640} h={235} colors={CHART_COLORS} /></PmCard>
       <PmCard><div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 12 }}>Recent activity</div><div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{activity.map((a, i) => { const cc = CHART_COLORS[i % CHART_COLORS.length]; return <div key={i} style={{ display: "flex", gap: 10, alignItems: "center" }}><div style={{ width: 32, height: 32, borderRadius: 8, background: cc + "1f", color: cc, display: "grid", placeItems: "center", flexShrink: 0 }}><a.icon size={15} /></div><div style={{ minWidth: 0 }}><div style={{ fontSize: 12.5, color: "var(--ink)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.t}</div><div style={{ fontSize: 11, color: "var(--muted)" }}>{a.s}</div></div></div>; })}</div></PmCard>
     </div>
     <style>{`@media(max-width:900px){.dash-kpi{grid-template-columns:1fr 1fr!important}.pm-grid2{grid-template-columns:1fr!important}}`}</style>
